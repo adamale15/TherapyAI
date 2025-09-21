@@ -1,0 +1,18 @@
+{
+  "name": "therapy-ai-server",
+  "type": "commonjs",
+  "scripts": {
+    "start": "ts-node index.ts"
+  },
+  "dependencies": {
+    "node-fetch": "^2.7.0",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/node-fetch": "^2.6.11",
+    "@types/ws": "^8.5.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}
