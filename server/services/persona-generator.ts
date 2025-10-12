@@ -84,7 +84,7 @@ export class PersonaGenerator {
   /**
    * Create a fallback preview when AI returns malformed JSON
    */
-  private createFallbackPreview(responseText: string): {
+  private createFallbackPreview(documentText: string): {
     name: string;
     condition: string;
     difficulty: string;
@@ -93,37 +93,98 @@ export class PersonaGenerator {
     speakingPatterns: string[];
   } {
     console.log(
-      "Creating fallback preview from text:",
-      responseText.substring(0, 500)
+      "Creating fallback preview from document text:",
+      documentText.substring(0, 500)
     );
 
-    // Extract basic information from the raw response text
-    const text = responseText.toLowerCase();
+    // Extract basic information from the raw document text
+    const text = documentText.toLowerCase();
 
     // Try to extract name with better patterns
     let name = "Unknown Patient";
     const namePatterns = [
-      /•\s*Name[:\s]+([a-zA-Z\s]+)/i,
-      /Name[:\s]+([a-zA-Z\s]+)/i,
-      /name[:\s]+([a-zA-Z\s]+)/i,
-      /patient[:\s]+([a-zA-Z\s]+)/i,
-      /client[:\s]+([a-zA-Z\s]+)/i,
-      /TherapyAI[^–]*–\s*([a-zA-Z\s]+)\s+Knowledge/i,
-      /([A-Z][a-z]+\s+[A-Z][a-z]+)/, // Simple first last name pattern
+      // Common PDF therapy document patterns - prioritize "Persona:" pattern
+      /persona[:\s]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,
+      /(?:patient|client|name)[:\s]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,
+      /(?:name|patient|client)[:\s]*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,
+      /•\s*(?:name|patient|client|persona)[:\s]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,
+      /(?:case study|therapy case)[:\s]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,
+      /(?:demographics|background)[:\s]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,
+      // Look for capitalized names in the first few lines
+      /^([A-Z][a-z]+\s+[A-Z][a-z]+)/m,
+      // Look for names after common prefixes
+      /(?:mr\.|ms\.|mrs\.|dr\.)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i,
+      // Simple first last name pattern (more flexible)
+      /([A-Z][a-z]{2,}\s+[A-Z][a-z]{2,})/,
+      // Look for names in quotes
+      /"([A-Z][a-z]+\s+[A-Z][a-z]+)"/,
+      // Look for names in parentheses
+      /\(([A-Z][a-z]+\s+[A-Z][a-z]+)\)/,
     ];
 
     console.log(
-      "Trying to extract name from text:",
-      responseText.substring(0, 200)
+      "Trying to extract name from document text:",
+      documentText.substring(0, 500)
     );
 
-    for (const pattern of namePatterns) {
-      const match = responseText.match(pattern);
-      console.log(`Pattern ${pattern} matched:`, match);
+    // Special check for "Persona:" pattern
+    const personaMatch = documentText.match(
+      /persona[:\s]+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/i
+    );
+    if (personaMatch) {
+      console.log("🎯 Found 'Persona:' pattern:", personaMatch);
+    }
+
+    for (let i = 0; i < namePatterns.length; i++) {
+      const pattern = namePatterns[i];
+      const match = documentText.match(pattern);
+      console.log(`Pattern ${i + 1} (${pattern}):`, match);
       if (match && match[1]) {
         name = match[1].trim().split("\n")[0].split(".")[0].split("–")[0];
-        console.log("Extracted name:", name);
+        console.log("✅ Extracted name:", name);
         break;
+      }
+    }
+
+    if (name === "Unknown Patient") {
+      console.log("❌ No name pattern matched. Available text patterns:");
+      console.log("First 10 lines:", documentText.split("\n").slice(0, 10));
+      console.log(
+        "Looking for any capitalized words:",
+        documentText.match(/[A-Z][a-z]+/g)?.slice(0, 10)
+      );
+
+      // Try to generate a name based on document content
+      const capitalizedWords = documentText.match(/[A-Z][a-z]+/g) || [];
+      if (capitalizedWords.length >= 2) {
+        // Try to find two capitalized words that could be a name
+        for (let i = 0; i < capitalizedWords.length - 1; i++) {
+          const word1 = capitalizedWords[i];
+          const word2 = capitalizedWords[i + 1];
+          // Check if these look like names (not common therapy terms)
+          const commonTerms = [
+            "THERAPY",
+            "PATIENT",
+            "CLIENT",
+            "CASE",
+            "STUDY",
+            "SESSION",
+            "TREATMENT",
+            "DIAGNOSIS",
+            "ANXIETY",
+            "DEPRESSION",
+            "TRAUMA",
+            "STRESS",
+          ];
+          if (
+            !commonTerms.includes(word1.toUpperCase()) &&
+            !commonTerms.includes(word2.toUpperCase())
+          ) {
+            name = `${word1} ${word2}`;
+            console.log("🔄 Generated name from content:", name);
+            break;
+          }
+        }
       }
     }
 
@@ -139,7 +200,7 @@ export class PersonaGenerator {
     console.log("Trying to extract condition from text");
 
     for (const pattern of conditionPatterns) {
-      const match = responseText.match(pattern);
+      const match = documentText.match(pattern);
       console.log(`Condition pattern ${pattern} matched:`, match);
       if (match && match[1]) {
         condition = match[1].trim().split("\n")[0].split(".")[0];
@@ -176,14 +237,14 @@ export class PersonaGenerator {
     }
 
     // Extract age if available
-    const ageMatch = responseText.match(/age[:\s]+(\d+)/i);
+    const ageMatch = documentText.match(/age[:\s]+(\d+)/i);
     const age = ageMatch ? ageMatch[1] : "";
 
     // Create description from presenting concerns or first meaningful content
     let description = "A therapy case for practice.";
 
     // Try to find presenting concerns section
-    const concernsMatch = responseText.match(
+    const concernsMatch = documentText.match(
       /presenting concerns[:\s]+([^•\n]+)/i
     );
     console.log("Looking for presenting concerns:", concernsMatch);
@@ -196,7 +257,7 @@ export class PersonaGenerator {
       );
     } else {
       // Fallback to first meaningful sentence
-      const sentences = responseText
+      const sentences = documentText
         .split(/[.!?]+/)
         .filter((s) => s.trim().length > 20 && !s.includes("TherapyAI"));
       if (sentences.length > 0) {
@@ -288,6 +349,13 @@ export class PersonaGenerator {
     4. Voice Settings: Appropriate voice characteristics for this persona
     5. System Prompt: A detailed prompt for the AI to roleplay as this persona
     6. Few-shot Examples: Example conversations to guide the AI's responses
+    
+    NAME EXTRACTION PRIORITY:
+    - Look for "Name:", "Patient:", "Client:", "Case Study:", or similar labels
+    - Look for capitalized first and last names (e.g., "John Smith", "Maria Garcia")
+    - Look for names in the first few lines of the document
+    - Look for names after "Mr.", "Ms.", "Mrs.", "Dr." prefixes
+    - If no clear name is found, generate a realistic first and last name based on the case details
     
     IMPORTANT GUIDELINES:
     - The persona should be a PATIENT seeking therapy, NOT a therapist
@@ -493,12 +561,19 @@ export class PersonaGenerator {
 Document: ${documentText}
 
 Extract:
-- Name: Look for "Name:" or "Patient:" or "Client:"
+- Name: Look for "Name:", "Patient:", "Client:", "Persona:", or capitalized first and last names
 - Condition: Look for "Presenting Concerns:" or anxiety/panic/depression keywords
 - Difficulty: Beginner (simple cases), Intermediate (moderate complexity), Advanced (complex/severe)
 - Description: First sentence from "Presenting Concerns" or main issue
 - Personality Traits: Extract from content (anxious, perfectionist, overwhelmed, etc.)
 - Speaking Patterns: Extract from content (catastrophic thinking, intellectualizes, etc.)
+
+IMPORTANT: Look specifically for patterns like:
+- "Persona: [Name]"
+- "Name: [Name]"
+- "Patient: [Name]"
+- "Client: [Name]"
+- Any capitalized first and last name combination
 
 Return ONLY this JSON (no other text):
 {
@@ -537,7 +612,7 @@ Return ONLY this JSON (no other text):
 
         // Try to create a fallback preview if JSON is completely malformed
         try {
-          const fallbackPreview = this.createFallbackPreview(responseText);
+          const fallbackPreview = this.createFallbackPreview(documentText);
           console.log("Using fallback preview:", fallbackPreview);
           return fallbackPreview;
         } catch (fallbackError) {

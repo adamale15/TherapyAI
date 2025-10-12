@@ -5,12 +5,7 @@ import { UserData, AuthService } from "./auth-interface";
 // Initialize Google Cloud Storage
 const storage = new Storage({
   projectId: process.env.GOOGLE_CLOUD_PROJECT_ID || "ivory-voyage-473503-d7",
-  keyFilename:
-    process.env.GOOGLE_APPLICATION_CREDENTIALS || "./gcp-credentials.json",
-  // Alternative: Use service account key directly from environment
-  credentials: process.env.GOOGLE_SERVICE_ACCOUNT_KEY
-    ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_KEY)
-    : undefined,
+  keyFilename: "./gcp-credentials.json",
 });
 
 const bucketName = process.env.GCS_BUCKET_NAME || "therapy_ai";
