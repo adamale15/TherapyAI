@@ -2,9 +2,10 @@
   "name": "therapy-ai-server",
   "type": "commonjs",
   "scripts": {
-    "start": "ts-node index.ts",
     "build": "tsc",
-    "dev": "ts-node index.ts"
+    "start": "node ./dist/index.js",
+    "dev": "ts-node index.ts",
+    "postinstall": "npm run build"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.17.1",

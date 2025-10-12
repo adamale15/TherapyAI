@@ -8,8 +8,8 @@ import { detectCrisis, crisisResponse } from "./safety";
 import personaRoutes from "./routes/personas";
 import authRoutes from "./routes/auth";
 
-const PORT = Number(process.env.PORT || 8080);
-const API_PORT = Number(process.env.API_PORT || 3001);
+const PORT = Number(process.env.PORT || 3001);
+const WS_PORT = Number(process.env.WS_PORT || 8080);
 
 type Session = {
   history: ChatTurn[]; // minimal memory per socket
@@ -36,13 +36,14 @@ app.get("/health", (req: express.Request, res: express.Response) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// Start API server
-app.listen(API_PORT, () => {
-  console.log(`[server] API server listening on port ${API_PORT}`);
+// Start API server on main port
+app.listen(PORT, () => {
+  console.log(`[server] API server listening on port ${PORT}`);
 });
 
-const wss = new WebSocketServer({ port: PORT }, () =>
-  console.log(`[server] Therapy WS listening on ${PORT}`)
+// Start WebSocket server on separate port
+const wss = new WebSocketServer({ port: WS_PORT }, () =>
+  console.log(`[server] Therapy WS listening on ${WS_PORT}`)
 );
 
 wss.on("connection", (ws: WebSocket) => {

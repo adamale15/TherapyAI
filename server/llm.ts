@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import {
   PersonaLoader,
   type PersonaData,
-} from "../knowledge-base/services/persona-loader";
+} from "./knowledge-base/services/persona-loader";
 
 // Use Gemini API key from environment
 const GEMINI_API_KEY =
