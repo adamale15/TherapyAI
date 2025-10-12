@@ -32,7 +32,7 @@ app.use("/api/personas", personaRoutes);
 app.use("/api/auth", authRoutes);
 
 // Health check endpoint
-app.get("/health", (req, res) => {
+app.get("/health", (req: express.Request, res: express.Response) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
@@ -60,7 +60,7 @@ wss.on("connection", (ws: WebSocket) => {
     } catch {}
   }, 25000);
 
-  ws.on("message", async (data, isBinary) => {
+  ws.on("message", async (data: Buffer, isBinary: boolean) => {
     if (isBinary) return; // no audio in this build
 
     try {
