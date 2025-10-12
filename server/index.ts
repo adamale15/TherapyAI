@@ -37,13 +37,13 @@ app.get("/health", (req: express.Request, res: express.Response) => {
 });
 
 // Start API server on main port
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`[server] API server listening on port ${PORT}`);
 });
 
-// Start WebSocket server on separate port
-const wss = new WebSocketServer({ port: WS_PORT }, () =>
-  console.log(`[server] Therapy WS listening on ${WS_PORT}`)
+// Start WebSocket server on the same port as the HTTP server
+const wss = new WebSocketServer({ server }, () =>
+  console.log(`[server] Therapy WS listening on ${PORT}`)
 );
 
 wss.on("connection", (ws: WebSocket) => {
