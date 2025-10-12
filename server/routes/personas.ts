@@ -12,7 +12,7 @@ const documentParser = new DocumentParser();
 const personaGenerator = new PersonaGenerator();
 
 // Get all personas (default + custom for user)
-router.get("/all/:userId?", async (req, res) => {
+router.get("/all/:userId?", async (req: express.Request, res: express.Response) => {
   try {
     const { userId } = req.params;
     const personas = await personaLoader.loadAllPersonas(userId);
@@ -27,7 +27,7 @@ router.get("/all/:userId?", async (req, res) => {
 });
 
 // Get default personas only
-router.get("/default", async (req, res) => {
+router.get("/default", async (req: express.Request, res: express.Response) => {
   try {
     const personas = await personaLoader.loadDefaultPersonas();
     res.json({ success: true, personas });
@@ -41,7 +41,7 @@ router.get("/default", async (req, res) => {
 });
 
 // Get custom personas for a user
-router.get("/custom/:userId", async (req, res) => {
+router.get("/custom/:userId", async (req: express.Request, res: express.Response) => {
   try {
     const { userId } = req.params;
     const personas = await personaLoader.loadCustomPersonas(userId);
@@ -56,7 +56,7 @@ router.get("/custom/:userId", async (req, res) => {
 });
 
 // Get specific persona
-router.get("/:personaId/:userId?", async (req, res) => {
+router.get("/:personaId/:userId?", async (req: express.Request, res: express.Response) => {
   try {
     const { personaId, userId } = req.params;
     const persona = await personaLoader.loadPersona(personaId, userId);
@@ -79,7 +79,7 @@ router.get("/:personaId/:userId?", async (req, res) => {
 });
 
 // Upload and create custom persona
-router.post("/upload", upload.single("personaFile"), async (req, res) => {
+router.post("/upload", upload.single("personaFile"), async (req: express.Request, res: express.Response) => {
   let uploadedFilePath: string | null = null;
 
   try {
@@ -153,7 +153,7 @@ router.post("/upload", upload.single("personaFile"), async (req, res) => {
 });
 
 // Generate preview without saving
-router.post("/preview", upload.single("personaFile"), async (req, res) => {
+router.post("/preview", upload.single("personaFile"), async (req: express.Request, res: express.Response) => {
   let uploadedFilePath: string | null = null;
 
   try {
@@ -215,7 +215,7 @@ router.post("/preview", upload.single("personaFile"), async (req, res) => {
 });
 
 // Update custom persona
-router.put("/:personaId/:userId", async (req, res) => {
+router.put("/:personaId/:userId", async (req: express.Request, res: express.Response) => {
   try {
     const { personaId, userId } = req.params;
     const updates = req.body;
@@ -234,7 +234,7 @@ router.put("/:personaId/:userId", async (req, res) => {
 });
 
 // Delete custom persona
-router.delete("/:personaId/:userId", async (req, res) => {
+router.delete("/:personaId/:userId", async (req: express.Request, res: express.Response) => {
   try {
     const { personaId, userId } = req.params;
 
@@ -252,7 +252,7 @@ router.delete("/:personaId/:userId", async (req, res) => {
 });
 
 // Get persona statistics
-router.get("/stats/:userId?", async (req, res) => {
+router.get("/stats/:userId?", async (req: express.Request, res: express.Response) => {
   try {
     const { userId } = req.params;
     const stats = await personaLoader.getPersonaStats(userId);

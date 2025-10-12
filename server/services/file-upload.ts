@@ -1,4 +1,5 @@
 import multer from "multer";
+import express from "express";
 import path from "path";
 import fs from "fs";
 
@@ -22,7 +23,7 @@ const storage = multer.diskStorage({
 
 // File filter to only allow PDF and Word documents
 const fileFilter = (
-  req: any,
+  req: express.Request,
   file: Express.Multer.File,
   cb: multer.FileFilterCallback
 ) => {

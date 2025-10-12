@@ -26,7 +26,7 @@ initializeAuthService();
 const router = express.Router();
 
 // Register new user
-router.post("/register", async (req, res) => {
+router.post("/register", async (req: express.Request, res: express.Response) => {
   try {
     const { email, password, userType, rememberMe } = req.body;
 
@@ -87,7 +87,7 @@ router.post("/register", async (req, res) => {
 });
 
 // Login user
-router.post("/login", async (req, res) => {
+router.post("/login", async (req: express.Request, res: express.Response) => {
   try {
     const { email, password } = req.body;
 
@@ -127,7 +127,7 @@ router.post("/login", async (req, res) => {
 });
 
 // Get user by ID
-router.get("/user/:userId", async (req, res) => {
+router.get("/user/:userId", async (req: express.Request, res: express.Response) => {
   try {
     const { userId } = req.params;
 
@@ -157,7 +157,7 @@ router.get("/user/:userId", async (req, res) => {
 });
 
 // Update user profile
-router.put("/user/:userId", async (req, res) => {
+router.put("/user/:userId", async (req: express.Request, res: express.Response) => {
   try {
     const { userId } = req.params;
     const updates = req.body;
@@ -194,7 +194,7 @@ router.put("/user/:userId", async (req, res) => {
 });
 
 // Deactivate user account
-router.delete("/user/:userId", async (req, res) => {
+router.delete("/user/:userId", async (req: express.Request, res: express.Response) => {
   try {
     const { userId } = req.params;
 
