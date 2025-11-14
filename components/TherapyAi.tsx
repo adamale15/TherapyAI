@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useUser, useAuth, useClerk } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import {
   Play,
   Users,
@@ -37,6 +39,10 @@ import {
   Plus,
   Upload,
   BarChart3,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { PersonaUploadModal } from "./PersonaUploadModal";
 import { PersonaManagement } from "./PersonaManagement";
@@ -307,6 +313,12 @@ type FeatureTabKey = keyof typeof featureTabs;
 
 // Main component
 const VeshApp: React.FC = () => {
+  // Clerk authentication
+  const { user, isLoaded } = useUser();
+  const { signOut } = useAuth();
+  const clerk = useClerk();
+  const router = useRouter();
+
   // State management
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [showDashboard, setShowDashboard] = useState(false);
@@ -351,42 +363,35 @@ const VeshApp: React.FC = () => {
   const [allPersonas, setAllPersonas] = useState<Persona[]>([]);
   const [showPersonaManagement, setShowPersonaManagement] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [userId] = useState<string>("default-user"); // In a real app, get from auth
+  // Get userId from Clerk user
+  const userId = user?.id || "default-user";
 
   // Sticky notes state
   const [stickyNotes, setStickyNotes] = useState<StickyNote[]>([]);
   const [newNote, setNewNote] = useState("");
   const [showStickyNotes, setShowStickyNotes] = useState(false);
 
-  // Login state
-  const [showLogin, setShowLogin] = useState(false);
-  const [userType, setUserType] = useState<"student" | "practitioner" | null>(
-    null
-  );
+  // User type dropdown state
   const [showUserTypeDropdown, setShowUserTypeDropdown] = useState(false);
-  const [loginForm, setLoginForm] = useState({
-    email: "",
-    password: "",
-    rememberMe: false,
-  });
-  const [loginError, setLoginError] = useState("");
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
-  const [isSignedIn, setIsSignedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState<{
-    type: "student" | "practitioner";
-    email: string;
-    loginTime: number;
-    isNewUser?: boolean;
-  } | null>(null);
+  // Derived from Clerk
+  const isSignedIn = !!user && isLoaded;
+  const currentUser = user
+    ? {
+        type:
+          (user.publicMetadata?.userType as "student" | "practitioner") ||
+          "student",
+        email: user.primaryEmailAddress?.emailAddress || "",
+        loginTime: user.lastSignInAt?.getTime() || Date.now(),
+        userId: user.id,
+      }
+    : null;
 
   const activeFeature = featureTabs[activeFeatureTab];
 
   const requireAuthForStep = (targetStep: Step) => {
     if (targetStep !== 1 && !isSignedIn) {
-      setUserType((prev) => prev ?? "student");
-      setShowUserTypeDropdown(false);
-      setShowLogin(true);
+      // Redirect to Clerk sign-in page
+      router.push("/sign-in");
       return false;
     }
     return true;
@@ -441,36 +446,13 @@ const VeshApp: React.FC = () => {
     };
   }, [showUserTypeDropdown]);
 
-  // Check for existing user session on mount
+  // Handle user type selection after sign-in
   useEffect(() => {
-    const checkExistingSession = () => {
-      const userSession =
-        localStorage.getItem("therapyai_user") ||
-        sessionStorage.getItem("therapyai_user");
-      if (userSession) {
-        try {
-          const user = JSON.parse(userSession);
-          console.log("Existing user session found:", user);
-          setCurrentUser(user);
-          setIsSignedIn(true);
-          // In a real app, you might want to validate the session with the backend
-          // For now, we'll just log it and let the user continue
-        } catch (error) {
-          console.error("Error parsing user session:", error);
-          // Clear invalid session
-          localStorage.removeItem("therapyai_user");
-          sessionStorage.removeItem("therapyai_user");
-          setCurrentUser(null);
-          setIsSignedIn(false);
-        }
-      } else {
-        setCurrentUser(null);
-        setIsSignedIn(false);
-      }
-    };
-
-    checkExistingSession();
-  }, []);
+    if (user && !user.publicMetadata?.userType) {
+      // If user doesn't have a userType set, show user type selection
+      // This will be handled by the UI
+    }
+  }, [user]);
 
   // Load available voices
   useEffect(() => {
@@ -2217,180 +2199,11 @@ const VeshApp: React.FC = () => {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Login functions
-  const handleLoginFormChange = (field: string, value: string | boolean) => {
-    setLoginForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-    setLoginError(""); // Clear error when user types
-  };
+  // Authentication is now handled by Clerk - no custom login functions needed
 
-  const validateLoginForm = () => {
-    if (!loginForm.email.trim()) {
-      setLoginError("Email is required");
-      return false;
-    }
-    if (!loginForm.password.trim()) {
-      setLoginError("Password is required");
-      return false;
-    }
-    if (!loginForm.email.includes("@")) {
-      setLoginError("Please enter a valid email address");
-      return false;
-    }
-    if (loginForm.password.length < 6) {
-      setLoginError("Password must be at least 6 characters");
-      return false;
-    }
-    return true;
-  };
-
-  const handleLogin = async () => {
-    if (!validateLoginForm()) return;
-
-    setIsLoggingIn(true);
-    setLoginError("");
-
-    try {
-      // Call the authentication API
-      const response = await fetch(buildApiUrl("/api/auth/login"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: loginForm.email,
-          password: loginForm.password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        setLoginError(data.message || "Login failed. Please try again.");
-        return;
-      }
-
-      // Store user session locally for frontend state management
-      const userData = {
-        type: data.user.userType,
-        email: data.user.email,
-        loginTime: data.user.lastLogin,
-        userId: data.user.id,
-      };
-
-      if (loginForm.rememberMe) {
-        localStorage.setItem("therapyai_user", JSON.stringify(userData));
-      } else {
-        sessionStorage.setItem("therapyai_user", JSON.stringify(userData));
-      }
-
-      // Update signed-in state
-      setCurrentUser(userData);
-      setIsSignedIn(true);
-
-      // Close login modal and proceed to persona selection
-      setShowLogin(false);
-      setUserType(null);
-      setLoginForm({ email: "", password: "", rememberMe: false });
-      goToStep(2);
-
-      console.log(
-        `User logged in successfully: ${data.user.email} (${data.user.userType})`
-      );
-    } catch (error) {
-      console.error("Login error:", error);
-      setLoginError(
-        "Login failed. Please check your connection and try again."
-      );
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
-
-  const handleCreateAccount = async () => {
-    if (!validateLoginForm()) return;
-
-    setIsCreatingAccount(true);
-    setLoginError("");
-
-    try {
-      // Call the registration API
-      const response = await fetch(buildApiUrl("/api/auth/register"), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: loginForm.email,
-          password: loginForm.password,
-          userType: userType,
-          rememberMe: loginForm.rememberMe,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        setLoginError(
-          data.message || "Account creation failed. Please try again."
-        );
-        return;
-      }
-
-      // Store user session locally for frontend state management
-      const userData = {
-        type: data.user.userType,
-        email: data.user.email,
-        loginTime: data.user.lastLogin,
-        userId: data.user.id,
-      };
-
-      if (loginForm.rememberMe) {
-        localStorage.setItem("therapyai_user", JSON.stringify(userData));
-      } else {
-        sessionStorage.setItem("therapyai_user", JSON.stringify(userData));
-      }
-
-      // Update signed-in state
-      setCurrentUser(userData);
-      setIsSignedIn(true);
-
-      // Close login modal and proceed to persona selection
-      setShowLogin(false);
-      setUserType(null);
-      setLoginForm({ email: "", password: "", rememberMe: false });
-      goToStep(2);
-
-      console.log(
-        `Account created successfully: ${data.user.email} (${data.user.userType})`
-      );
-    } catch (error) {
-      console.error("Account creation error:", error);
-      setLoginError(
-        "Account creation failed. Please check your connection and try again."
-      );
-    } finally {
-      setIsCreatingAccount(false);
-    }
-  };
-
-  const resetLoginForm = () => {
-    setLoginForm({ email: "", password: "", rememberMe: false });
-    setLoginError("");
-    setIsLoggingIn(false);
-    setIsCreatingAccount(false);
-  };
-
-  const handleSignOut = () => {
-    // Clear user session
-    localStorage.removeItem("therapyai_user");
-    sessionStorage.removeItem("therapyai_user");
-
-    // Reset user state
-    setCurrentUser(null);
-    setIsSignedIn(false);
+  const handleSignOut = async () => {
+    // Sign out using Clerk
+    await signOut();
 
     // Reset app state
     goToStep(1);
@@ -2414,7 +2227,7 @@ const VeshApp: React.FC = () => {
       case 1:
         return (
           <div className="min-h-screen text-white relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/45 to-black/15 pointer-events-none"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/5 pointer-events-none"></div>
             {/* Subtle background pattern */}
             <div className="absolute inset-0 opacity-5">
               <div
@@ -2534,11 +2347,10 @@ const VeshApp: React.FC = () => {
                           <div className="py-2">
                             <button
                               onClick={() => {
-                                setUserType("student");
                                 setShowUserTypeDropdown(false);
-                                setShowLogin(true);
+                                router.push("/sign-up?userType=student");
                               }}
-                              className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#2a2a2a] transition-colors flex items-center rounded-xl mx-2 my-1"
+                              className="w-full px-4 py-3 text-left text-sm text-white flex items-center rounded-xl mx-2 my-1"
                             >
                               <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center mr-3">
                                 <GraduationCap className="w-5 h-5 text-white" />
@@ -2552,11 +2364,10 @@ const VeshApp: React.FC = () => {
                             </button>
                             <button
                               onClick={() => {
-                                setUserType("practitioner");
                                 setShowUserTypeDropdown(false);
-                                setShowLogin(true);
+                                router.push("/sign-up?userType=practitioner");
                               }}
-                              className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#2a2a2a] transition-colors flex items-center rounded-xl mx-2 my-1"
+                              className="w-full px-4 py-3 text-left text-sm text-white flex items-center rounded-xl mx-2 my-1"
                             >
                               <div className="w-10 h-10 bg-gradient-to-r from-[#3b82f6] to-[#06b6d4] rounded-xl flex items-center justify-center mr-3">
                                 <Shield className="w-5 h-5 text-white" />
@@ -2602,8 +2413,7 @@ const VeshApp: React.FC = () => {
                     </p>
                     <button
                       onClick={() => {
-                        setUserType("student");
-                        setShowLogin(true);
+                        router.push("/sign-up?userType=student");
                       }}
                       className="btn-primary-modern px-8 py-4 text-lg"
                     >
@@ -2635,7 +2445,7 @@ const VeshApp: React.FC = () => {
                     </div>
                     <div className="grid md:grid-cols-3 gap-6">
                       <div className="card-modern">
-                        <div className="text-sm text-gray-400 mb-2">
+                        <div className="text-sm text-bold mb-2">
                           {activeFeature.statsTitle}
                         </div>
                         <div className="text-3xl font-bold text-white mb-2">
@@ -2703,8 +2513,7 @@ const VeshApp: React.FC = () => {
                     <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
                       <button
                         onClick={() => {
-                          setUserType("student");
-                          setShowLogin(true);
+                          router.push("/sign-up?userType=student");
                         }}
                         className="btn-primary-modern px-8 py-4 flex items-center"
                       >
@@ -2713,8 +2522,7 @@ const VeshApp: React.FC = () => {
                       </button>
                       <button
                         onClick={() => {
-                          setUserType("practitioner");
-                          setShowLogin(true);
+                          router.push("/sign-up?userType=practitioner");
                         }}
                         className="btn-secondary-modern px-8 py-4 flex items-center"
                       >
@@ -3273,7 +3081,7 @@ const VeshApp: React.FC = () => {
 
       case 2:
         return (
-          <div className="min-h-screen bg-black/80 backdrop-blur-xl text-white">
+          <div className="min-h-screen bg-black/60 backdrop-blur-xl text-white">
             {/* Header */}
             <header className="px-6 py-6 border-b border-[#1a1a1a]">
               <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -3470,7 +3278,7 @@ const VeshApp: React.FC = () => {
 
       case 3:
         return (
-          <div className="min-h-screen bg-black/85 backdrop-blur-xl text-white">
+          <div className="min-h-screen bg-black/60 backdrop-blur-xl text-white">
             {/* Header */}
             <header className="px-6 py-6 border-b border-[#1a1a1a]">
               <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -3554,7 +3362,7 @@ const VeshApp: React.FC = () => {
 
       case 4:
         return (
-          <div className="min-h-screen bg-black/85 backdrop-blur-xl text-white">
+          <div className="min-h-screen bg-black/60 backdrop-blur-xl text-white">
             {/* Header */}
             <header className="px-6 py-6 border-b border-[#1a1a1a]">
               <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -3811,7 +3619,7 @@ const VeshApp: React.FC = () => {
 
       case 5:
         return (
-          <div className="min-h-screen bg-black/85 backdrop-blur-xl text-white">
+          <div className="min-h-screen bg-black/60 backdrop-blur-xl text-white">
             <div className="h-screen flex flex-col">
               {/* Header */}
               <div className="bg-[#1a1a1a] border-b border-[#1a1a1a] px-6 py-4">
@@ -4664,163 +4472,7 @@ const VeshApp: React.FC = () => {
         userId={userId}
       />
 
-      {/* Login Modal */}
-      {showLogin && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a1a1a] rounded-2xl p-8 max-w-md w-full">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-white">
-                {userType === "student"
-                  ? "Student Login"
-                  : "Practitioner Login"}
-              </h2>
-              <button
-                onClick={() => {
-                  setShowLogin(false);
-                  setUserType(null);
-                  resetLoginForm();
-                }}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="space-y-6">
-              {/* User Type Display */}
-              <div className="text-center">
-                <div
-                  className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${
-                    userType === "student"
-                      ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                      : "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                  }`}
-                >
-                  <User className="w-4 h-4 mr-2" />
-                  {userType === "student"
-                    ? "Student Account"
-                    : "Practitioner Account"}
-                </div>
-              </div>
-
-              {/* Login Form */}
-              <form
-                className="space-y-4"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleLogin();
-                }}
-              >
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    value={loginForm.email}
-                    onChange={(e) =>
-                      handleLoginFormChange("email", e.target.value)
-                    }
-                    className="w-full px-4 py-3 bg-[#2a2a2a] border border-[#2a2a2a] rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="Enter your email"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    value={loginForm.password}
-                    onChange={(e) =>
-                      handleLoginFormChange("password", e.target.value)
-                    }
-                    className="w-full px-4 py-3 bg-[#2a2a2a] border border-[#2a2a2a] rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="Enter your password"
-                    required
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={loginForm.rememberMe}
-                      onChange={(e) =>
-                        handleLoginFormChange("rememberMe", e.target.checked)
-                      }
-                      className="w-4 h-4 text-purple-600 bg-[#2a2a2a] border-[#2a2a2a] rounded focus:ring-purple-500 focus:ring-2"
-                    />
-                    <span className="ml-2 text-sm text-gray-300">
-                      Remember me
-                    </span>
-                  </label>
-                  <button
-                    type="button"
-                    className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
-
-                {/* Error Message */}
-                {loginError && (
-                  <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
-                    <p className="text-red-400 text-sm">{loginError}</p>
-                  </div>
-                )}
-              </form>
-
-              {/* Action Buttons */}
-              <div className="space-y-3">
-                <button
-                  type="button"
-                  onClick={handleLogin}
-                  disabled={isLoggingIn || isCreatingAccount}
-                  className={`w-full py-3 px-4 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
-                    userType === "student"
-                      ? "bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] hover:from-[#4f46e5] hover:to-[#7c3aed]"
-                      : "bg-gradient-to-r from-[#3b82f6] to-[#06b6d4] hover:from-[#2563eb] hover:to-[#0891b2]"
-                  }`}
-                >
-                  {isLoggingIn ? (
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Signing In...
-                    </div>
-                  ) : (
-                    "Sign In"
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCreateAccount}
-                  disabled={isLoggingIn || isCreatingAccount}
-                  className="w-full py-3 px-4 bg-[#2a2a2a] border border-[#2a2a2a] rounded-xl font-semibold text-white hover:bg-[#3a3a3a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isCreatingAccount ? (
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Creating Account...
-                    </div>
-                  ) : (
-                    "Create Account"
-                  )}
-                </button>
-              </div>
-
-              {/* User Type Specific Info */}
-              <div className="text-center">
-                <p className="text-xs text-gray-500">
-                  {userType === "student"
-                    ? "Students can practice therapy skills with AI personas"
-                    : "Practitioners can access advanced training and assessment tools"}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Login is now handled by Clerk - use /sign-in and /sign-up pages */}
     </div>
   );
 };

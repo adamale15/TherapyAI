@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { Raleway } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 
 const raleway = Raleway({
   subsets: ["latin"],
@@ -27,15 +28,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={raleway.variable}>
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#4f46e5" />
-      </head>
-      <body className={`${raleway.className} antialiased`}>
-        {children}
-        <Analytics />
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" className={raleway.variable}>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <meta name="theme-color" content="#4f46e5" />
+        </head>
+        <body className={`${raleway.className} antialiased`}>
+          {children}
+          <Analytics />
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
