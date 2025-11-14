@@ -1884,7 +1884,7 @@ const VeshApp: React.FC = () => {
       </head>
       <body>
         <div class="header">
-          <h1>Simpathy Session Report</h1>
+          <h1>Vash Session Report</h1>
           <p>Generated on ${sessionSummary.timestamp}</p>
         </div>
 
@@ -2045,10 +2045,9 @@ const VeshApp: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `Simpathy_Session_${sessionSummary.persona.replace(
-      " ",
-      "_"
-    )}_${new Date().toISOString().split("T")[0]}.html`;
+    link.download = `Vash_Session_${sessionSummary.persona.replace(" ", "_")}_${
+      new Date().toISOString().split("T")[0]
+    }.html`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -2593,7 +2592,7 @@ const VeshApp: React.FC = () => {
                     {/* Header */}
                     <div className="flex items-center justify-between mb-8">
                       <h2 className="text-3xl font-bold text-white">
-                        About Simpathy
+                        About Vash
                       </h2>
                       <button
                         onClick={() => setShowLearnMore(false)}
@@ -2617,20 +2616,20 @@ const VeshApp: React.FC = () => {
 
                     {/* Content */}
                     <div className="space-y-8">
-                      {/* What is Simpathy */}
+                      {/* What is Vash */}
                       <div>
                         <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
                           <Brain className="w-6 h-6 mr-3 text-purple-400" />
-                          What is Simpathy?
+                          What is Vash?
                         </h3>
                         <p className="text-gray-300 leading-relaxed">
-                          Simpathy is an advanced training platform designed to
-                          help psychology students and mental health
-                          professionals practice therapeutic skills in a safe,
-                          controlled environment. Our AI-powered personas
-                          simulate real patient interactions, allowing you to
-                          develop essential counseling techniques without the
-                          pressure of real-world consequences.
+                          Vash is an advanced training platform designed to help
+                          psychology students and mental health professionals
+                          practice therapeutic skills in a safe, controlled
+                          environment. Our AI-powered personas simulate real
+                          patient interactions, allowing you to develop
+                          essential counseling techniques without the pressure
+                          of real-world consequences.
                         </p>
                       </div>
 
@@ -3316,7 +3315,7 @@ const VeshApp: React.FC = () => {
                   <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
                     <Brain className="w-6 h-6 text-white" />
                   </div>
-                  <span className="text-xl font-bold">Simpathy</span>
+                  <span className="text-xl font-bold">Vash</span>
                 </button>
               </div>
             </header>
@@ -3397,7 +3396,7 @@ const VeshApp: React.FC = () => {
                   <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
                     <Brain className="w-6 h-6 text-white" />
                   </div>
-                  <span className="text-xl font-bold">Simpathy</span>
+                  <span className="text-xl font-bold">Vash</span>
                 </div>
                 <button
                   onClick={() => setCurrentStep(3)}
