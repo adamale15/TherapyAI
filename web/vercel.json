@@ -1,7 +1,0 @@
-{
-  "version": 2,
-  "env": {
-    "NEXT_PUBLIC_API_URL": "https://therapyaisunhacks.onrender.com",
-    "NEXT_PUBLIC_WS_URL": "wss://therapyaisunhacks.onrender.com"
-  }
-}

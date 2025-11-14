@@ -1,4 +1,8 @@
 node_modules/
-web/node_modules/
-web/.next/
-web/.env.local
+.next/
+.env.local
+.env
+*.log
+dist/
+uploads/
+lib/knowledge-base/custom-personas/
