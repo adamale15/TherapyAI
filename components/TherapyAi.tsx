@@ -319,6 +319,17 @@ const VeshApp: React.FC = () => {
   const clerk = useClerk();
   const router = useRouter();
 
+  // Debug: Log user metadata changes
+  useEffect(() => {
+    if (user && isLoaded) {
+      console.log("User metadata:", {
+        userType: user.publicMetadata?.userType,
+        userId: user.id,
+        email: user.primaryEmailAddress?.emailAddress,
+      });
+    }
+  }, [user?.publicMetadata?.userType, user?.id, isLoaded]);
+
   // State management
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [showDashboard, setShowDashboard] = useState(false);
@@ -410,12 +421,20 @@ const VeshApp: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const getApiBaseUrl = () => {
-    const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
-    if (envUrl) {
-      return envUrl.replace(/\/$/, "");
+    // In browser, always use relative URLs (Next.js handles this automatically)
+    if (typeof window !== "undefined") {
+      // Only use env URL if it's explicitly set and valid
+      const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+      if (envUrl && envUrl !== "undefined" && envUrl !== "") {
+        return envUrl.replace(/\/$/, "");
+      }
+      // Otherwise, use relative URLs (empty string means relative)
+      return "";
     }
-    if (typeof window !== "undefined" && window.location?.origin) {
-      return window.location.origin;
+    // Server-side: use env URL or empty for relative
+    const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+    if (envUrl && envUrl !== "undefined" && envUrl !== "") {
+      return envUrl.replace(/\/$/, "");
     }
     return "";
   };
@@ -423,7 +442,13 @@ const VeshApp: React.FC = () => {
   const buildApiUrl = (path: string) => {
     const normalizedPath = path.startsWith("/") ? path : `/${path}`;
     const baseUrl = getApiBaseUrl();
-    return baseUrl ? `${baseUrl}${normalizedPath}` : normalizedPath;
+
+    // If baseUrl is empty or invalid, use relative URL
+    if (!baseUrl || baseUrl === "undefined") {
+      return normalizedPath;
+    }
+
+    return `${baseUrl}${normalizedPath}`;
   };
 
   // Handle click outside dropdown
@@ -446,13 +471,32 @@ const VeshApp: React.FC = () => {
     };
   }, [showUserTypeDropdown]);
 
-  // Handle user type selection after sign-in
+  // Handle user type selection after sign-in and refresh metadata
   useEffect(() => {
-    if (user && !user.publicMetadata?.userType) {
-      // If user doesn't have a userType set, show user type selection
-      // This will be handled by the UI
+    if (user && isLoaded) {
+      // Check if we're coming from the set-user-type redirect
+      const urlParams = new URLSearchParams(window.location.search);
+      const userTypeSet = urlParams.get("userTypeSet");
+
+      if (userTypeSet === "true") {
+        // Reload user to get updated metadata
+        user
+          .reload()
+          .then(() => {
+            // Remove the query parameter
+            window.history.replaceState({}, "", window.location.pathname);
+          })
+          .catch((err) => {
+            console.error("Error reloading user after userType set:", err);
+          });
+      }
+
+      // If user doesn't have a userType set, they need to select one
+      if (!user.publicMetadata?.userType) {
+        // This will be handled by the UI - user can select from dropdown
+      }
     }
-  }, [user]);
+  }, [user, isLoaded]);
 
   // Load available voices
   useEffect(() => {
@@ -535,29 +579,95 @@ const VeshApp: React.FC = () => {
 
   // Load personas from API
   useEffect(() => {
+    // Always set fallback personas first to ensure they're available immediately
+    console.log("Setting fallback personas:", personas.length);
+    setAllPersonas(personas);
+    if (!selectedPersona && personas.length > 0) {
+      setSelectedPersona(personas[0]);
+    }
+
+    // Then try to load from API (will replace fallback if API returns personas)
     loadPersonas();
   }, [userId]);
 
   const loadPersonas = async () => {
-    try {
-      const response = await fetch(buildApiUrl(`/api/personas/all/${userId}`));
-      const result = await response.json();
+    // Skip API call if userId is invalid
+    if (!userId || userId === "default-user" || userId === "undefined") {
+      console.log("Using fallback personas for default user");
+      setAllPersonas(personas);
+      if (!selectedPersona && personas.length > 0) {
+        setSelectedPersona(personas[0]);
+      }
+      return;
+    }
 
-      if (result.success) {
+    try {
+      const apiUrl = buildApiUrl(`/api/personas/all/${userId}`);
+      console.log("Loading personas from:", apiUrl);
+
+      // Add timeout to fetch
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("API response:", {
+        success: result.success,
+        personaCount: result.personas?.length || 0,
+      });
+
+      if (
+        result.success &&
+        result.personas &&
+        Array.isArray(result.personas) &&
+        result.personas.length > 0
+      ) {
+        // API returned personas - use them
+        console.log("Using personas from API:", result.personas.length);
         setAllPersonas(result.personas);
         // If no persona is selected, select the first one
-        if (!selectedPersona && result.personas.length > 0) {
+        if (!selectedPersona) {
           setSelectedPersona(result.personas[0]);
         }
       } else {
-        console.error("Failed to load personas:", result.error);
-        // Fallback to hardcoded personas
+        // API returned empty or no personas - keep fallback
+        console.log(
+          "API returned empty, keeping fallback personas:",
+          personas.length
+        );
         setAllPersonas(personas);
+        if (!selectedPersona && personas.length > 0) {
+          setSelectedPersona(personas[0]);
+        }
       }
-    } catch (error) {
-      console.error("Error loading personas:", error);
+    } catch (error: any) {
+      // Silently handle abort errors (timeout)
+      if (error?.name === "AbortError") {
+        console.warn("Persona loading timed out, using fallback personas");
+      } else {
+        console.warn(
+          "Error loading personas from API, using fallback:",
+          error?.message || error
+        );
+      }
       // Fallback to hardcoded personas
       setAllPersonas(personas);
+      if (!selectedPersona && personas.length > 0) {
+        setSelectedPersona(personas[0]);
+      }
     }
   };
 
@@ -586,9 +696,11 @@ const VeshApp: React.FC = () => {
 
       try {
         setConnectionStatus("connecting");
-        const eventSource = new EventSource(
-          buildApiUrl(`/api/chat/stream?sessionId=${sessionIdRef.current}`)
+        const streamUrl = buildApiUrl(
+          `/api/chat/stream?sessionId=${sessionIdRef.current}`
         );
+        console.log("Connecting to SSE:", streamUrl);
+        const eventSource = new EventSource(streamUrl);
 
         eventSource.onopen = () => {
           setWsConnected(true);
@@ -612,10 +724,13 @@ const VeshApp: React.FC = () => {
           }
         };
 
-        eventSource.onerror = (error) => {
+        eventSource.onerror = (event) => {
           setConnectionStatus("error");
-          console.error("SSE error:", error);
-          eventSource.close();
+          // SSE error events don't have useful error info, just log the event type
+          console.warn("SSE connection error, attempting to reconnect...");
+          if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+          }
 
           // Reconnect after a delay
           reconnectTimeout = setTimeout(() => {
@@ -2262,7 +2377,16 @@ const VeshApp: React.FC = () => {
                             ? "cursor-pointer hover:bg-white/10 p-2 rounded-xl transition-colors"
                             : ""
                         }`}
-                        onClick={() => {
+                        onClick={async () => {
+                          // Refresh user metadata before navigating
+                          if (user) {
+                            try {
+                              await user.reload();
+                            } catch (err) {
+                              console.error("Error refreshing user:", err);
+                            }
+                          }
+
                           if (currentUser?.type === "student") {
                             goToStep(6);
                           } else if (currentUser?.type === "practitioner") {
@@ -2406,7 +2530,7 @@ const VeshApp: React.FC = () => {
                       <br />
                       <span className="gradient-text">with AI.</span>
                     </h1>
-                    <p className="text-xl text-gray-400 mb-8 max-w-3xl mx-auto leading-relaxed">
+                    <p className="text-xl text-bold mb-8 max-w-3xl mx-auto leading-relaxed">
                       An advanced training platform that uses AI to automate
                       various aspects of therapeutic practice, skill
                       development, and real-time feedback.

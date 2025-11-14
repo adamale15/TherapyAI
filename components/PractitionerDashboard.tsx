@@ -2,22 +2,19 @@ import React, { useState, useEffect } from "react";
 import {
   BookOpen,
   Users,
-  BarChart3,
   Clock,
   Target,
   TrendingUp,
   PlayCircle,
-  FileText,
-  Award,
   Calendar,
   MessageSquare,
   Star,
   Heart,
-  ArrowLeft,
   User,
   ClipboardList,
   GraduationCap,
   Brain,
+  ArrowRight,
 } from "lucide-react";
 
 interface PractitionerDashboardProps {
@@ -71,25 +68,23 @@ const PractitionerDashboard: React.FC<PractitionerDashboardProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-black/60 backdrop-blur-xl text-white">
       {/* Header Navigation */}
-      <div className="bg-[#1a1a1a] border-b border-[#1a1a1a] p-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={onBackToHome}
-              className="text-gray-300 hover:text-white transition-colors flex items-center space-x-3 group"
-            >
-              <div className="w-8 h-8 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center group-hover:shadow-lg group-hover:shadow-purple-500/25 transition-all">
-                <Brain className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-lg font-bold text-white">Vesh</span>
-            </button>
-          </div>
+      <div className="border-b border-white/10 px-6 py-6">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <button
+            onClick={onBackToHome}
+            className="flex items-center space-x-3 hover:opacity-80 transition-opacity group"
+          >
+            <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center group-hover:shadow-lg group-hover:shadow-purple-500/25 transition-all">
+              <Brain className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-xl font-bold text-white">Vesh</span>
+          </button>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-[#3b82f6] to-[#06b6d4] rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
                 <User className="w-4 h-4 text-white" />
               </div>
               <div className="text-right">
@@ -101,180 +96,126 @@ const PractitionerDashboard: React.FC<PractitionerDashboardProps> = ({
         </div>
       </div>
 
-      <div className="p-4 flex items-center justify-center">
-        <div className="max-w-6xl mx-auto w-full space-y-8">
+      <div className="px-6 py-8">
+        <div className="max-w-7xl mx-auto w-full space-y-8">
           {/* Welcome Header */}
           <div>
-            <h1 className="text-2xl font-bold text-white mb-1">
+            <h1 className="text-3xl font-bold text-white mb-2">
               {getGreeting()}, {user.email.split("@")[0]}!
             </h1>
-            <p className="text-base text-gray-300">
-              Welcome to your practitioner dashboard. Access advanced training
-              tools and assessment features.
+            <p className="text-base text-gray-400">
+              Welcome to your practitioner dashboard. Access advanced training tools and assessment features.
             </p>
           </div>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex items-center gap-3">
             <button
               onClick={onStartSession}
-              className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white p-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center space-x-4"
+              className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg px-4 py-2.5 hover:bg-white/10 hover:border-white/20 transition-all duration-200 flex items-center space-x-2"
             >
-              <PlayCircle className="w-6 h-6" />
-              <div className="text-left">
-                <h3 className="text-lg font-semibold">
-                  Start Training Session
-                </h3>
-                <p className="text-blue-100 text-sm">
-                  Practice with advanced scenarios
-                </p>
-              </div>
+              <PlayCircle className="w-4 h-4 text-white" />
+              <span className="text-sm font-medium text-white">Start Session</span>
             </button>
 
             <button
               onClick={onManagePersonas}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center space-x-4"
+              className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg px-4 py-2.5 hover:bg-white/10 hover:border-white/20 transition-all duration-200 flex items-center space-x-2"
             >
-              <Users className="w-6 h-6" />
-              <div className="text-left">
-                <h3 className="text-lg font-semibold">Manage Personas</h3>
-                <p className="text-purple-100 text-sm">
-                  Create and customize training cases
-                </p>
-              </div>
+              <Users className="w-4 h-4 text-white" />
+              <span className="text-sm font-medium text-white">Manage Personas</span>
             </button>
           </div>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-[#1a1a1a]/50 backdrop-blur-sm border border-[#1a1a1a] rounded-xl p-3 hover:border-blue-500/50 transition-all duration-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-400">
-                    Training Sessions
-                  </p>
-                  <p className="text-2xl font-bold text-white">
-                    {stats.totalSessions}
-                  </p>
-                </div>
-                <GraduationCap className="w-6 h-6 text-blue-500" />
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 hover:border-white/20 transition-all">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Sessions</p>
+                <GraduationCap className="w-4 h-4 text-gray-400" />
               </div>
+              <p className="text-2xl font-bold text-white">{stats.totalSessions}</p>
             </div>
 
-            <div className="bg-[#1a1a1a]/50 backdrop-blur-sm border border-[#1a1a1a] rounded-xl p-3 hover:border-cyan-500/50 transition-all duration-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-400">
-                    Total Time
-                  </p>
-                  <p className="text-2xl font-bold text-white">
-                    {formatTime(stats.totalTime)}
-                  </p>
-                </div>
-                <Clock className="w-6 h-6 text-cyan-500" />
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 hover:border-white/20 transition-all">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Time</p>
+                <Clock className="w-4 h-4 text-gray-400" />
               </div>
+              <p className="text-2xl font-bold text-white">{formatTime(stats.totalTime)}</p>
             </div>
 
-            <div className="bg-[#1a1a1a]/50 backdrop-blur-sm border border-[#1a1a1a] rounded-xl p-3 hover:border-red-500/50 transition-all duration-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-400">
-                    Teaching Score
-                  </p>
-                  <p className="text-2xl font-bold text-white">
-                    {stats.averageRapport}
-                  </p>
-                </div>
-                <Heart className="w-6 h-6 text-red-500" />
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 hover:border-white/20 transition-all">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Teaching</p>
+                <Heart className="w-4 h-4 text-gray-400" />
               </div>
+              <p className="text-2xl font-bold text-white">{stats.averageRapport}</p>
             </div>
 
-            <div className="bg-[#1a1a1a]/50 backdrop-blur-sm border border-[#1a1a1a] rounded-xl p-3 hover:border-orange-500/50 transition-all duration-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-400">
-                    Assessment Score
-                  </p>
-                  <p className="text-2xl font-bold text-white">
-                    {stats.averageEngagement}
-                  </p>
-                </div>
-                <Target className="w-6 h-6 text-orange-500" />
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 hover:border-white/20 transition-all">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Assessment</p>
+                <Target className="w-4 h-4 text-gray-400" />
               </div>
+              <p className="text-2xl font-bold text-white">{stats.averageEngagement}</p>
             </div>
 
-            <div className="bg-[#1a1a1a]/50 backdrop-blur-sm border border-[#1a1a1a] rounded-xl p-3 hover:border-green-500/50 transition-all duration-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-400">
-                    Active Streak
-                  </p>
-                  <p className="text-2xl font-bold text-white">
-                    {stats.currentStreak} days
-                  </p>
-                </div>
-                <TrendingUp className="w-6 h-6 text-green-500" />
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4 hover:border-white/20 transition-all">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Streak</p>
+                <TrendingUp className="w-4 h-4 text-gray-400" />
               </div>
+              <p className="text-2xl font-bold text-white">{stats.currentStreak}</p>
             </div>
           </div>
 
-          {/* Bottom Sections - Compact Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Weekly Progress */}
-            <div className="bg-[#1a1a1a]/50 backdrop-blur-sm border border-[#1a1a1a] rounded-xl p-3">
-              <h3 className="text-base font-semibold text-white mb-2 flex items-center">
-                <Calendar className="w-4 h-4 mr-2 text-blue-500" />
-                Weekly Training
-              </h3>
-              <div className="space-y-2">
+          {/* Bottom Sections */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Weekly Training */}
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-white flex items-center">
+                  <Calendar className="w-5 h-5 mr-2 text-gray-400" />
+                  Weekly Training
+                </h3>
+              </div>
+              <div className="space-y-3">
                 {[
-                  { day: "Mon", sessions: 2, completed: true },
-                  { day: "Tue", sessions: 1, completed: true },
-                  { day: "Wed", sessions: 3, completed: true },
-                  { day: "Thu", sessions: 2, completed: true },
-                  { day: "Fri", sessions: 1, completed: true },
-                  { day: "Sat", sessions: 0, completed: false },
-                  { day: "Sun", sessions: 1, completed: true },
+                  { day: "Mon", sessions: 2 },
+                  { day: "Tue", sessions: 1 },
+                  { day: "Wed", sessions: 3 },
+                  { day: "Thu", sessions: 2 },
+                  { day: "Fri", sessions: 1 },
+                  { day: "Sat", sessions: 0 },
+                  { day: "Sun", sessions: 1 },
                 ].map((day, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between"
-                  >
-                    <span className="text-sm font-medium text-gray-400">
-                      {day.day}
-                    </span>
+                  <div key={index} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
+                    <span className="text-sm font-medium text-gray-300">{day.day}</span>
                     <div className="flex items-center space-x-2">
-                      <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                          day.completed
-                            ? "bg-blue-500 text-white"
-                            : "bg-[#3a3a3a] text-gray-400"
-                        }`}
-                      >
-                        {day.sessions}
-                      </div>
-                      {day.completed && (
-                        <Award className="w-3 h-3 text-blue-500" />
-                      )}
+                      <span className="text-sm text-gray-400">{day.sessions}</span>
+                      <div className={`w-2 h-2 rounded-full ${day.sessions > 0 ? 'bg-white/40' : 'bg-white/10'}`}></div>
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="mt-3 p-2 bg-blue-900/30 rounded-lg">
-                <p className="text-xs text-blue-300">
-                  <Target className="w-3 h-3 inline mr-1" />
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <p className="text-xs text-gray-400 flex items-center">
+                  <Target className="w-3 h-3 mr-2" />
                   Goal: {stats.weeklyGoal} sessions this week
                 </p>
               </div>
             </div>
 
-            {/* Recent Sessions */}
-            <div className="bg-[#1a1a1a]/50 backdrop-blur-sm border border-[#1a1a1a] rounded-xl p-3">
-              <h3 className="text-base font-semibold text-white mb-2 flex items-center">
-                <MessageSquare className="w-4 h-4 mr-2 text-purple-500" />
-                Recent Training
-              </h3>
-              <div className="space-y-3">
+            {/* Recent Training */}
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-white flex items-center">
+                  <MessageSquare className="w-5 h-5 mr-2 text-gray-400" />
+                  Recent Training
+                </h3>
+              </div>
+              <div className="space-y-4">
                 {[
                   {
                     id: "1",
@@ -301,86 +242,67 @@ const PractitionerDashboard: React.FC<PractitionerDashboardProps> = ({
                     notes: "Multi-participant scenario training",
                   },
                 ].map((session) => (
-                  <div
-                    key={session.id}
-                    className="border-l-4 border-purple-500 pl-3 py-2"
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <h4 className="font-medium text-white text-sm">
-                        {session.persona}
-                      </h4>
-                      <div className="flex items-center space-x-1">
-                        <Star className="w-3 h-3 text-yellow-500" />
-                        <span className="text-xs text-gray-400">
-                          {session.rating}
-                        </span>
+                  <div key={session.id} className="pb-4 border-b border-white/5 last:border-0 last:pb-0">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-white text-sm mb-1">{session.persona}</h4>
+                        <p className="text-xs text-gray-400 mb-2">{session.notes}</p>
+                      </div>
+                      <div className="flex items-center space-x-1 ml-3">
+                        <Star className="w-3 h-3 text-gray-400 fill-gray-400" />
+                        <span className="text-xs text-gray-400">{session.rating}</span>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-400 mb-1">
-                      {formatTime(session.duration)} • {session.date}
-                    </p>
-                    <p className="text-xs text-gray-500">{session.notes}</p>
+                    <p className="text-xs text-gray-500">{formatTime(session.duration)} • {session.date}</p>
                   </div>
                 ))}
               </div>
-              <button className="mt-3 text-purple-400 hover:text-purple-300 text-xs font-medium">
-                View All Sessions →
+              <button className="mt-4 text-sm text-gray-400 hover:text-white transition-colors flex items-center group">
+                View All Sessions
+                <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
 
             {/* Professional Development */}
-            <div className="bg-[#1a1a1a]/50 backdrop-blur-sm border border-[#1a1a1a] rounded-xl p-3">
-              <h3 className="text-base font-semibold text-white mb-2 flex items-center">
-                <ClipboardList className="w-4 h-4 mr-2 text-green-500" />
-                Professional Development
-              </h3>
-              <div className="space-y-3">
-                <div className="p-3 border-2 border-green-500/30 rounded-lg bg-green-900/20">
-                  <h4 className="font-semibold text-green-400 mb-1 text-sm">
-                    Advanced Techniques
-                  </h4>
-                  <p className="text-xs text-green-300 mb-2">
-                    CBT and DBT methodologies
-                  </p>
-                  <div className="w-full bg-green-900/30 rounded-full h-1.5">
-                    <div
-                      className="bg-green-500 h-1.5 rounded-full"
-                      style={{ width: "85%" }}
-                    ></div>
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-white flex items-center">
+                  <ClipboardList className="w-5 h-5 mr-2 text-gray-400" />
+                  Professional Development
+                </h3>
+              </div>
+              <div className="space-y-4">
+                <div className="pb-4 border-b border-white/5">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-semibold text-white text-sm">Advanced Techniques</h4>
+                    <span className="text-xs text-gray-400">85%</span>
                   </div>
-                  <p className="text-xs text-green-400 mt-1">85% Complete</p>
+                  <p className="text-xs text-gray-400 mb-3">CBT and DBT methodologies</p>
+                  <div className="w-full bg-white/10 rounded-full h-1">
+                    <div className="bg-white/40 h-1 rounded-full" style={{ width: "85%" }}></div>
+                  </div>
                 </div>
 
-                <div className="p-3 border-2 border-blue-500/30 rounded-lg bg-blue-900/20">
-                  <h4 className="font-semibold text-blue-400 mb-1 text-sm">
-                    Crisis Intervention
-                  </h4>
-                  <p className="text-xs text-blue-300 mb-2">
-                    Emergency response protocols
-                  </p>
-                  <div className="w-full bg-blue-900/30 rounded-full h-1.5">
-                    <div
-                      className="bg-blue-500 h-1.5 rounded-full"
-                      style={{ width: "70%" }}
-                    ></div>
+                <div className="pb-4 border-b border-white/5">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-semibold text-white text-sm">Crisis Intervention</h4>
+                    <span className="text-xs text-gray-400">70%</span>
                   </div>
-                  <p className="text-xs text-blue-400 mt-1">70% Complete</p>
+                  <p className="text-xs text-gray-400 mb-3">Emergency response protocols</p>
+                  <div className="w-full bg-white/10 rounded-full h-1">
+                    <div className="bg-white/40 h-1 rounded-full" style={{ width: "70%" }}></div>
+                  </div>
                 </div>
 
-                <div className="p-3 border-2 border-purple-500/30 rounded-lg bg-purple-900/20">
-                  <h4 className="font-semibold text-purple-400 mb-1 text-sm">
-                    Research Methods
-                  </h4>
-                  <p className="text-xs text-purple-300 mb-2">
-                    Evidence-based practice
-                  </p>
-                  <div className="w-full bg-purple-900/30 rounded-full h-1.5">
-                    <div
-                      className="bg-purple-500 h-1.5 rounded-full"
-                      style={{ width: "45%" }}
-                    ></div>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-semibold text-white text-sm">Research Methods</h4>
+                    <span className="text-xs text-gray-400">45%</span>
                   </div>
-                  <p className="text-xs text-purple-400 mt-1">45% Complete</p>
+                  <p className="text-xs text-gray-400 mb-3">Evidence-based practice</p>
+                  <div className="w-full bg-white/10 rounded-full h-1">
+                    <div className="bg-white/40 h-1 rounded-full" style={{ width: "45%" }}></div>
+                  </div>
                 </div>
               </div>
             </div>

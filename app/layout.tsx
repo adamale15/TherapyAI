@@ -29,7 +29,7 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en" className={raleway.variable}>
+      <html lang="en" className={raleway.variable} suppressHydrationWarning>
         <head>
           <meta name="viewport" content="width=device-width, initial-scale=1" />
           <meta name="theme-color" content="#4f46e5" />

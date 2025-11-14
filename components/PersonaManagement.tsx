@@ -46,27 +46,95 @@ export const PersonaManagement: React.FC<PersonaManagementProps> = ({
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Build API URL helper
+  const getApiBaseUrl = () => {
+    // In browser, always use relative URLs (Next.js handles this automatically)
+    if (typeof window !== "undefined") {
+      // Only use env URL if it's explicitly set and valid
+      const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+      if (envUrl && envUrl !== "undefined" && envUrl !== "") {
+        return envUrl.replace(/\/$/, "");
+      }
+      // Otherwise, use relative URLs (empty string means relative)
+      return "";
+    }
+    // Server-side: use env URL or empty for relative
+    const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+    if (envUrl && envUrl !== "undefined" && envUrl !== "") {
+      return envUrl.replace(/\/$/, "");
+    }
+    return "";
+  };
+
+  const buildApiUrl = (path: string) => {
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    const baseUrl = getApiBaseUrl();
+    
+    // If baseUrl is empty or invalid, use relative URL
+    if (!baseUrl || baseUrl === "undefined") {
+      return normalizedPath;
+    }
+    
+    return `${baseUrl}${normalizedPath}`;
+  };
+
   useEffect(() => {
     loadPersonas();
   }, [userId]);
 
   const loadPersonas = async () => {
+    // Skip API call if userId is invalid
+    if (!userId || userId === "default-user" || userId === "undefined") {
+      console.log("PersonaManagement: Using empty personas for default user");
+      setPersonas([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     try {
       setLoading(true);
-      const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_API_URL || ""
-        }/api/personas/all/${userId}`
-      );
+      setError(null);
+      
+      const apiUrl = buildApiUrl(`/api/personas/all/${userId}`);
+      console.log("PersonaManagement: Loading personas from:", apiUrl);
+      
+      // Add timeout to fetch
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const result = await response.json();
 
-      if (result.success) {
-        setPersonas(result.personas);
+      if (result.success && result.personas && Array.isArray(result.personas)) {
+        setPersonas(result.personas || []);
       } else {
-        setError("Failed to load personas");
+        // No error message - just use empty array
+        console.warn("PersonaManagement: No personas returned from API");
+        setPersonas([]);
       }
-    } catch (error) {
-      setError("Failed to load personas");
+    } catch (error: any) {
+      // Silently handle errors - don't show error message
+      if (error?.name === "AbortError") {
+        console.warn("PersonaManagement: Loading timed out");
+      } else {
+        console.warn("PersonaManagement: Error loading personas:", error?.message || error);
+      }
+      setPersonas([]);
+      // Don't set error state - just show empty state
     } finally {
       setLoading(false);
     }
@@ -145,7 +213,7 @@ export const PersonaManagement: React.FC<PersonaManagementProps> = ({
         </button>
       </div>
 
-      {error && (
+      {error && error !== "Failed to load personas" && (
         <div className="flex items-center space-x-2 text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg p-4">
           <AlertCircle className="w-5 h-5" />
           <span>{error}</span>

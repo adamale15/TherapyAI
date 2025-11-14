@@ -13,17 +13,22 @@ export class SupabasePersonaLoader {
    */
   async loadDefaultPersonas(): Promise<PersonaData[]> {
     try {
+      console.log("[PersonaLoader] Loading default personas from Supabase...");
       const { data, error } = await supabaseAdmin
         .from("personas")
         .select("*")
         .eq("is_default", true)
         .order("created_at", { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error("[PersonaLoader] Supabase error loading default personas:", error);
+        throw error;
+      }
 
+      console.log("[PersonaLoader] Supabase returned", data?.length || 0, "default personas");
       return (data || []).map(this.mapToPersonaData);
     } catch (error) {
-      console.error("Error loading default personas:", error);
+      console.error("[PersonaLoader] Error loading default personas:", error);
       return [];
     }
   }
@@ -60,10 +65,15 @@ export class SupabasePersonaLoader {
    * Load all personas (default + custom for user)
    */
   async loadAllPersonas(userId?: string): Promise<PersonaData[]> {
+    console.log("[PersonaLoader] loadAllPersonas called with userId:", userId || "undefined");
     const defaultPersonas = await this.loadDefaultPersonas();
+    console.log("[PersonaLoader] Default personas loaded:", defaultPersonas.length);
     const customPersonas = userId ? await this.loadCustomPersonas(userId) : [];
+    console.log("[PersonaLoader] Custom personas loaded:", customPersonas.length);
 
-    return [...defaultPersonas, ...customPersonas];
+    const allPersonas = [...defaultPersonas, ...customPersonas];
+    console.log("[PersonaLoader] Total personas:", allPersonas.length);
+    return allPersonas;
   }
 
   /**
