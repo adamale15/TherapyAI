@@ -259,7 +259,7 @@ export class PersonaGenerator {
       // Fallback to first meaningful sentence
       const sentences = documentText
         .split(/[.!?]+/)
-        .filter((s) => s.trim().length > 20 && !s.includes("TherapyAI"));
+        .filter((s) => s.trim().length > 20 && !s.includes("Vesh"));
       if (sentences.length > 0) {
         description = sentences[0].trim() + ".";
         console.log("Extracted description from first sentence:", description);

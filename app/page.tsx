@@ -1,5 +1,5 @@
-import TherapyAI from "@/components/TherapyAi";
+import VeshApp from "@/components/TherapyAi";
 
 export default function Page() {
-  return <TherapyAI />;
+  return <VeshApp />;
 }

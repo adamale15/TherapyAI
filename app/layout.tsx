@@ -2,11 +2,11 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 
 export const metadata = {
-  title: "TherapyAI Trainer",
+  title: "Vesh Trainer",
   description:
     "Practice Therapy Skills with Local AI - A safe environment to practice therapeutic conversations using local Ollama with Llama 3.",
   keywords: "therapy, AI, training, mental health, counseling, practice",
-  authors: [{ name: "TherapyAI Team" }],
+  authors: [{ name: "Vesh Team" }],
 };
 
 export const viewport = {

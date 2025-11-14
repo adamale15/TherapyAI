@@ -83,7 +83,7 @@ const PractitionerDashboard: React.FC<PractitionerDashboardProps> = ({
               <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
                 <Brain className="w-5 h-5 text-white" />
               </div>
-              <span className="text-lg font-bold">TherapyAI</span>
+              <span className="text-lg font-bold">Vesh</span>
             </button>
           </div>
 

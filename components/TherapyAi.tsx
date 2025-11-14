@@ -257,7 +257,7 @@ const personas: Persona[] = [
 ];
 
 // Main component
-const TherapyAI: React.FC = () => {
+const VeshApp: React.FC = () => {
   // State management
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7>(1);
   const [showDashboard, setShowDashboard] = useState(false);
@@ -474,9 +474,7 @@ const TherapyAI: React.FC = () => {
   const loadPersonas = async () => {
     try {
       const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_API_URL || ""
-        }/api/personas/all/${userId}`
+        `${process.env.NEXT_PUBLIC_API_URL || ""}/api/personas/all/${userId}`
       );
       const result = await response.json();
 
@@ -553,7 +551,7 @@ const TherapyAI: React.FC = () => {
           setConnectionStatus("error");
           console.error("SSE error:", error);
           eventSource.close();
-          
+
           // Reconnect after a delay
           reconnectTimeout = setTimeout(() => {
             console.log("Attempting to reconnect SSE...");
@@ -1119,85 +1117,87 @@ const TherapyAI: React.FC = () => {
         setConnectionStatus("error");
         // Fallback to demo mode if API fails
         setTimeout(() => {
-        let response = "";
+          let response = "";
 
-        if (selectedPersona?.id === "sarah") {
-          const sarahResponses = [
-            "Um... hi. I'm honestly pretty nervous about this whole thing. I've never done therapy before.",
-            "I don't know... I'm not really sure why I'm here. My roommate said I should try this.",
-            "I've been having these weird episodes where my heart starts racing and I can't breathe.",
-            "I keep thinking about failing my MCAT and disappointing my parents. It's all I think about.",
-            "I can't sleep anymore. I just lie there worrying about everything.",
-            "I feel like I'm going crazy. Is that normal?",
-            "I don't know what's wrong with me. I used to be able to handle things.",
-            "I'm scared. I don't know what to do.",
-            "I keep having these thoughts that I'm not good enough.",
-            "I feel like I'm falling apart.",
-            "I don't want to be here but I don't know where else to go.",
-            "I'm sorry, I'm probably wasting your time.",
-            "I don't know how to explain what I'm feeling.",
-            "I feel like I'm drowning.",
-            "I can't stop worrying about everything.",
-            "I feel like I'm failing at everything.",
-            "I don't know who I am anymore.",
-            "I feel lost.",
-            "I'm scared I'm going to mess up my life.",
-            "I don't know what to do anymore.",
-          ];
-          response =
-            sarahResponses[Math.floor(Math.random() * sarahResponses.length)];
-        } else if (selectedPersona?.id === "marcus") {
-          const marcusResponses = [
-            "I've been feeling pretty down lately. Work has been overwhelming and I just don't have the energy for anything.",
-            "I used to enjoy coding, but now it just feels like a chore. I can't seem to find joy in anything anymore.",
-            "I've been isolating myself from friends. I know I should reach out, but I just don't have the motivation.",
-            "I had therapy before, a couple years ago. It helped some, but I'm in a different place now.",
-            "I work from home mostly, which I thought would be great, but it's actually made me feel more alone.",
-            "I keep thinking about what's the point of it all. I'm just going through the motions.",
-            "I know I should probably be doing more to help myself, but I feel stuck.",
-            "Sometimes I wonder if this is just how life is supposed to be, you know? Just existing.",
-            "I wake up every day and just... exist. I go through the motions but I don't feel anything.",
-            "I used to have hobbies, things I enjoyed. Now I just sit and stare at my computer screen.",
-            "I know I'm depressed, but I don't know how to get out of this hole I'm in.",
-          ];
-          response =
-            marcusResponses[Math.floor(Math.random() * marcusResponses.length)];
-        } else if (selectedPersona?.id === "elena") {
-          const elenaResponses = [
-            "I'm here because I have to be. The court said I need to do this, but I'm not sure it's going to help.",
-            "I have nightmares almost every night. I wake up sweating and my heart is pounding.",
-            "I'm always on edge, waiting for something bad to happen. I can't relax anymore.",
-            "I have two kids to take care of, but sometimes I feel like I'm not a good mother.",
-            "I don't trust people easily anymore. It's hard for me to open up to anyone.",
-            "I keep reliving what happened. It's like I'm stuck in that moment and can't move forward.",
-            "I try to be strong for my children, but I'm falling apart inside.",
-            "I've tried therapy before, but I left early. I wasn't ready to talk about everything.",
-            "I don't want to be here, but I have to be. For my kids.",
-            "Every loud noise makes me jump. I can't even watch TV with my children anymore.",
-            "I feel like I'm failing them. They need a mother who's not broken.",
-          ];
-          response =
-            elenaResponses[Math.floor(Math.random() * elenaResponses.length)];
-        } else {
-          // Fallback generic response
-          response = "I'm not sure what to say. This is all new to me.";
-        }
+          if (selectedPersona?.id === "sarah") {
+            const sarahResponses = [
+              "Um... hi. I'm honestly pretty nervous about this whole thing. I've never done therapy before.",
+              "I don't know... I'm not really sure why I'm here. My roommate said I should try this.",
+              "I've been having these weird episodes where my heart starts racing and I can't breathe.",
+              "I keep thinking about failing my MCAT and disappointing my parents. It's all I think about.",
+              "I can't sleep anymore. I just lie there worrying about everything.",
+              "I feel like I'm going crazy. Is that normal?",
+              "I don't know what's wrong with me. I used to be able to handle things.",
+              "I'm scared. I don't know what to do.",
+              "I keep having these thoughts that I'm not good enough.",
+              "I feel like I'm falling apart.",
+              "I don't want to be here but I don't know where else to go.",
+              "I'm sorry, I'm probably wasting your time.",
+              "I don't know how to explain what I'm feeling.",
+              "I feel like I'm drowning.",
+              "I can't stop worrying about everything.",
+              "I feel like I'm failing at everything.",
+              "I don't know who I am anymore.",
+              "I feel lost.",
+              "I'm scared I'm going to mess up my life.",
+              "I don't know what to do anymore.",
+            ];
+            response =
+              sarahResponses[Math.floor(Math.random() * sarahResponses.length)];
+          } else if (selectedPersona?.id === "marcus") {
+            const marcusResponses = [
+              "I've been feeling pretty down lately. Work has been overwhelming and I just don't have the energy for anything.",
+              "I used to enjoy coding, but now it just feels like a chore. I can't seem to find joy in anything anymore.",
+              "I've been isolating myself from friends. I know I should reach out, but I just don't have the motivation.",
+              "I had therapy before, a couple years ago. It helped some, but I'm in a different place now.",
+              "I work from home mostly, which I thought would be great, but it's actually made me feel more alone.",
+              "I keep thinking about what's the point of it all. I'm just going through the motions.",
+              "I know I should probably be doing more to help myself, but I feel stuck.",
+              "Sometimes I wonder if this is just how life is supposed to be, you know? Just existing.",
+              "I wake up every day and just... exist. I go through the motions but I don't feel anything.",
+              "I used to have hobbies, things I enjoyed. Now I just sit and stare at my computer screen.",
+              "I know I'm depressed, but I don't know how to get out of this hole I'm in.",
+            ];
+            response =
+              marcusResponses[
+                Math.floor(Math.random() * marcusResponses.length)
+              ];
+          } else if (selectedPersona?.id === "elena") {
+            const elenaResponses = [
+              "I'm here because I have to be. The court said I need to do this, but I'm not sure it's going to help.",
+              "I have nightmares almost every night. I wake up sweating and my heart is pounding.",
+              "I'm always on edge, waiting for something bad to happen. I can't relax anymore.",
+              "I have two kids to take care of, but sometimes I feel like I'm not a good mother.",
+              "I don't trust people easily anymore. It's hard for me to open up to anyone.",
+              "I keep reliving what happened. It's like I'm stuck in that moment and can't move forward.",
+              "I try to be strong for my children, but I'm falling apart inside.",
+              "I've tried therapy before, but I left early. I wasn't ready to talk about everything.",
+              "I don't want to be here, but I have to be. For my kids.",
+              "Every loud noise makes me jump. I can't even watch TV with my children anymore.",
+              "I feel like I'm failing them. They need a mother who's not broken.",
+            ];
+            response =
+              elenaResponses[Math.floor(Math.random() * elenaResponses.length)];
+          } else {
+            // Fallback generic response
+            response = "I'm not sure what to say. This is all new to me.";
+          }
 
-        const aiMessage: Message = {
-          id: Date.now().toString(),
-          sender: "persona",
-          text: response,
-          timestamp: Date.now(),
-          emotionalTone: "empathetic",
-        };
+          const aiMessage: Message = {
+            id: Date.now().toString(),
+            sender: "persona",
+            text: response,
+            timestamp: Date.now(),
+            emotionalTone: "empathetic",
+          };
 
-        setSessionData((prev) => ({
-          ...prev,
-          messages: [...prev.messages, aiMessage],
-        }));
+          setSessionData((prev) => ({
+            ...prev,
+            messages: [...prev.messages, aiMessage],
+          }));
 
-        speakText(response);
-        generateRealTimeFeedback(response);
+          speakText(response);
+          generateRealTimeFeedback(response);
         }, 1500);
       });
 
@@ -1842,7 +1842,7 @@ const TherapyAI: React.FC = () => {
       <html>
       <head>
         <meta charset="utf-8">
-        <title>TherapyAI Session Report</title>
+        <title>Vesh Session Report</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
           .header { text-align: center; margin-bottom: 30px; }
@@ -1884,7 +1884,7 @@ const TherapyAI: React.FC = () => {
       </head>
       <body>
         <div class="header">
-          <h1>TherapyAI Session Report</h1>
+          <h1>Simpathy Session Report</h1>
           <p>Generated on ${sessionSummary.timestamp}</p>
         </div>
 
@@ -2045,7 +2045,7 @@ const TherapyAI: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `TherapyAI_Session_${sessionSummary.persona.replace(
+    link.download = `Simpathy_Session_${sessionSummary.persona.replace(
       " ",
       "_"
     )}_${new Date().toISOString().split("T")[0]}.html`;
@@ -2172,9 +2172,7 @@ const TherapyAI: React.FC = () => {
     try {
       // Call the GCS authentication API
       const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_API_URL || ""
-        }/api/auth/login`,
+        `${process.env.NEXT_PUBLIC_API_URL || ""}/api/auth/login`,
         {
           method: "POST",
           headers: {
@@ -2240,9 +2238,7 @@ const TherapyAI: React.FC = () => {
     try {
       // Call the GCS registration API
       const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_API_URL || ""
-        }/api/auth/register`,
+        `${process.env.NEXT_PUBLIC_API_URL || ""}/api/auth/register`,
         {
           method: "POST",
           headers: {
@@ -2362,7 +2358,7 @@ const TherapyAI: React.FC = () => {
                     <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
                       <Brain className="w-6 h-6 text-white" />
                     </div>
-                    <span className="text-xl font-bold">TherapyAI</span>
+                    <span className="text-xl font-bold">Vesh</span>
                   </button>
                   {isSignedIn ? (
                     // Signed in - show user info and sign out
@@ -2584,7 +2580,7 @@ const TherapyAI: React.FC = () => {
               {/* Footer */}
               <footer className="px-6 py-8 border-t border-gray-800">
                 <div className="max-w-7xl mx-auto text-center text-gray-400 text-sm">
-                  © 2025 TherapyAI. All rights reserved.
+                  © 2025 Vesh. All rights reserved.
                 </div>
               </footer>
             </div>
@@ -2597,7 +2593,7 @@ const TherapyAI: React.FC = () => {
                     {/* Header */}
                     <div className="flex items-center justify-between mb-8">
                       <h2 className="text-3xl font-bold text-white">
-                        About TherapyAI
+                        About Simpathy
                       </h2>
                       <button
                         onClick={() => setShowLearnMore(false)}
@@ -2621,14 +2617,14 @@ const TherapyAI: React.FC = () => {
 
                     {/* Content */}
                     <div className="space-y-8">
-                      {/* What is TherapyAI */}
+                      {/* What is Simpathy */}
                       <div>
                         <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
                           <Brain className="w-6 h-6 mr-3 text-purple-400" />
-                          What is TherapyAI?
+                          What is Simpathy?
                         </h3>
                         <p className="text-gray-300 leading-relaxed">
-                          TherapyAI is an advanced training platform designed to
+                          Simpathy is an advanced training platform designed to
                           help psychology students and mental health
                           professionals practice therapeutic skills in a safe,
                           controlled environment. Our AI-powered personas
@@ -3123,7 +3119,7 @@ const TherapyAI: React.FC = () => {
                   <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
                     <Brain className="w-6 h-6 text-white" />
                   </div>
-                  <span className="text-xl font-bold">TherapyAI</span>
+                  <span className="text-xl font-bold">Vesh</span>
                 </button>
                 <div className="flex items-center space-x-4">
                   {isSignedIn && (
@@ -3320,7 +3316,7 @@ const TherapyAI: React.FC = () => {
                   <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
                     <Brain className="w-6 h-6 text-white" />
                   </div>
-                  <span className="text-xl font-bold">TherapyAI</span>
+                  <span className="text-xl font-bold">Simpathy</span>
                 </button>
               </div>
             </header>
@@ -3401,7 +3397,7 @@ const TherapyAI: React.FC = () => {
                   <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
                     <Brain className="w-6 h-6 text-white" />
                   </div>
-                  <span className="text-xl font-bold">TherapyAI</span>
+                  <span className="text-xl font-bold">Simpathy</span>
                 </div>
                 <button
                   onClick={() => setCurrentStep(3)}
@@ -4664,4 +4660,4 @@ const TherapyAI: React.FC = () => {
   );
 };
 
-export default TherapyAI;
+export default VeshApp;
