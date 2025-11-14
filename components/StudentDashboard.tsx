@@ -70,25 +70,25 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
+    <div className="min-h-screen bg-[#0a0a0a]">
       {/* Header Navigation */}
-      <div className="bg-gray-900/50 backdrop-blur-sm border-b border-gray-800 p-4">
+      <div className="bg-[#1a1a1a] border-b border-[#1a1a1a] p-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <button
               onClick={onBackToHome}
-              className="text-gray-300 hover:text-white transition-colors flex items-center space-x-3"
+              className="text-gray-300 hover:text-white transition-colors flex items-center space-x-3 group"
             >
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center group-hover:shadow-lg group-hover:shadow-purple-500/25 transition-all">
                 <Brain className="w-5 h-5 text-white" />
               </div>
-              <span className="text-lg font-bold">Vesh</span>
+              <span className="text-lg font-bold text-white">Vesh</span>
             </button>
           </div>
 
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-full flex items-center justify-center">
                 <User className="w-4 h-4 text-white" />
               </div>
               <div className="text-right">
@@ -143,14 +143,14 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
           </div>
 
           {/* University Courses Section */}
-          <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-3">
+          <div className="bg-[#1a1a1a]/50 backdrop-blur-sm border border-[#1a1a1a] rounded-xl p-3">
             <h3 className="text-base font-semibold text-white mb-2 flex items-center">
               <GraduationCap className="w-4 h-4 mr-2 text-purple-500" />
               University Courses
             </h3>
             <div className="space-y-3">
               {/* Course 1 */}
-              <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-3 hover:border-purple-500/50 transition-all duration-200">
+              <div className="bg-[#2a2a2a]/50 border border-[#2a2a2a] rounded-lg p-3 hover:border-purple-500/50 transition-all duration-200">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h4 className="font-semibold text-white text-sm mb-1">
@@ -176,7 +176,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
               </div>
 
               {/* Course 2 */}
-              <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-3 hover:border-purple-500/50 transition-all duration-200">
+              <div className="bg-[#2a2a2a]/50 border border-[#2a2a2a] rounded-lg p-3 hover:border-purple-500/50 transition-all duration-200">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h4 className="font-semibold text-white text-sm mb-1">
@@ -200,7 +200,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
               </div>
 
               {/* Course 3 */}
-              <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-3 hover:border-purple-500/50 transition-all duration-200">
+              <div className="bg-[#2a2a2a]/50 border border-[#2a2a2a] rounded-lg p-3 hover:border-purple-500/50 transition-all duration-200">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h4 className="font-semibold text-white text-sm mb-1">
@@ -224,7 +224,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
               </div>
 
               {/* Course 4 */}
-              <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-3 hover:border-purple-500/50 transition-all duration-200">
+              <div className="bg-[#2a2a2a]/50 border border-[#2a2a2a] rounded-lg p-3 hover:border-purple-500/50 transition-all duration-200">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h4 className="font-semibold text-white text-sm mb-1">
@@ -254,7 +254,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-3 hover:border-purple-500/50 transition-all duration-200">
+            <div className="bg-[#1a1a1a]/50 backdrop-blur-sm border border-[#1a1a1a] rounded-xl p-3 hover:border-purple-500/50 transition-all duration-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-400">
@@ -268,7 +268,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
               </div>
             </div>
 
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-3 hover:border-blue-500/50 transition-all duration-200">
+            <div className="bg-[#1a1a1a]/50 backdrop-blur-sm border border-[#1a1a1a] rounded-xl p-3 hover:border-blue-500/50 transition-all duration-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-400">
@@ -282,7 +282,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
               </div>
             </div>
 
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-3 hover:border-red-500/50 transition-all duration-200">
+            <div className="bg-[#1a1a1a]/50 backdrop-blur-sm border border-[#1a1a1a] rounded-xl p-3 hover:border-red-500/50 transition-all duration-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-400">
@@ -296,7 +296,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
               </div>
             </div>
 
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-3 hover:border-orange-500/50 transition-all duration-200">
+            <div className="bg-[#1a1a1a]/50 backdrop-blur-sm border border-[#1a1a1a] rounded-xl p-3 hover:border-orange-500/50 transition-all duration-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-400">
@@ -310,7 +310,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
               </div>
             </div>
 
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-3 hover:border-green-500/50 transition-all duration-200">
+            <div className="bg-[#1a1a1a]/50 backdrop-blur-sm border border-[#1a1a1a] rounded-xl p-3 hover:border-green-500/50 transition-all duration-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-400">
@@ -328,7 +328,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
           {/* Bottom Sections - Compact Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Weekly Progress */}
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-3">
+            <div className="bg-[#1a1a1a]/50 backdrop-blur-sm border border-[#1a1a1a] rounded-xl p-3">
               <h3 className="text-base font-semibold text-white mb-2 flex items-center">
                 <Calendar className="w-4 h-4 mr-2 text-purple-500" />
                 Weekly Progress
@@ -355,7 +355,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                         className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
                           day.completed
                             ? "bg-green-500 text-white"
-                            : "bg-gray-700 text-gray-400"
+                            : "bg-[#3a3a3a] text-gray-400"
                         }`}
                       >
                         {day.sessions}
@@ -376,7 +376,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
             </div>
 
             {/* Recent Sessions */}
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-3">
+            <div className="bg-[#1a1a1a]/50 backdrop-blur-sm border border-[#1a1a1a] rounded-xl p-3">
               <h3 className="text-base font-semibold text-white mb-2 flex items-center">
                 <MessageSquare className="w-4 h-4 mr-2 text-blue-500" />
                 Recent Sessions
@@ -436,7 +436,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
             </div>
 
             {/* Learning Path */}
-            <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-3">
+            <div className="bg-[#1a1a1a]/50 backdrop-blur-sm border border-[#1a1a1a] rounded-xl p-3">
               <h3 className="text-base font-semibold text-white mb-2 flex items-center">
                 <Target className="w-4 h-4 mr-2 text-green-500" />
                 Learning Path
@@ -481,7 +481,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({
                   <p className="text-xs text-gray-300 mb-2">
                     Specialized scenarios
                   </p>
-                  <div className="w-full bg-gray-700 rounded-full h-1.5">
+                  <div className="w-full bg-[#3a3a3a] rounded-full h-1.5">
                     <div
                       className="bg-gray-500 h-1.5 rounded-full"
                       style={{ width: "0%" }}

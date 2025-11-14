@@ -111,6 +111,8 @@ interface SessionData {
   emotionalState: string;
 }
 
+type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
 // Personas data
 const personas: Persona[] = [
   {
@@ -256,10 +258,57 @@ const personas: Persona[] = [
   },
 ];
 
+const featureTabs = {
+  create: {
+    label: "Create Session",
+    statsTitle: "Total Sessions",
+    statsValue: "500+",
+    statsSubtitle: "Simulated sessions completed this month",
+    description:
+      "Practice therapeutic conversations with AI-driven personas and get instant coaching on your delivery.",
+    bulletPoints: [
+      "Instant session setup with guided prompts",
+      "Live rapport + technique scoring",
+      "Auto summaries ready for supervision",
+    ],
+    gradient: "from-[#6366f1] to-[#8b5cf6]",
+  },
+  optimize: {
+    label: "Content Optimization",
+    statsTitle: "Avg. Rapport Score",
+    statsValue: "92%",
+    statsSubtitle: "Based on the last 50 student sessions",
+    description:
+      "Refine transcripts, notes, and lesson plans with AI-assisted edits that highlight empathy and clarity.",
+    bulletPoints: [
+      "Suggests evidence-based phrasing",
+      "Highlights blind spots in reflections",
+      "Exports polished notes for portfolios",
+    ],
+    gradient: "from-[#f97316] to-[#f43f5e]",
+  },
+  distribute: {
+    label: "Distribute",
+    statsTitle: "Resources Shared",
+    statsValue: "1.2K",
+    statsSubtitle: "Handouts sent across training cohorts",
+    description:
+      "Share curated skill-builders, crisis playbooks, and client worksheets straight from your dashboard.",
+    bulletPoints: [
+      "One-click sharing to cohorts",
+      "Version control for faculty edits",
+      "Track engagement + completion",
+    ],
+    gradient: "from-[#06b6d4] to-[#3b82f6]",
+  },
+} as const;
+
+type FeatureTabKey = keyof typeof featureTabs;
+
 // Main component
 const VeshApp: React.FC = () => {
   // State management
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7>(1);
+  const [currentStep, setCurrentStep] = useState<Step>(1);
   const [showDashboard, setShowDashboard] = useState(false);
   const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
   const [sessionData, setSessionData] = useState<SessionData>({
@@ -295,6 +344,8 @@ const VeshApp: React.FC = () => {
   const [emotionalState, setEmotionalState] = useState("anxious");
   const [engagementLevel, setEngagementLevel] = useState(2);
   const [sessionPhase, setSessionPhase] = useState("opening");
+  const [activeFeatureTab, setActiveFeatureTab] =
+    useState<FeatureTabKey>("create");
 
   // Persona management state
   const [allPersonas, setAllPersonas] = useState<Persona[]>([]);
@@ -329,12 +380,46 @@ const VeshApp: React.FC = () => {
     isNewUser?: boolean;
   } | null>(null);
 
+  const activeFeature = featureTabs[activeFeatureTab];
+
+  const requireAuthForStep = (targetStep: Step) => {
+    if (targetStep !== 1 && !isSignedIn) {
+      setUserType((prev) => prev ?? "student");
+      setShowUserTypeDropdown(false);
+      setShowLogin(true);
+      return false;
+    }
+    return true;
+  };
+
+  const goToStep = (targetStep: Step) => {
+    if (!requireAuthForStep(targetStep)) return;
+    setCurrentStep(targetStep);
+  };
+
   // Refs
   const eventSourceRef = useRef<EventSource | null>(null);
   const sessionIdRef = useRef<string>(`session-${Date.now()}`);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const recognitionRef = useRef<any>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const getApiBaseUrl = () => {
+    const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+    if (envUrl) {
+      return envUrl.replace(/\/$/, "");
+    }
+    if (typeof window !== "undefined" && window.location?.origin) {
+      return window.location.origin;
+    }
+    return "";
+  };
+
+  const buildApiUrl = (path: string) => {
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    const baseUrl = getApiBaseUrl();
+    return baseUrl ? `${baseUrl}${normalizedPath}` : normalizedPath;
+  };
 
   // Handle click outside dropdown
   useEffect(() => {
@@ -473,9 +558,7 @@ const VeshApp: React.FC = () => {
 
   const loadPersonas = async () => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || ""}/api/personas/all/${userId}`
-      );
+      const response = await fetch(buildApiUrl(`/api/personas/all/${userId}`));
       const result = await response.json();
 
       if (result.success) {
@@ -522,7 +605,7 @@ const VeshApp: React.FC = () => {
       try {
         setConnectionStatus("connecting");
         const eventSource = new EventSource(
-          `/api/chat/stream?sessionId=${sessionIdRef.current}`
+          buildApiUrl(`/api/chat/stream?sessionId=${sessionIdRef.current}`)
         );
 
         eventSource.onopen = () => {
@@ -1090,7 +1173,7 @@ const VeshApp: React.FC = () => {
     generateUserFeedback(text.trim());
 
     // Send message via HTTP POST
-    fetch("/api/chat", {
+    fetch(buildApiUrl("/api/chat"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1548,6 +1631,7 @@ const VeshApp: React.FC = () => {
 
   // Start session
   const startSession = () => {
+    if (!requireAuthForStep(5)) return;
     setSessionData((prev) => ({
       ...prev,
       startTime: Date.now(),
@@ -1555,11 +1639,11 @@ const VeshApp: React.FC = () => {
     }));
     setSessionDuration(0);
     setTimeRemaining(selectedSessionLength * 60);
-    setCurrentStep(5);
+    goToStep(5);
 
     // Send persona to backend
     if (selectedPersona) {
-      fetch("/api/chat", {
+      fetch(buildApiUrl("/api/chat"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1884,7 +1968,7 @@ const VeshApp: React.FC = () => {
       </head>
       <body>
         <div class="header">
-          <h1>Vash Session Report</h1>
+          <h1>Vesh Session Report</h1>
           <p>Generated on ${sessionSummary.timestamp}</p>
         </div>
 
@@ -2045,7 +2129,7 @@ const VeshApp: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `Vash_Session_${sessionSummary.persona.replace(" ", "_")}_${
+    link.download = `Vesh_Session_${sessionSummary.persona.replace(" ", "_")}_${
       new Date().toISOString().split("T")[0]
     }.html`;
     document.body.appendChild(link);
@@ -2067,7 +2151,7 @@ const VeshApp: React.FC = () => {
     stopSpeech();
 
     // Reset server session
-    fetch("/api/chat", {
+    fetch(buildApiUrl("/api/chat"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2091,7 +2175,7 @@ const VeshApp: React.FC = () => {
     setCurrentFeedback([]);
     setRapportLevel(3);
     setTextInput("");
-    setCurrentStep(1);
+    goToStep(1);
     setSelectedPersona(null);
     setStickyNotes([]); // Clear sticky notes on reset
   };
@@ -2169,20 +2253,17 @@ const VeshApp: React.FC = () => {
     setLoginError("");
 
     try {
-      // Call the GCS authentication API
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || ""}/api/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: loginForm.email,
-            password: loginForm.password,
-          }),
-        }
-      );
+      // Call the authentication API
+      const response = await fetch(buildApiUrl("/api/auth/login"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: loginForm.email,
+          password: loginForm.password,
+        }),
+      });
 
       const data = await response.json();
 
@@ -2213,7 +2294,7 @@ const VeshApp: React.FC = () => {
       setShowLogin(false);
       setUserType(null);
       setLoginForm({ email: "", password: "", rememberMe: false });
-      setCurrentStep(2);
+      goToStep(2);
 
       console.log(
         `User logged in successfully: ${data.user.email} (${data.user.userType})`
@@ -2235,22 +2316,19 @@ const VeshApp: React.FC = () => {
     setLoginError("");
 
     try {
-      // Call the GCS registration API
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || ""}/api/auth/register`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: loginForm.email,
-            password: loginForm.password,
-            userType: userType,
-            rememberMe: loginForm.rememberMe,
-          }),
-        }
-      );
+      // Call the registration API
+      const response = await fetch(buildApiUrl("/api/auth/register"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: loginForm.email,
+          password: loginForm.password,
+          userType: userType,
+          rememberMe: loginForm.rememberMe,
+        }),
+      });
 
       const data = await response.json();
 
@@ -2283,7 +2361,7 @@ const VeshApp: React.FC = () => {
       setShowLogin(false);
       setUserType(null);
       setLoginForm({ email: "", password: "", rememberMe: false });
-      setCurrentStep(2);
+      goToStep(2);
 
       console.log(
         `Account created successfully: ${data.user.email} (${data.user.userType})`
@@ -2315,7 +2393,7 @@ const VeshApp: React.FC = () => {
     setIsSignedIn(false);
 
     // Reset app state
-    setCurrentStep(1);
+    goToStep(1);
     setSelectedPersona(null);
     setSessionData({
       startTime: null,
@@ -2335,15 +2413,17 @@ const VeshApp: React.FC = () => {
     switch (currentStep) {
       case 1:
         return (
-          <div className="min-h-screen bg-black text-white relative overflow-hidden">
-            {/* Hero background gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-blue-900/20 to-indigo-900/20"></div>
-
-            {/* Floating geometric elements */}
-            <div className="absolute inset-0 overflow-hidden">
-              <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-full blur-3xl"></div>
-              <div className="absolute bottom-20 left-20 w-96 h-96 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-full blur-3xl"></div>
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
+          <div className="min-h-screen text-white relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/45 to-black/15 pointer-events-none"></div>
+            {/* Subtle background pattern */}
+            <div className="absolute inset-0 opacity-5">
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)`,
+                  backgroundSize: "40px 40px",
+                }}
+              ></div>
             </div>
 
             <div className="relative z-10 flex flex-col min-h-screen">
@@ -2351,30 +2431,29 @@ const VeshApp: React.FC = () => {
               <header className="px-6 py-6">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                   <button
-                    onClick={() => setCurrentStep(1)}
-                    className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
+                    onClick={() => goToStep(1)}
+                    className="flex items-center space-x-3 hover:opacity-80 transition-opacity group"
                   >
-                    <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center group-hover:shadow-lg group-hover:shadow-purple-500/25 transition-all">
                       <Brain className="w-6 h-6 text-white" />
                     </div>
-                    <span className="text-xl font-bold">Vesh</span>
+                    <span className="text-xl font-bold text-white">Vesh</span>
                   </button>
                   {isSignedIn ? (
                     // Signed in - show user info and sign out
                     <div className="flex items-center space-x-3">
                       <div
                         className={`flex items-center space-x-2 ${
-                          currentUser?.type === "student"
-                            ? "cursor-pointer hover:bg-gray-800/50 p-2 rounded-lg transition-colors"
-                            : currentUser?.type === "practitioner"
-                            ? "cursor-pointer hover:bg-gray-800/50 p-2 rounded-lg transition-colors"
+                          currentUser?.type === "student" ||
+                          currentUser?.type === "practitioner"
+                            ? "cursor-pointer hover:bg-white/10 p-2 rounded-xl transition-colors"
                             : ""
                         }`}
                         onClick={() => {
                           if (currentUser?.type === "student") {
-                            setCurrentStep(6);
+                            goToStep(6);
                           } else if (currentUser?.type === "practitioner") {
-                            setCurrentStep(7);
+                            goToStep(7);
                           }
                         }}
                       >
@@ -2406,7 +2485,7 @@ const VeshApp: React.FC = () => {
                       </div>
                       <button
                         onClick={handleSignOut}
-                        className="px-4 py-2 bg-red-500/20 backdrop-blur-sm border border-red-500/30 rounded-lg text-sm font-medium text-red-300 hover:bg-red-500/30 hover:text-red-200 transition-colors flex items-center"
+                        className="px-4 py-2 bg-red-500/20 backdrop-blur-sm border border-red-500/30 rounded-xl text-sm font-medium text-red-300 hover:bg-red-500/30 hover:text-red-200 transition-colors flex items-center"
                       >
                         <svg
                           className="w-4 h-4 mr-2"
@@ -2431,7 +2510,7 @@ const VeshApp: React.FC = () => {
                         onClick={() =>
                           setShowUserTypeDropdown(!showUserTypeDropdown)
                         }
-                        className="px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg text-sm font-medium hover:bg-white/20 transition-colors flex items-center"
+                        className="flex items-center px-6 py-2 rounded-full text-sm font-semibold bg-white text-[#0f172a] shadow-lg hover:shadow-xl transition-all"
                       >
                         Sign In
                         <svg
@@ -2451,7 +2530,7 @@ const VeshApp: React.FC = () => {
 
                       {/* Dropdown Menu */}
                       {showUserTypeDropdown && (
-                        <div className="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-50">
+                        <div className="absolute right-0 mt-2 w-56 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl shadow-xl z-50 overflow-hidden">
                           <div className="py-2">
                             <button
                               onClick={() => {
@@ -2459,13 +2538,13 @@ const VeshApp: React.FC = () => {
                                 setShowUserTypeDropdown(false);
                                 setShowLogin(true);
                               }}
-                              className="w-full px-4 py-3 text-left text-sm text-white hover:bg-purple-500/20 hover:text-purple-300 transition-colors flex items-center"
+                              className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#2a2a2a] transition-colors flex items-center rounded-xl mx-2 my-1"
                             >
-                              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center mr-3">
-                                <GraduationCap className="w-4 h-4 text-white" />
+                              <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center mr-3">
+                                <GraduationCap className="w-5 h-5 text-white" />
                               </div>
                               <div>
-                                <div className="font-medium">Student</div>
+                                <div className="font-semibold">Student</div>
                                 <div className="text-xs text-gray-400">
                                   Practice therapy skills
                                 </div>
@@ -2477,13 +2556,15 @@ const VeshApp: React.FC = () => {
                                 setShowUserTypeDropdown(false);
                                 setShowLogin(true);
                               }}
-                              className="w-full px-4 py-3 text-left text-sm text-white hover:bg-blue-500/20 hover:text-blue-300 transition-colors flex items-center"
+                              className="w-full px-4 py-3 text-left text-sm text-white hover:bg-[#2a2a2a] transition-colors flex items-center rounded-xl mx-2 my-1"
                             >
-                              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center mr-3">
-                                <Shield className="w-4 h-4 text-white" />
+                              <div className="w-10 h-10 bg-gradient-to-r from-[#3b82f6] to-[#06b6d4] rounded-xl flex items-center justify-center mr-3">
+                                <Shield className="w-5 h-5 text-white" />
                               </div>
                               <div>
-                                <div className="font-medium">Practitioner</div>
+                                <div className="font-semibold">
+                                  Practitioner
+                                </div>
                                 <div className="text-xs text-gray-400">
                                   Professional training
                                 </div>
@@ -2498,77 +2579,152 @@ const VeshApp: React.FC = () => {
               </header>
 
               {/* Main content */}
-              <main className="flex-1 flex items-center justify-center px-6">
-                <div className="max-w-4xl w-full text-center">
-                  <div className="mb-8">
-                    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
-                      The best therapy training
-                      <br />
-                      <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
-                        using AI.
-                      </span>
-                    </h1>
-                    <p className="text-lg sm:text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed px-4">
-                      Practice therapeutic skills in a safe environment. Memory
-                      - that's dynamic, works like the human brain, and scales
-                      without breaking the bank.
+              <main className="flex-1 flex items-center justify-center px-6 py-12">
+                <div className="max-w-6xl w-full">
+                  {/* Trust badge */}
+                  <div className="text-center mb-8">
+                    <p className="text-sm text-gray-400 mb-2">
+                      Trusted by 35,000+ people
                     </p>
                   </div>
 
+                  {/* Hero Section */}
+                  <div className="text-center mb-16">
+                    <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold mb-6 text-white leading-tight">
+                      Managing your therapy training
+                      <br />
+                      <span className="gradient-text">with AI.</span>
+                    </h1>
+                    <p className="text-xl text-gray-400 mb-8 max-w-3xl mx-auto leading-relaxed">
+                      An advanced training platform that uses AI to automate
+                      various aspects of therapeutic practice, skill
+                      development, and real-time feedback.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setUserType("student");
+                        setShowLogin(true);
+                      }}
+                      className="btn-primary-modern px-8 py-4 text-lg"
+                    >
+                      Get started for free
+                    </button>
+                  </div>
+
+                  {/* Feature Showcase Card */}
+                  <div className="card-feature mb-16">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex flex-wrap gap-3">
+                        {Object.entries(featureTabs).map(([key, tab]) => (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() =>
+                              setActiveFeatureTab(key as FeatureTabKey)
+                            }
+                            className={`px-5 py-2 text-sm font-medium border ${
+                              activeFeatureTab === key
+                                ? "bg-white/10 text-white border-white/30 shadow-lg shadow-purple-500/25"
+                                : "bg-white/5 text-gray-400 border-white/5 hover:bg-white/10 hover:text-white"
+                            }`}
+                          >
+                            {tab.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-6">
+                      <div className="card-modern">
+                        <div className="text-sm text-gray-400 mb-2">
+                          {activeFeature.statsTitle}
+                        </div>
+                        <div className="text-3xl font-bold text-white mb-2">
+                          {activeFeature.statsValue}
+                        </div>
+                        <p className="text-xs text-bold">
+                          {activeFeature.statsSubtitle}
+                        </p>
+                        <div
+                          className={`mt-6 h-20 bg-gradient-to-t ${activeFeature.gradient} rounded-xl opacity-70`}
+                        ></div>
+                      </div>
+                      <div className="card-modern md:col-span-2">
+                        <div className="text-sm text-bold mb-2">
+                          {activeFeature.label}
+                        </div>
+                        <div className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-6 min-h-[150px]">
+                          <p className="text-gray-200 text-sm leading-relaxed">
+                            {activeFeature.description}
+                          </p>
+                          <ul className="mt-4 grid gap-3 text-sm text-gray-400">
+                            {activeFeature.bulletPoints.map((point) => (
+                              <li
+                                key={point}
+                                className="flex items-start gap-2"
+                              >
+                                <span className="mt-1 h-2 w-2 rounded-full bg-white/60"></span>
+                                <span>{point}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Stats */}
-                  <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-8 mb-12">
+                  <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-12 mb-16">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-white">500+</div>
+                      <div className="text-3xl font-bold text-white mb-1">
+                        500+
+                      </div>
                       <div className="text-sm text-gray-400">
                         Students Training
                       </div>
                     </div>
-                    <div className="hidden sm:block w-px h-8 bg-gray-600"></div>
+                    <div className="hidden sm:block w-px h-12 bg-[#2a2a2a]"></div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-white">98%</div>
+                      <div className="text-3xl font-bold text-white mb-1">
+                        98%
+                      </div>
                       <div className="text-sm text-gray-400">Success Rate</div>
                     </div>
-                    <div className="hidden sm:block w-px h-8 bg-gray-600"></div>
+                    <div className="hidden sm:block w-px h-12 bg-[#2a2a2a]"></div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-white">24/7</div>
+                      <div className="text-3xl font-bold text-white mb-1">
+                        24/7
+                      </div>
                       <div className="text-sm text-gray-400">Available</div>
                     </div>
                   </div>
 
                   {/* CTA Buttons */}
-                  <div className="flex flex-col items-center justify-center space-y-6">
-                    {/* Main Action Buttons */}
+                  <div className="flex flex-col items-center justify-center space-y-4">
                     <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
                       <button
                         onClick={() => {
                           setUserType("student");
                           setShowLogin(true);
                         }}
-                        className="group relative px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-semibold text-white hover:from-purple-600 hover:to-pink-600 transition-all duration-300 transform hover:scale-105"
+                        className="btn-primary-modern px-8 py-4 flex items-center"
                       >
-                        <span className="relative z-10 flex items-center">
-                          Student
-                          <ArrowRight className="w-5 h-5 ml-2" />
-                        </span>
+                        Start as Student
+                        <ArrowRight className="w-5 h-5 ml-2" />
                       </button>
                       <button
                         onClick={() => {
                           setUserType("practitioner");
                           setShowLogin(true);
                         }}
-                        className="group relative px-8 py-4 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg font-semibold text-white hover:from-blue-600 hover:to-cyan-600 transition-all duration-300 transform hover:scale-105"
+                        className="btn-secondary-modern px-8 py-4 flex items-center"
                       >
-                        <span className="relative z-10 flex items-center">
-                          Practitioner
-                          <ArrowRight className="w-5 h-5 ml-2" />
-                        </span>
+                        Start as Practitioner
+                        <ArrowRight className="w-5 h-5 ml-2" />
                       </button>
                     </div>
-
-                    {/* Learn More Button */}
                     <button
                       onClick={() => setShowLearnMore(true)}
-                      className="px-8 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg font-semibold text-white hover:bg-white/20 transition-all duration-300"
+                      className="btn-ghost-modern px-8 py-4"
                     >
                       Learn More
                     </button>
@@ -2577,26 +2733,36 @@ const VeshApp: React.FC = () => {
               </main>
 
               {/* Footer */}
-              <footer className="px-6 py-8 border-t border-gray-800">
-                <div className="max-w-7xl mx-auto text-center text-gray-400 text-sm">
-                  © 2025 Vesh. All rights reserved.
+              <footer className="px-6 py-8 border-t border-[#1a1a1a]">
+                <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between">
+                  <div className="flex items-center space-x-3 mb-4 sm:mb-0">
+                    <div className="w-8 h-8 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center">
+                      <Brain className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="text-sm text-gray-400">
+                      Join us to shape the future of therapy training together.
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    © 2025 Vesh. All rights reserved.
+                  </div>
                 </div>
               </footer>
             </div>
 
             {/* Learn More Modal */}
             {showLearnMore && (
-              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
                   <div className="p-8">
                     {/* Header */}
                     <div className="flex items-center justify-between mb-8">
                       <h2 className="text-3xl font-bold text-white">
-                        About Vash
+                        About Vesh
                       </h2>
                       <button
                         onClick={() => setShowLearnMore(false)}
-                        className="text-gray-400 hover:text-white transition-colors"
+                        className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-[#2a2a2a] rounded-xl"
                       >
                         <svg
                           className="w-6 h-6"
@@ -2616,14 +2782,14 @@ const VeshApp: React.FC = () => {
 
                     {/* Content */}
                     <div className="space-y-8">
-                      {/* What is Vash */}
+                      {/* What is Vesh */}
                       <div>
                         <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
                           <Brain className="w-6 h-6 mr-3 text-purple-400" />
-                          What is Vash?
+                          What is Vesh?
                         </h3>
                         <p className="text-gray-300 leading-relaxed">
-                          Vash is an advanced training platform designed to help
+                          Vesh is an advanced training platform designed to help
                           psychology students and mental health professionals
                           practice therapeutic skills in a safe, controlled
                           environment. Our AI-powered personas simulate real
@@ -2641,43 +2807,43 @@ const VeshApp: React.FC = () => {
                         </h3>
                         <div className="grid md:grid-cols-2 gap-6">
                           <div className="space-y-4">
-                            <div className="flex items-start">
-                              <div className="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center mr-3 mt-1">
-                                <MessageCircle className="w-4 h-4 text-purple-400" />
+                            <div className="card-modern flex items-start">
+                              <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
+                                <MessageCircle className="w-5 h-5 text-white" />
                               </div>
                               <div>
-                                <h4 className="font-semibold text-white mb-1">
+                                <h4 className="font-semibold text-white mb-2">
                                   Realistic Conversations
                                 </h4>
-                                <p className="text-gray-400 text-sm">
+                                <p className="text-gray-400 text-sm leading-relaxed">
                                   Practice with AI personas that respond
                                   authentically to your therapeutic techniques.
                                 </p>
                               </div>
                             </div>
-                            <div className="flex items-start">
-                              <div className="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center mr-3 mt-1">
-                                <Heart className="w-4 h-4 text-purple-400" />
+                            <div className="card-modern flex items-start">
+                              <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
+                                <Heart className="w-5 h-5 text-white" />
                               </div>
                               <div>
-                                <h4 className="font-semibold text-white mb-1">
+                                <h4 className="font-semibold text-white mb-2">
                                   Live Feedback
                                 </h4>
-                                <p className="text-gray-400 text-sm">
+                                <p className="text-gray-400 text-sm leading-relaxed">
                                   Get real-time coaching tips and rapport level
                                   indicators during sessions.
                                 </p>
                               </div>
                             </div>
-                            <div className="flex items-start">
-                              <div className="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center mr-3 mt-1">
-                                <Mic className="w-4 h-4 text-purple-400" />
+                            <div className="card-modern flex items-start">
+                              <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
+                                <Mic className="w-5 h-5 text-white" />
                               </div>
                               <div>
-                                <h4 className="font-semibold text-white mb-1">
+                                <h4 className="font-semibold text-white mb-2">
                                   Voice Interaction
                                 </h4>
-                                <p className="text-gray-400 text-sm">
+                                <p className="text-gray-400 text-sm leading-relaxed">
                                   Practice both text and voice-based therapeutic
                                   conversations.
                                 </p>
@@ -2685,43 +2851,43 @@ const VeshApp: React.FC = () => {
                             </div>
                           </div>
                           <div className="space-y-4">
-                            <div className="flex items-start">
-                              <div className="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center mr-3 mt-1">
-                                <Users className="w-4 h-4 text-purple-400" />
+                            <div className="card-modern flex items-start">
+                              <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
+                                <Users className="w-5 h-5 text-white" />
                               </div>
                               <div>
-                                <h4 className="font-semibold text-white mb-1">
+                                <h4 className="font-semibold text-white mb-2">
                                   Multiple Personas
                                 </h4>
-                                <p className="text-gray-400 text-sm">
+                                <p className="text-gray-400 text-sm leading-relaxed">
                                   Practice with different patient types and
                                   difficulty levels.
                                 </p>
                               </div>
                             </div>
-                            <div className="flex items-start">
-                              <div className="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center mr-3 mt-1">
-                                <Shield className="w-4 h-4 text-purple-400" />
+                            <div className="card-modern flex items-start">
+                              <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
+                                <Shield className="w-5 h-5 text-white" />
                               </div>
                               <div>
-                                <h4 className="font-semibold text-white mb-1">
+                                <h4 className="font-semibold text-white mb-2">
                                   Safe Environment
                                 </h4>
-                                <p className="text-gray-400 text-sm">
+                                <p className="text-gray-400 text-sm leading-relaxed">
                                   Learn from mistakes without affecting real
                                   patients.
                                 </p>
                               </div>
                             </div>
-                            <div className="flex items-start">
-                              <div className="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center mr-3 mt-1">
-                                <GraduationCap className="w-4 h-4 text-purple-400" />
+                            <div className="card-modern flex items-start">
+                              <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
+                                <GraduationCap className="w-5 h-5 text-white" />
                               </div>
                               <div>
-                                <h4 className="font-semibold text-white mb-1">
+                                <h4 className="font-semibold text-white mb-2">
                                   Educational Focus
                                 </h4>
-                                <p className="text-gray-400 text-sm">
+                                <p className="text-gray-400 text-sm leading-relaxed">
                                   Designed specifically for psychology students
                                   and professionals.
                                 </p>
@@ -2738,8 +2904,8 @@ const VeshApp: React.FC = () => {
                           How It Works
                         </h3>
                         <div className="space-y-4">
-                          <div className="flex items-center">
-                            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm mr-4">
+                          <div className="card-modern flex items-center">
+                            <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center text-white font-bold text-sm mr-4 flex-shrink-0">
                               1
                             </div>
                             <p className="text-gray-300">
@@ -2747,8 +2913,8 @@ const VeshApp: React.FC = () => {
                               levels and conditions
                             </p>
                           </div>
-                          <div className="flex items-center">
-                            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm mr-4">
+                          <div className="card-modern flex items-center">
+                            <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center text-white font-bold text-sm mr-4 flex-shrink-0">
                               2
                             </div>
                             <p className="text-gray-300">
@@ -2756,8 +2922,8 @@ const VeshApp: React.FC = () => {
                               considerations
                             </p>
                           </div>
-                          <div className="flex items-center">
-                            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm mr-4">
+                          <div className="card-modern flex items-center">
+                            <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center text-white font-bold text-sm mr-4 flex-shrink-0">
                               3
                             </div>
                             <p className="text-gray-300">
@@ -2765,8 +2931,8 @@ const VeshApp: React.FC = () => {
                               feedback
                             </p>
                           </div>
-                          <div className="flex items-center">
-                            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-sm mr-4">
+                          <div className="card-modern flex items-center">
+                            <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center text-white font-bold text-sm mr-4 flex-shrink-0">
                               4
                             </div>
                             <p className="text-gray-300">
@@ -2784,29 +2950,29 @@ const VeshApp: React.FC = () => {
                           Benefits for Students
                         </h3>
                         <div className="grid md:grid-cols-3 gap-6">
-                          <div className="bg-gray-800/50 rounded-lg p-4">
-                            <h4 className="font-semibold text-white mb-2">
+                          <div className="card-modern">
+                            <h4 className="font-semibold text-white mb-3">
                               Build Confidence
                             </h4>
-                            <p className="text-gray-400 text-sm">
+                            <p className="text-gray-400 text-sm leading-relaxed">
                               Practice therapeutic techniques in a low-pressure
                               environment before working with real clients.
                             </p>
                           </div>
-                          <div className="bg-gray-800/50 rounded-lg p-4">
-                            <h4 className="font-semibold text-white mb-2">
+                          <div className="card-modern">
+                            <h4 className="font-semibold text-white mb-3">
                               Learn from Mistakes
                             </h4>
-                            <p className="text-gray-400 text-sm">
+                            <p className="text-gray-400 text-sm leading-relaxed">
                               Make errors and learn from them without any
                               real-world consequences or client impact.
                             </p>
                           </div>
-                          <div className="bg-gray-800/50 rounded-lg p-4">
-                            <h4 className="font-semibold text-white mb-2">
+                          <div className="card-modern">
+                            <h4 className="font-semibold text-white mb-3">
                               Track Progress
                             </h4>
-                            <p className="text-gray-400 text-sm">
+                            <p className="text-gray-400 text-sm leading-relaxed">
                               Monitor your therapeutic skills development with
                               real-time feedback and rapport tracking.
                             </p>
@@ -2816,20 +2982,20 @@ const VeshApp: React.FC = () => {
                     </div>
 
                     {/* CTA */}
-                    <div className="mt-8 pt-6 border-t border-gray-800">
+                    <div className="mt-8 pt-6 border-t border-[#2a2a2a]">
                       <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
                         <button
                           onClick={() => {
                             setShowLearnMore(false);
-                            setCurrentStep(2);
+                            goToStep(2);
                           }}
-                          className="px-8 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-semibold text-white hover:from-purple-600 hover:to-pink-600 transition-all duration-300"
+                          className="btn-primary-modern px-8 py-3"
                         >
                           Start Training Now
                         </button>
                         <button
                           onClick={() => setShowLearnMore(false)}
-                          className="px-8 py-3 bg-gray-800 border border-gray-700 rounded-lg font-semibold text-white hover:bg-gray-700 transition-colors"
+                          className="btn-secondary-modern px-8 py-3"
                         >
                           Close
                         </button>
@@ -2843,11 +3009,11 @@ const VeshApp: React.FC = () => {
             {/* Session Summary Modal */}
             {showSessionSummary && sessionSummary && (
               <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="bg-[#1a1a1a] border border-[#1a1a1a] rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                   <div className="p-8">
                     {/* Header */}
                     <div className="text-center mb-8">
-                      <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-500/25">
                         <CheckCircle className="w-8 h-8 text-white" />
                       </div>
                       <h2 className="text-3xl font-bold text-white mb-2">
@@ -2861,7 +3027,7 @@ const VeshApp: React.FC = () => {
                     {/* Summary Content */}
                     <div className="space-y-8">
                       {/* Session Overview */}
-                      <div className="bg-gray-800/50 rounded-lg p-6">
+                      <div className="card-modern">
                         <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
                           <Clock className="w-5 h-5 mr-3 text-purple-400" />
                           Session Overview
@@ -2919,7 +3085,7 @@ const VeshApp: React.FC = () => {
                       {/* Performance Metrics */}
                       <div className="grid md:grid-cols-2 gap-6">
                         {/* Rapport Level */}
-                        <div className="bg-gray-800/50 rounded-lg p-6">
+                        <div className="card-modern">
                           <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                             <Heart className="w-5 h-5 mr-3 text-purple-400" />
                             Rapport Building
@@ -2970,7 +3136,7 @@ const VeshApp: React.FC = () => {
                         </div>
 
                         {/* Engagement Score */}
-                        <div className="bg-gray-800/50 rounded-lg p-6">
+                        <div className="card-modern">
                           <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                             <MessageCircle className="w-5 h-5 mr-3 text-purple-400" />
                             Engagement Score
@@ -3016,7 +3182,7 @@ const VeshApp: React.FC = () => {
                       </div>
 
                       {/* Feedback Summary */}
-                      <div className="bg-gray-800/50 rounded-lg p-6">
+                      <div className="card-modern">
                         <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                           <Lightbulb className="w-5 h-5 mr-3 text-purple-400" />
                           Coaching Feedback Summary
@@ -3060,11 +3226,11 @@ const VeshApp: React.FC = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="mt-8 pt-6 border-t border-gray-800">
+                    <div className="mt-8 pt-6 border-t border-[#1a1a1a]">
                       <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
                         <button
                           onClick={downloadConversationPDF}
-                          className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg font-semibold text-white hover:from-blue-600 hover:to-cyan-600 transition-all duration-300 flex items-center"
+                          className="btn-primary-modern flex items-center"
                         >
                           <svg
                             className="w-4 h-4 mr-2"
@@ -3084,15 +3250,15 @@ const VeshApp: React.FC = () => {
                         <button
                           onClick={() => {
                             closeSessionSummary();
-                            setCurrentStep(2);
+                            goToStep(2);
                           }}
-                          className="px-8 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-semibold text-white hover:from-purple-600 hover:to-pink-600 transition-all duration-300"
+                          className="btn-primary-modern"
                         >
                           Practice Again
                         </button>
                         <button
                           onClick={closeSessionSummary}
-                          className="px-8 py-3 bg-gray-800 border border-gray-700 rounded-lg font-semibold text-white hover:bg-gray-700 transition-colors"
+                          className="btn-secondary-modern"
                         >
                           Return Home
                         </button>
@@ -3107,34 +3273,34 @@ const VeshApp: React.FC = () => {
 
       case 2:
         return (
-          <div className="min-h-screen bg-black text-white">
+          <div className="min-h-screen bg-black/80 backdrop-blur-xl text-white">
             {/* Header */}
-            <header className="px-6 py-6 border-b border-gray-800">
+            <header className="px-6 py-6 border-b border-[#1a1a1a]">
               <div className="max-w-7xl mx-auto flex items-center justify-between">
                 <button
-                  onClick={() => setCurrentStep(1)}
-                  className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
+                  onClick={() => goToStep(1)}
+                  className="flex items-center space-x-3 hover:opacity-80 transition-opacity group"
                 >
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                  <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center group-hover:shadow-lg group-hover:shadow-purple-500/25 transition-all">
                     <Brain className="w-6 h-6 text-white" />
                   </div>
-                  <span className="text-xl font-bold">Vesh</span>
+                  <span className="text-xl font-bold text-white">Vesh</span>
                 </button>
                 <div className="flex items-center space-x-4">
                   {isSignedIn && (
                     <div
                       className={`flex items-center space-x-2 ${
                         currentUser?.type === "student"
-                          ? "cursor-pointer hover:bg-gray-800/50 p-2 rounded-lg transition-colors"
+                          ? "cursor-pointer hover:bg-[#2a2a2a]/50 p-2 rounded-xl transition-colors"
                           : currentUser?.type === "practitioner"
-                          ? "cursor-pointer hover:bg-gray-800/50 p-2 rounded-lg transition-colors"
+                          ? "cursor-pointer hover:bg-[#2a2a2a]/50 p-2 rounded-xl transition-colors"
                           : ""
                       }`}
                       onClick={() => {
                         if (currentUser?.type === "student") {
-                          setCurrentStep(6);
+                          goToStep(6);
                         } else if (currentUser?.type === "practitioner") {
-                          setCurrentStep(7);
+                          goToStep(7);
                         }
                       }}
                     >
@@ -3168,7 +3334,7 @@ const VeshApp: React.FC = () => {
                   {isSignedIn && (
                     <button
                       onClick={handleSignOut}
-                      className="px-4 py-2 bg-red-500/20 backdrop-blur-sm border border-red-500/30 rounded-lg text-sm font-medium text-red-300 hover:bg-red-500/30 hover:text-red-200 transition-colors flex items-center"
+                      className="px-4 py-2 bg-red-500/20 backdrop-blur-sm border border-red-500/30 rounded-xl text-sm font-medium text-red-300 hover:bg-red-500/30 hover:text-red-200 transition-colors flex items-center"
                     >
                       <svg
                         className="w-4 h-4 mr-2"
@@ -3202,54 +3368,54 @@ const VeshApp: React.FC = () => {
                     therapeutic skills.
                   </p>
 
-                  <div className="flex justify-center space-x-4">
+                  <div className="flex flex-wrap justify-center gap-4">
                     {isSignedIn && currentUser?.type === "student" && (
                       <button
-                        onClick={() => setCurrentStep(6)}
-                        className="flex items-center space-x-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-300"
+                        onClick={() => goToStep(6)}
+                        className="btn-primary-modern flex items-center"
                       >
-                        <BarChart3 className="w-5 h-5" />
+                        <BarChart3 className="w-5 h-5 mr-2" />
                         <span>Dashboard</span>
                       </button>
                     )}
                     {isSignedIn && currentUser?.type === "practitioner" && (
                       <button
-                        onClick={() => setCurrentStep(7)}
-                        className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-6 py-3 rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all duration-300"
+                        onClick={() => goToStep(7)}
+                        className="btn-primary-modern flex items-center"
                       >
-                        <BarChart3 className="w-5 h-5" />
+                        <BarChart3 className="w-5 h-5 mr-2" />
                         <span>Dashboard</span>
                       </button>
                     )}
                     <button
                       onClick={() => setShowPersonaManagement(true)}
-                      className="flex items-center space-x-2 bg-gray-800 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors"
+                      className="btn-secondary-modern flex items-center"
                     >
-                      <Users className="w-5 h-5" />
+                      <Users className="w-5 h-5 mr-2" />
                       <span>Manage Personas</span>
                     </button>
                     <button
                       onClick={() => setShowUploadModal(true)}
-                      className="flex items-center space-x-2 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
+                      className="btn-primary-modern flex items-center"
                     >
-                      <Upload className="w-5 h-5" />
+                      <Upload className="w-5 h-5 mr-2" />
                       <span>Upload Custom</span>
                     </button>
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-8">
+                <div className="grid md:grid-cols-3 gap-6">
                   {allPersonas.map((persona, index) => (
                     <div
                       key={persona.id}
-                      className="group bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-8 hover:border-purple-500/50 transition-all duration-300 cursor-pointer hover:transform hover:scale-105 flex flex-col"
+                      className="card-feature cursor-pointer flex flex-col"
                       onClick={() => {
                         setSelectedPersona(persona);
-                        setCurrentStep(3);
+                        goToStep(3);
                       }}
                     >
                       <div className="text-center mb-6">
-                        <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <div className="w-16 h-16 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-500/25">
                           <User className="w-8 h-8 text-white" />
                         </div>
                         <h3 className="text-2xl font-bold text-white mb-2">
@@ -3291,7 +3457,7 @@ const VeshApp: React.FC = () => {
                         {persona.description}
                       </p>
 
-                      <button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 px-6 rounded-lg font-semibold hover:from-purple-600 hover:to-pink-600 transition-all duration-300 mt-auto">
+                      <button className="w-full bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] text-white py-3 px-6 rounded-xl font-semibold hover:from-[#4f46e5] hover:to-[#7c3aed] transition-all duration-300 mt-auto">
                         SELECT {persona.name.split(" ")[0].toUpperCase()}
                       </button>
                     </div>
@@ -3304,18 +3470,18 @@ const VeshApp: React.FC = () => {
 
       case 3:
         return (
-          <div className="min-h-screen bg-black text-white">
+          <div className="min-h-screen bg-black/85 backdrop-blur-xl text-white">
             {/* Header */}
-            <header className="px-6 py-6 border-b border-gray-800">
+            <header className="px-6 py-6 border-b border-[#1a1a1a]">
               <div className="max-w-7xl mx-auto flex items-center justify-between">
                 <button
-                  onClick={() => setCurrentStep(1)}
+                  onClick={() => goToStep(1)}
                   className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
                 >
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                  <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center">
                     <Brain className="w-6 h-6 text-white" />
                   </div>
-                  <span className="text-xl font-bold">Vash</span>
+                  <span className="text-xl font-bold text-white">Vesh</span>
                 </button>
               </div>
             </header>
@@ -3323,7 +3489,7 @@ const VeshApp: React.FC = () => {
             <main className="px-6 py-12">
               <div className="max-w-4xl mx-auto">
                 <div className="text-center mb-12">
-                  <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-purple-500/25">
                     <User className="w-10 h-10 text-white" />
                   </div>
                   <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
@@ -3334,7 +3500,7 @@ const VeshApp: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-8 mb-8">
+                <div className="card-feature mb-8">
                   <div className="space-y-6">
                     {selectedPersona &&
                       Object.entries(selectedPersona.background).map(
@@ -3367,15 +3533,15 @@ const VeshApp: React.FC = () => {
 
                 <div className="flex justify-center space-x-4">
                   <button
-                    onClick={() => setCurrentStep(2)}
-                    className="px-6 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white hover:bg-gray-700 transition-colors flex items-center"
+                    onClick={() => goToStep(2)}
+                    className="px-6 py-3 bg-[#2a2a2a] border border-[#2a2a2a] rounded-xl text-white hover:bg-[#3a3a3a] transition-colors flex items-center"
                   >
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back to Selection
                   </button>
                   <button
-                    onClick={() => setCurrentStep(4)}
-                    className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg text-white hover:from-purple-600 hover:to-pink-600 transition-all duration-300 flex items-center"
+                    onClick={() => goToStep(4)}
+                    className="px-6 py-3 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl text-white hover:from-[#4f46e5] hover:to-[#7c3aed] transition-all duration-300 flex items-center"
                   >
                     Continue to Setup
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -3388,18 +3554,18 @@ const VeshApp: React.FC = () => {
 
       case 4:
         return (
-          <div className="min-h-screen bg-black text-white">
+          <div className="min-h-screen bg-black/85 backdrop-blur-xl text-white">
             {/* Header */}
-            <header className="px-6 py-6 border-b border-gray-800">
+            <header className="px-6 py-6 border-b border-[#1a1a1a]">
               <div className="max-w-7xl mx-auto flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                  <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center">
                     <Brain className="w-6 h-6 text-white" />
                   </div>
-                  <span className="text-xl font-bold">Vash</span>
+                  <span className="text-xl font-bold text-white">Vesh</span>
                 </div>
                 <button
-                  onClick={() => setCurrentStep(3)}
+                  onClick={() => goToStep(3)}
                   className="flex items-center text-gray-300 hover:text-white transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
@@ -3411,7 +3577,7 @@ const VeshApp: React.FC = () => {
             <main className="px-6 py-12">
               <div className="max-w-2xl mx-auto">
                 <div className="text-center mb-12">
-                  <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <div className="w-20 h-20 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-2xl flex items-center justify-center mx-auto mb-6">
                     <Settings className="w-10 h-10 text-white" />
                   </div>
                   <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
@@ -3422,7 +3588,7 @@ const VeshApp: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-8">
+                <div className="bg-[#1a1a1a]/50 backdrop-blur-sm border border-[#1a1a1a] rounded-2xl p-8">
                   <div className="space-y-8">
                     {/* Session Length */}
                     <div>
@@ -3449,7 +3615,7 @@ const VeshApp: React.FC = () => {
                         ].map((option) => (
                           <label
                             key={option.duration}
-                            className="flex items-center p-3 rounded-lg border border-gray-700 hover:border-purple-500/50 transition-colors cursor-pointer"
+                            className="flex items-center p-3 rounded-xl border border-[#2a2a2a] hover:border-purple-500/50 transition-colors cursor-pointer"
                           >
                             <input
                               type="radio"
@@ -3461,7 +3627,7 @@ const VeshApp: React.FC = () => {
                               onChange={() =>
                                 setSelectedSessionLength(option.duration)
                               }
-                              className="w-4 h-4 text-purple-500 border-gray-600 focus:ring-purple-500 bg-gray-800"
+                              className="w-4 h-4 text-purple-500 border-gray-600 focus:ring-purple-500 bg-[#2a2a2a]"
                             />
                             <span className="ml-3 text-gray-300">
                               {option.label}
@@ -3496,10 +3662,10 @@ const VeshApp: React.FC = () => {
                             </div>
                             <button
                               onClick={startListening}
-                              className={`w-full px-4 py-3 rounded-lg text-sm flex items-center justify-center transition-all duration-300 ${
+                              className={`w-full px-4 py-3 rounded-xl text-sm flex items-center justify-center transition-all duration-300 ${
                                 isListening
                                   ? "bg-red-500 text-white hover:bg-red-600"
-                                  : "bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600"
+                                  : "bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] text-white hover:from-[#4f46e5] hover:to-[#7c3aed]"
                               }`}
                             >
                               {isListening ? (
@@ -3515,7 +3681,7 @@ const VeshApp: React.FC = () => {
                               )}
                             </button>
                             {currentTranscript && (
-                              <div className="text-xs text-gray-400 italic bg-gray-800 p-2 rounded">
+                              <div className="text-xs text-gray-400 italic bg-[#2a2a2a] p-2 rounded">
                                 Heard: "{currentTranscript}"
                               </div>
                             )}
@@ -3536,7 +3702,7 @@ const VeshApp: React.FC = () => {
                                 onChange={(e) =>
                                   setSelectedVoice(e.target.value || null)
                                 }
-                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-therapy-500 focus:border-transparent bg-white text-gray-900"
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-therapy-500 focus:border-transparent bg-white text-gray-900"
                               >
                                 <option
                                   value=""
@@ -3574,7 +3740,7 @@ const VeshApp: React.FC = () => {
                                     voices.map((v) => v.name)
                                   );
                                 }}
-                                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium"
+                                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-medium"
                                 title="Refresh voices"
                               >
                                 ↻
@@ -3633,7 +3799,7 @@ const VeshApp: React.FC = () => {
                 <div className="mt-8 text-center">
                   <button
                     onClick={startSession}
-                    className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg text-white font-semibold text-lg hover:from-purple-600 hover:to-pink-600 transition-all duration-300 transform hover:scale-105"
+                    className="px-8 py-4 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl text-white font-semibold text-lg hover:from-[#4f46e5] hover:to-[#7c3aed] transition-all duration-300 transform hover:scale-105"
                   >
                     BEGIN THERAPY SESSION
                   </button>
@@ -3645,21 +3811,21 @@ const VeshApp: React.FC = () => {
 
       case 5:
         return (
-          <div className="min-h-screen bg-black text-white">
+          <div className="min-h-screen bg-black/85 backdrop-blur-xl text-white">
             <div className="h-screen flex flex-col">
               {/* Header */}
-              <div className="bg-gray-900/90 backdrop-blur-sm border-b border-gray-800 px-6 py-4">
+              <div className="bg-[#1a1a1a] border-b border-[#1a1a1a] px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-6">
                     <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center mr-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center mr-3">
                         <MessageCircle className="w-5 h-5 text-white" />
                       </div>
                       <h1 className="text-xl font-bold text-white">
                         THERAPY SESSION - {selectedPersona?.name}
                       </h1>
                     </div>
-                    <div className="flex items-center text-gray-300 bg-gray-800 px-4 py-2 rounded-lg">
+                    <div className="flex items-center text-gray-300 bg-[#2a2a2a] px-4 py-2 rounded-xl">
                       <Clock className="w-4 h-4 mr-2 text-purple-400" />
                       <span className="font-mono font-semibold">
                         Time Remaining: {formatTime(timeRemaining)}
@@ -3668,7 +3834,7 @@ const VeshApp: React.FC = () => {
                   </div>
 
                   <div className="flex items-center space-x-4">
-                    <div className="flex items-center text-sm px-3 py-2 rounded-lg transition-all duration-300">
+                    <div className="flex items-center text-sm px-3 py-2 rounded-xl transition-all duration-300">
                       {wsConnected ? (
                         <div className="flex items-center text-green-400 bg-green-500/20 border border-green-500/30">
                           <Wifi className="w-4 h-4 mr-2 animate-pulse" />
@@ -3684,7 +3850,7 @@ const VeshApp: React.FC = () => {
                     {isSpeaking && (
                       <button
                         onClick={stopSpeech}
-                        className="flex items-center px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transform transition-all duration-300 hover:scale-105 animate-pulse"
+                        className="flex items-center px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transform transition-all duration-300 hover:scale-105 animate-pulse"
                         title="Stop speaking"
                       >
                         <VolumeX className="w-4 h-4 mr-2" />
@@ -3705,7 +3871,7 @@ const VeshApp: React.FC = () => {
                         );
                         // Don't reset session immediately, let user see summary first
                       }}
-                      className="px-4 py-2 bg-red-500/20 backdrop-blur-sm border border-red-500/30 rounded-lg text-sm font-medium text-red-300 hover:bg-red-500/30 hover:text-red-200 transition-colors flex items-center"
+                      className="px-4 py-2 bg-red-500/20 backdrop-blur-sm border border-red-500/30 rounded-xl text-sm font-medium text-red-300 hover:bg-red-500/30 hover:text-red-200 transition-colors flex items-center"
                       title="End Session"
                     >
                       <Pause className="w-4 h-4 mr-2" />
@@ -3713,7 +3879,7 @@ const VeshApp: React.FC = () => {
                     </button>
                     <button
                       onClick={resetSession}
-                      className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-all duration-300 hover:scale-110"
+                      className="p-2 text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded-xl transition-all duration-300 hover:scale-110"
                       title="Reset session"
                     >
                       <RotateCcw className="w-5 h-5" />
@@ -3902,7 +4068,7 @@ const VeshApp: React.FC = () => {
                 </div>
 
                 {/* Real-time Feedback Panel */}
-                <div className="w-80 bg-gray-900/50 backdrop-blur-sm border-l border-gray-800 p-6 overflow-y-auto shadow-xl">
+                <div className="w-80 bg-[#1a1a1a]/50 backdrop-blur-sm border-l border-[#1a1a1a] p-6 overflow-y-auto shadow-xl">
                   <div className="mb-6">
                     <h3 className="text-lg font-bold text-white mb-2 flex items-center">
                       <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-3">
@@ -3916,7 +4082,7 @@ const VeshApp: React.FC = () => {
                   </div>
 
                   {/* Patient Metrics */}
-                  <div className="mb-6 bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-lg p-4">
+                  <div className="mb-6 bg-[#2a2a2a]/50 backdrop-blur-sm border border-[#2a2a2a] rounded-xl p-4">
                     <h4 className="text-sm font-semibold text-white mb-4 flex items-center">
                       <Heart className="w-4 h-4 mr-2 text-red-400" />
                       Patient Metrics
@@ -4030,7 +4196,7 @@ const VeshApp: React.FC = () => {
 
                   {/* Session Phase */}
                   <div className="mb-6">
-                    <div className="bg-blue-900/30 border border-blue-700/50 rounded-lg p-3">
+                    <div className="bg-blue-900/30 border border-blue-700/50 rounded-xl p-3">
                       <div className="flex items-center mb-2">
                         <Clock className="w-4 h-4 mr-2 text-blue-400" />
                         <span className="text-sm font-semibold text-blue-300">
@@ -4057,7 +4223,7 @@ const VeshApp: React.FC = () => {
                     </h4>
                     <div className="space-y-3">
                       {currentFeedback.length === 0 ? (
-                        <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 text-center">
+                        <div className="bg-[#2a2a2a]/50 border border-[#2a2a2a] rounded-xl p-4 text-center">
                           <div className="text-gray-400 text-sm">
                             Start the conversation to receive personalized
                             coaching tips
@@ -4067,7 +4233,7 @@ const VeshApp: React.FC = () => {
                         currentFeedback.map((feedback) => (
                           <div
                             key={feedback.id}
-                            className={`rounded-lg p-3 ${
+                            className={`rounded-xl p-3 ${
                               feedback.type === "positive"
                                 ? "bg-green-900/30 border-l-4 border-green-400"
                                 : feedback.type === "suggestion"
@@ -4116,7 +4282,7 @@ const VeshApp: React.FC = () => {
                     {showStickyNotes && (
                       <div className="space-y-4">
                         {/* Add New Note */}
-                        <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                        <div className="bg-[#2a2a2a]/50 border border-[#2a2a2a] rounded-xl p-4">
                           <div className="flex space-x-2">
                             <input
                               type="text"
@@ -4126,12 +4292,12 @@ const VeshApp: React.FC = () => {
                                 e.key === "Enter" && addStickyNote()
                               }
                               placeholder="Add a note about this session..."
-                              className="flex-1 px-3 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-white placeholder-gray-400"
+                              className="flex-1 px-3 py-2 text-sm bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-white placeholder-gray-400"
                             />
                             <button
                               onClick={addStickyNote}
                               disabled={!newNote.trim()}
-                              className="px-3 py-2 bg-purple-500 text-white text-sm rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                              className="px-3 py-2 bg-purple-500 text-white text-sm rounded-xl hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                             >
                               <Plus className="w-4 h-4" />
                             </button>
@@ -4148,7 +4314,7 @@ const VeshApp: React.FC = () => {
                             stickyNotes.map((note) => (
                               <div
                                 key={note.id}
-                                className={`p-3 rounded-lg border-l-4 ${note.color} relative group`}
+                                className={`p-3 rounded-xl border-l-4 ${note.color} relative group`}
                               >
                                 <div className="flex justify-between items-start">
                                   <div className="flex-1">
@@ -4185,9 +4351,9 @@ const VeshApp: React.FC = () => {
           return (
             <StudentDashboard
               user={currentUser}
-              onStartSession={() => setCurrentStep(2)}
+              onStartSession={() => goToStep(2)}
               onManagePersonas={() => setShowPersonaManagement(true)}
-              onBackToHome={() => setCurrentStep(1)}
+              onBackToHome={() => goToStep(1)}
             />
           );
         }
@@ -4199,9 +4365,9 @@ const VeshApp: React.FC = () => {
           return (
             <PractitionerDashboard
               user={currentUser}
-              onStartSession={() => setCurrentStep(2)}
+              onStartSession={() => goToStep(2)}
               onManagePersonas={() => setShowPersonaManagement(true)}
-              onBackToHome={() => setCurrentStep(1)}
+              onBackToHome={() => goToStep(1)}
             />
           );
         }
@@ -4219,11 +4385,11 @@ const VeshApp: React.FC = () => {
       {/* Session Summary Modal */}
       {showSessionSummary && sessionSummary && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-800">
+          <div className="bg-[#1a1a1a] rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-[#1a1a1a]">
             <div className="p-8">
               {/* Header */}
               <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-gradient-to-r from-[#10b981] to-[#059669] rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <CheckCircle className="w-8 h-8 text-white" />
                 </div>
                 <h2 className="text-3xl font-bold text-white mb-2">
@@ -4235,7 +4401,7 @@ const VeshApp: React.FC = () => {
               </div>
 
               {/* Session Overview */}
-              <div className="bg-gray-800/50 rounded-xl p-6 mb-8">
+              <div className="bg-[#2a2a2a]/50 rounded-xl p-6 mb-8">
                 <h3 className="text-xl font-semibold text-white mb-4">
                   Session Overview
                 </h3>
@@ -4270,7 +4436,7 @@ const VeshApp: React.FC = () => {
               {/* Performance Metrics */}
               <div className="grid md:grid-cols-2 gap-6">
                 {/* Rapport Level */}
-                <div className="bg-gray-800/50 rounded-lg p-6">
+                <div className="bg-[#2a2a2a]/50 rounded-xl p-6">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                     <Heart className="w-5 h-5 mr-3 text-purple-400" />
                     Rapport Building
@@ -4319,7 +4485,7 @@ const VeshApp: React.FC = () => {
                 </div>
 
                 {/* Engagement Score */}
-                <div className="bg-gray-800/50 rounded-lg p-6">
+                <div className="bg-[#2a2a2a]/50 rounded-xl p-6">
                   <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                     <TrendingUp className="w-5 h-5 mr-3 text-blue-400" />
                     Engagement Score
@@ -4363,7 +4529,7 @@ const VeshApp: React.FC = () => {
               </div>
 
               {/* Feedback Summary */}
-              <div className="bg-gray-800/50 rounded-lg p-6 mt-6">
+              <div className="bg-[#2a2a2a]/50 rounded-xl p-6 mt-6">
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                   <MessageSquare className="w-5 h-5 mr-3 text-cyan-400" />
                   Coaching Feedback Summary
@@ -4395,7 +4561,7 @@ const VeshApp: React.FC = () => {
               {/* Session Notes */}
               {sessionSummary.stickyNotes &&
                 sessionSummary.stickyNotes.length > 0 && (
-                  <div className="bg-gray-800/50 rounded-lg p-6 mt-6">
+                  <div className="bg-[#2a2a2a]/50 rounded-xl p-6 mt-6">
                     <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                       <MessageSquare className="w-5 h-5 mr-3 text-purple-400" />
                       Session Notes
@@ -4405,7 +4571,7 @@ const VeshApp: React.FC = () => {
                         (note: SessionNote, index: number) => (
                           <div
                             key={index}
-                            className="bg-gray-700/50 rounded-lg p-4 border-l-4 border-purple-500"
+                            className="bg-gray-700/50 rounded-xl p-4 border-l-4 border-purple-500"
                           >
                             <p className="text-gray-200 text-sm mb-2">
                               {note.content}
@@ -4422,11 +4588,11 @@ const VeshApp: React.FC = () => {
                 )}
 
               {/* Action Buttons */}
-              <div className="mt-8 pt-6 border-t border-gray-800">
+              <div className="mt-8 pt-6 border-t border-[#1a1a1a]">
                 <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
                   <button
                     onClick={downloadConversationPDF}
-                    className="px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg font-semibold text-white hover:from-blue-600 hover:to-cyan-600 transition-all duration-300 flex items-center"
+                    className="px-6 py-3 bg-gradient-to-r from-[#3b82f6] to-[#06b6d4] rounded-xl font-semibold text-white hover:from-[#2563eb] hover:to-[#0891b2] transition-all duration-300 flex items-center"
                   >
                     <svg
                       className="w-4 h-4 mr-2"
@@ -4446,15 +4612,15 @@ const VeshApp: React.FC = () => {
                   <button
                     onClick={() => {
                       closeSessionSummary();
-                      setCurrentStep(2);
+                      goToStep(2);
                     }}
-                    className="px-8 py-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg font-semibold text-white hover:from-purple-600 hover:to-pink-600 transition-all duration-300"
+                    className="px-8 py-3 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl font-semibold text-white hover:from-[#4f46e5] hover:to-[#7c3aed] transition-all duration-300"
                   >
                     Practice Again
                   </button>
                   <button
                     onClick={closeSessionSummary}
-                    className="px-8 py-3 bg-gray-800 border border-gray-700 rounded-lg font-semibold text-white hover:bg-gray-700 transition-colors"
+                    className="px-8 py-3 bg-[#2a2a2a] border border-[#2a2a2a] rounded-xl font-semibold text-white hover:bg-[#3a3a3a] transition-colors"
                   >
                     Return Home
                   </button>
@@ -4468,7 +4634,7 @@ const VeshApp: React.FC = () => {
       {/* Persona Management Modal */}
       {showPersonaManagement && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 rounded-2xl p-8 max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-[#1a1a1a] rounded-2xl p-8 max-w-6xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-white">
                 Persona Management
@@ -4501,7 +4667,7 @@ const VeshApp: React.FC = () => {
       {/* Login Modal */}
       {showLogin && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 rounded-2xl p-8 max-w-md w-full">
+          <div className="bg-[#1a1a1a] rounded-2xl p-8 max-w-md w-full">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-white">
                 {userType === "student"
@@ -4555,7 +4721,7 @@ const VeshApp: React.FC = () => {
                     onChange={(e) =>
                       handleLoginFormChange("email", e.target.value)
                     }
-                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-[#2a2a2a] border border-[#2a2a2a] rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     placeholder="Enter your email"
                     required
                   />
@@ -4570,7 +4736,7 @@ const VeshApp: React.FC = () => {
                     onChange={(e) =>
                       handleLoginFormChange("password", e.target.value)
                     }
-                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-3 bg-[#2a2a2a] border border-[#2a2a2a] rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     placeholder="Enter your password"
                     required
                   />
@@ -4583,7 +4749,7 @@ const VeshApp: React.FC = () => {
                       onChange={(e) =>
                         handleLoginFormChange("rememberMe", e.target.checked)
                       }
-                      className="w-4 h-4 text-purple-600 bg-gray-800 border-gray-700 rounded focus:ring-purple-500 focus:ring-2"
+                      className="w-4 h-4 text-purple-600 bg-[#2a2a2a] border-[#2a2a2a] rounded focus:ring-purple-500 focus:ring-2"
                     />
                     <span className="ml-2 text-sm text-gray-300">
                       Remember me
@@ -4599,7 +4765,7 @@ const VeshApp: React.FC = () => {
 
                 {/* Error Message */}
                 {loginError && (
-                  <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                  <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
                     <p className="text-red-400 text-sm">{loginError}</p>
                   </div>
                 )}
@@ -4611,10 +4777,10 @@ const VeshApp: React.FC = () => {
                   type="button"
                   onClick={handleLogin}
                   disabled={isLoggingIn || isCreatingAccount}
-                  className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
+                  className={`w-full py-3 px-4 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
                     userType === "student"
-                      ? "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                      : "bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+                      ? "bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] hover:from-[#4f46e5] hover:to-[#7c3aed]"
+                      : "bg-gradient-to-r from-[#3b82f6] to-[#06b6d4] hover:from-[#2563eb] hover:to-[#0891b2]"
                   }`}
                 >
                   {isLoggingIn ? (
@@ -4630,7 +4796,7 @@ const VeshApp: React.FC = () => {
                   type="button"
                   onClick={handleCreateAccount}
                   disabled={isLoggingIn || isCreatingAccount}
-                  className="w-full py-3 px-4 bg-gray-800 border border-gray-700 rounded-lg font-semibold text-white hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3 px-4 bg-[#2a2a2a] border border-[#2a2a2a] rounded-xl font-semibold text-white hover:bg-[#3a3a3a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isCreatingAccount ? (
                     <div className="flex items-center justify-center">
