@@ -2341,345 +2341,216 @@ const VeshApp: React.FC = () => {
     switch (currentStep) {
       case 1:
         return (
-          <div className="min-h-screen text-white relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/5 pointer-events-none"></div>
-            {/* Subtle background pattern */}
-            <div className="absolute inset-0 opacity-5">
-              <div
-                className="absolute inset-0"
-                style={{
-                  backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)`,
-                  backgroundSize: "40px 40px",
-                }}
-              ></div>
+          <div className="min-h-screen text-white relative overflow-x-hidden">
+            {/* Fixed Background Image */}
+            <div 
+              className="fixed inset-0 z-0"
+              style={{
+                backgroundImage: `url('/Vesh.png')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+              }}
+            >
+              <div className="absolute inset-0 bg-black/30"></div> {/* Optional overlay for text readability */}
             </div>
 
-            <div className="relative z-10 flex flex-col min-h-screen">
-              {/* Header */}
-              <header className="px-6 py-6">
-                <div className="max-w-7xl mx-auto flex items-center justify-between">
-                  <button
-                    onClick={() => goToStep(1)}
-                    className="flex items-center space-x-3 hover:opacity-80 transition-opacity group"
-                  >
-                    <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center group-hover:shadow-lg group-hover:shadow-purple-500/25 transition-all">
-                      <Brain className="w-6 h-6 text-white" />
-                    </div>
-                    <span className="text-xl font-bold text-white">Vesh</span>
-                  </button>
-                  {isSignedIn ? (
-                    // Signed in - show user info and sign out
-                    <div className="flex items-center space-x-3">
-                      <div
-                        className={`flex items-center space-x-2 ${
-                          currentUser?.type === "student" ||
-                          currentUser?.type === "practitioner"
-                            ? "cursor-pointer hover:bg-white/10 p-2 rounded-xl transition-colors"
-                            : ""
-                        }`}
-                        onClick={async () => {
-                          // Refresh user metadata before navigating
-                          if (user) {
-                            try {
-                              await user.reload();
-                            } catch (err) {
-                              console.error("Error refreshing user:", err);
-                            }
-                          }
-
-                          if (currentUser?.type === "student") {
-                            goToStep(6);
-                          } else if (currentUser?.type === "practitioner") {
-                            goToStep(7);
-                          }
-                        }}
-                      >
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                            currentUser?.type === "student"
-                              ? "bg-purple-500/20 border border-purple-500/30"
-                              : "bg-blue-500/20 border border-blue-500/30"
-                          }`}
-                        >
-                          <User className="w-4 h-4 text-white" />
-                        </div>
-                        <div className="text-sm">
-                          <div className="text-white font-medium">
-                            {currentUser?.email}
-                          </div>
-                          <div
-                            className={`text-xs ${
-                              currentUser?.type === "student"
-                                ? "text-purple-300"
-                                : "text-blue-300"
-                            }`}
-                          >
-                            {currentUser?.type === "student"
-                              ? "Student"
-                              : "Practitioner"}
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        onClick={handleSignOut}
-                        className="px-4 py-2 bg-red-500/20 backdrop-blur-sm border border-red-500/30 rounded-xl text-sm font-medium text-red-300 hover:bg-red-500/30 hover:text-red-200 transition-colors flex items-center"
-                      >
-                        <svg
-                          className="w-4 h-4 mr-2"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                          />
-                        </svg>
-                        Sign Out
-                      </button>
-                    </div>
-                  ) : (
-                    // Not signed in - show sign in dropdown
-                    <div className="relative" ref={dropdownRef}>
-                      <button
-                        onClick={() =>
-                          setShowUserTypeDropdown(!showUserTypeDropdown)
-                        }
-                        className="flex items-center px-6 py-2 rounded-full text-sm font-semibold bg-white text-[#0f172a] shadow-lg hover:shadow-xl transition-all"
-                      >
-                        Sign In
-                        <svg
-                          className="w-4 h-4 ml-2"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </button>
-
-                      {/* Dropdown Menu */}
-                      {showUserTypeDropdown && (
-                        <div className="absolute right-0 mt-2 w-56 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl shadow-xl z-50 overflow-hidden">
-                          <div className="py-2">
-                            <button
-                              onClick={() => {
-                                setShowUserTypeDropdown(false);
-                                router.push("/sign-up?userType=student");
-                              }}
-                              className="w-full px-4 py-3 text-left text-sm text-white flex items-center rounded-xl mx-2 my-1"
-                            >
-                              <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center mr-3">
-                                <GraduationCap className="w-5 h-5 text-white" />
-                              </div>
-                              <div>
-                                <div className="font-semibold">Student</div>
-                                <div className="text-xs text-gray-400">
-                                  Practice therapy skills
-                                </div>
-                              </div>
-                            </button>
-                            <button
-                              onClick={() => {
-                                setShowUserTypeDropdown(false);
-                                router.push("/sign-up?userType=practitioner");
-                              }}
-                              className="w-full px-4 py-3 text-left text-sm text-white flex items-center rounded-xl mx-2 my-1"
-                            >
-                              <div className="w-10 h-10 bg-gradient-to-r from-[#3b82f6] to-[#06b6d4] rounded-xl flex items-center justify-center mr-3">
-                                <Shield className="w-5 h-5 text-white" />
-                              </div>
-                              <div>
-                                <div className="font-semibold">
-                                  Practitioner
-                                </div>
-                                <div className="text-xs text-gray-400">
-                                  Professional training
-                                </div>
-                              </div>
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </header>
-
-              {/* Main content */}
-              <main className="flex-1 flex items-center justify-center px-6 py-12">
-                <div className="max-w-6xl w-full">
-                  {/* Trust badge */}
-                  <div className="text-center mb-8">
-                    <p className="text-sm text-gray-400 mb-2">
-                      Trusted by 35,000+ people
-                    </p>
-                  </div>
-
-                  {/* Hero Section */}
-                  <div className="text-center mb-16">
-                    <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold mb-6 text-white leading-tight">
-                      Managing your therapy training
-                      <br />
-                      <span className="gradient-text">with AI.</span>
-                    </h1>
-                    <p className="text-xl text-bold mb-8 max-w-3xl mx-auto leading-relaxed">
-                      An advanced training platform that uses AI to automate
-                      various aspects of therapeutic practice, skill
-                      development, and real-time feedback.
-                    </p>
+            <div className="relative z-10 flex flex-col">
+              {/* Hero Section - Full Screen */}
+              <div className="min-h-screen flex flex-col">
+                {/* Header */}
+                <header className="px-6 py-6">
+                  <div className="max-w-7xl mx-auto flex items-center justify-between w-full">
                     <button
-                      onClick={() => {
-                        router.push("/sign-up?userType=student");
-                      }}
-                      className="btn-primary-modern px-8 py-4 text-lg"
+                      onClick={() => goToStep(1)}
+                      className="flex items-center space-x-3 hover:opacity-80 transition-opacity group"
                     >
-                      Get started for free
+                      <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center group-hover:shadow-lg group-hover:shadow-purple-500/25 transition-all">
+                        <Brain className="w-6 h-6 text-white" />
+                      </div>
+                      <span className="text-xl font-bold text-white">Vesh</span>
                     </button>
-                  </div>
-
-                  {/* Feature Showcase Card */}
-                  <div className="card-feature mb-16">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex flex-wrap gap-3">
-                        {Object.entries(featureTabs).map(([key, tab]) => (
-                          <button
-                            key={key}
-                            type="button"
-                            onClick={() =>
-                              setActiveFeatureTab(key as FeatureTabKey)
+                    {isSignedIn ? (
+                      // Signed in - show user info and sign out
+                      <div className="flex items-center space-x-3">
+                        <div
+                          className={`flex items-center space-x-2 ${
+                            currentUser?.type === "student" ||
+                            currentUser?.type === "practitioner"
+                              ? "cursor-pointer hover:bg-white/10 p-2 rounded-xl transition-colors"
+                              : ""
+                          }`}
+                          onClick={async () => {
+                            // Refresh user metadata before navigating
+                            if (user) {
+                              try {
+                                await user.reload();
+                              } catch (err) {
+                                console.error("Error refreshing user:", err);
+                              }
                             }
-                            className={`px-5 py-2 text-sm font-medium border ${
-                              activeFeatureTab === key
-                                ? "bg-white/10 text-white border-white/30 shadow-lg shadow-purple-500/25"
-                                : "bg-white/5 text-gray-400 border-white/5 hover:bg-white/10 hover:text-white"
+
+                            if (currentUser?.type === "student") {
+                              goToStep(6);
+                            } else if (currentUser?.type === "practitioner") {
+                              goToStep(7);
+                            }
+                          }}
+                        >
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                              currentUser?.type === "student"
+                                ? "bg-purple-500/20 border border-purple-500/30"
+                                : "bg-blue-500/20 border border-blue-500/30"
                             }`}
                           >
-                            {tab.label}
-                          </button>
-                        ))}
+                            <User className="w-4 h-4 text-white" />
+                          </div>
+                          <div className="text-sm">
+                            <div className="text-white font-medium">
+                              {currentUser?.email}
+                            </div>
+                            <div
+                              className={`text-xs ${
+                                currentUser?.type === "student"
+                                  ? "text-purple-300"
+                                  : "text-blue-300"
+                              }`}
+                            >
+                              {currentUser?.type === "student"
+                                ? "Student"
+                                : "Practitioner"}
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={handleSignOut}
+                          className="px-4 py-2 bg-red-500/20 backdrop-blur-sm border border-red-500/30 rounded-xl text-sm font-medium text-red-300 hover:bg-red-500/30 hover:text-red-200 transition-colors flex items-center"
+                        >
+                          <svg
+                            className="w-4 h-4 mr-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                            />
+                          </svg>
+                          Sign Out
+                        </button>
                       </div>
-                    </div>
-                    <div className="grid md:grid-cols-3 gap-6">
-                      <div className="card-modern">
-                        <div className="text-sm text-bold mb-2">
-                          {activeFeature.statsTitle}
-                        </div>
-                        <div className="text-3xl font-bold text-white mb-2">
-                          {activeFeature.statsValue}
-                        </div>
-                        <p className="text-xs text-bold">
-                          {activeFeature.statsSubtitle}
-                        </p>
-                        <div
-                          className={`mt-6 h-20 bg-gradient-to-t ${activeFeature.gradient} rounded-xl opacity-70`}
-                        ></div>
-                      </div>
-                      <div className="card-modern md:col-span-2">
-                        <div className="text-sm text-bold mb-2">
-                          {activeFeature.label}
-                        </div>
-                        <div className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-6 min-h-[150px]">
-                          <p className="text-gray-200 text-sm leading-relaxed">
-                            {activeFeature.description}
-                          </p>
-                          <ul className="mt-4 grid gap-3 text-sm text-gray-400">
-                            {activeFeature.bulletPoints.map((point) => (
-                              <li
-                                key={point}
-                                className="flex items-start gap-2"
+                    ) : (
+                      // Not signed in - show sign in dropdown
+                      <div className="relative" ref={dropdownRef}>
+                        <button
+                          onClick={() =>
+                            setShowUserTypeDropdown(!showUserTypeDropdown)
+                          }
+                          className="flex items-center px-6 py-2 rounded-full text-sm font-semibold bg-white text-[#0f172a] shadow-lg hover:shadow-xl transition-all"
+                        >
+                          Sign In
+                          <svg
+                            className="w-4 h-4 ml-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </button>
+
+                        {/* Dropdown Menu */}
+                        {showUserTypeDropdown && (
+                          <div className="absolute right-0 mt-2 w-56 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl shadow-xl z-50 overflow-hidden">
+                            <div className="py-2">
+                              <button
+                                onClick={() => {
+                                  setShowUserTypeDropdown(false);
+                                  router.push("/sign-up?userType=student");
+                                }}
+                                className="w-full px-4 py-3 text-left text-sm text-white flex items-center rounded-xl mx-2 my-1"
                               >
-                                <span className="mt-1 h-2 w-2 rounded-full bg-white/60"></span>
-                                <span>{point}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
+                                <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center mr-3">
+                                  <GraduationCap className="w-5 h-5 text-white" />
+                                </div>
+                                <div>
+                                  <div className="font-semibold">Student</div>
+                                  <div className="text-xs text-gray-400">
+                                    Practice therapy skills
+                                  </div>
+                                </div>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setShowUserTypeDropdown(false);
+                                  router.push("/sign-up?userType=practitioner");
+                                }}
+                                className="w-full px-4 py-3 text-left text-sm text-white flex items-center rounded-xl mx-2 my-1"
+                              >
+                                <div className="w-10 h-10 bg-gradient-to-r from-[#3b82f6] to-[#06b6d4] rounded-xl flex items-center justify-center mr-3">
+                                  <Shield className="w-5 h-5 text-white" />
+                                </div>
+                                <div>
+                                  <div className="font-semibold">
+                                    Practitioner
+                                  </div>
+                                  <div className="text-xs text-gray-400">
+                                    Professional training
+                                  </div>
+                                </div>
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
+                    )}
                   </div>
+                </header>
 
-                  {/* Stats */}
-                  <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-12 mb-16">
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-white mb-1">
-                        500+
+                {/* Hero Content */}
+                <div className="flex-1 flex items-center px-6">
+                  <div className="max-w-7xl mx-auto w-full grid md:grid-cols-2 gap-12">
+                    <div className="text-left">
+                      <div className="mb-8">
+                        <p className="text-sm text-gray-300 mb-2 font-medium tracking-wide uppercase">
+                          Trusted by 35,000+ people
+                        </p>
                       </div>
-                      <div className="text-sm text-gray-400">
-                        Students Training
-                      </div>
-                    </div>
-                    <div className="hidden sm:block w-px h-12 bg-[#2a2a2a]"></div>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-white mb-1">
-                        98%
-                      </div>
-                      <div className="text-sm text-gray-400">Success Rate</div>
-                    </div>
-                    <div className="hidden sm:block w-px h-12 bg-[#2a2a2a]"></div>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold text-white mb-1">
-                        24/7
-                      </div>
-                      <div className="text-sm text-gray-400">Available</div>
-                    </div>
-                  </div>
-
-                  {/* CTA Buttons */}
-                  <div className="flex flex-col items-center justify-center space-y-4">
-                    <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+                      <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold mb-6 text-white leading-tight drop-shadow-lg">
+                        Managing your therapy training
+                        <br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">with AI.</span>
+                      </h1>
+                      <p className="text-xl text-gray-100 mb-8 max-w-xl leading-relaxed drop-shadow-md">
+                        An advanced training platform that uses AI to automate
+                        various aspects of therapeutic practice, skill
+                        development, and real-time feedback.
+                      </p>
                       <button
                         onClick={() => {
                           router.push("/sign-up?userType=student");
                         }}
-                        className="btn-primary-modern px-8 py-4 flex items-center"
+                        className="btn-primary-modern px-8 py-4 text-lg flex items-center shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 transition-all duration-300"
                       >
-                        Start as Student
-                        <ArrowRight className="w-5 h-5 ml-2" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          router.push("/sign-up?userType=practitioner");
-                        }}
-                        className="btn-secondary-modern px-8 py-4 flex items-center"
-                      >
-                        Start as Practitioner
+                        Get started for free
                         <ArrowRight className="w-5 h-5 ml-2" />
                       </button>
                     </div>
-                    <button
-                      onClick={() => setShowLearnMore(true)}
-                      className="btn-ghost-modern px-8 py-4"
-                    >
-                      Learn More
-                    </button>
+                    {/* Right side empty to show background */}
+                    <div></div>
                   </div>
                 </div>
-              </main>
-
-              {/* Footer */}
-              <footer className="px-6 py-8 border-t border-[#1a1a1a]">
-                <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between">
-                  <div className="flex items-center space-x-3 mb-4 sm:mb-0">
-                    <div className="w-8 h-8 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center">
-                      <Brain className="w-5 h-5 text-white" />
-                    </div>
-                    <span className="text-sm text-gray-400">
-                      Join us to shape the future of therapy training together.
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    © 2025 Vesh. All rights reserved.
-                  </div>
-                </div>
-              </footer>
+                
+              </div>
             </div>
 
             {/* Learn More Modal */}
