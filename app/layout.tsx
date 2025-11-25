@@ -1,12 +1,12 @@
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
-import { Raleway } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 
-const raleway = Raleway({
+const montserrat = Montserrat({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-raleway",
+  variable: "--font-montserrat",
 });
 
 export const metadata = {
@@ -29,12 +29,12 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en" className={raleway.variable} suppressHydrationWarning>
+      <html lang="en" className={montserrat.variable} suppressHydrationWarning>
         <head>
           <meta name="viewport" content="width=device-width, initial-scale=1" />
           <meta name="theme-color" content="#4f46e5" />
         </head>
-        <body className={`${raleway.className} antialiased`}>
+        <body className={`${montserrat.className} antialiased`}>
           {children}
           <Analytics />
         </body>

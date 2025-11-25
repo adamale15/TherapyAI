@@ -12,7 +12,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Server-side client (uses service role key if available for admin operations)
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false,
+  },
+  global: {
+    fetch: (url, options) => fetch(url, options),
+  },
+});
 
 // Admin client for server-side operations that need elevated permissions
 export const supabaseAdmin = supabaseServiceKey
@@ -20,6 +27,9 @@ export const supabaseAdmin = supabaseServiceKey
       auth: {
         autoRefreshToken: false,
         persistSession: false,
+      },
+      global: {
+        fetch: (url, options) => fetch(url, options),
       },
     })
   : supabase;

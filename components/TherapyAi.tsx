@@ -43,7 +43,9 @@ import {
   Lock,
   Eye,
   EyeOff,
+  ChevronDown,
 } from "lucide-react";
+import { elevenLabsService } from "@/lib/services/elevenlabs-service";
 import { PersonaUploadModal } from "./PersonaUploadModal";
 import { PersonaManagement } from "./PersonaManagement";
 import { StudentDashboard } from "./StudentDashboard";
@@ -681,6 +683,7 @@ const VeshApp: React.FC = () => {
   const handlePersonaSelect = (persona: any) => {
     setSelectedPersona(persona);
     setShowPersonaManagement(false);
+    goToStep(3);
   };
 
   // Server-Sent Events (SSE) connection
@@ -848,15 +851,47 @@ const VeshApp: React.FC = () => {
     }
   };
 
-  // Text-to-speech with more human-like settings
-  const speakText = (text: string) => {
+  // Text-to-speech with ElevenLabs and fallback
+  const speakText = async (text: string) => {
+    // Stop any current speech
     if ("speechSynthesis" in window) {
-      // Stop any current speech
       speechSynthesis.cancel();
+    }
+    setIsSpeaking(true);
 
-      console.log("Speaking text:", text);
-      console.log("Text length:", text.length);
+    console.log("Speaking text:", text);
 
+    // VOICE MAPPING
+    const voiceMap: Record<string, string> = {
+      "Sarah Chen": "EXAVITQu4vr4xnSDxMaL", // Bella
+      "Marcus Williams": "ErXwobaYiN019PkySvjV", // Antoni
+      "Elena Rodriguez": "21m00Tcm4TlvDq8ikWAM", // Rachel
+    };
+
+    const voiceId = selectedPersona ? voiceMap[selectedPersona.name] : null;
+
+    // Try ElevenLabs first if we have a voice ID
+    if (voiceId) {
+      try {
+        console.log(`Attempting ElevenLabs TTS for ${selectedPersona?.name} (Voice ID: ${voiceId})`);
+        const stream = await elevenLabsService.streamAudio(text, voiceId);
+        
+        if (stream) {
+          await elevenLabsService.playAudio(stream);
+          setIsSpeaking(false);
+          return;
+        } else {
+          console.warn("ElevenLabs stream was null, falling back to browser TTS");
+        }
+      } catch (error) {
+        console.error("ElevenLabs TTS failed, falling back to browser TTS:", error);
+      }
+    }
+
+    // Fallback to Browser TTS
+    if ("speechSynthesis" in window) {
+      console.log("Using browser TTS fallback");
+      
       // Use available voices from state
       if (availableVoices.length === 0) {
         console.log("Voices not loaded yet, waiting...");
@@ -879,11 +914,9 @@ const VeshApp: React.FC = () => {
         return;
       }
 
-      console.log(
-        "Available voices:",
-        availableVoices.map((v) => v.name)
-      );
       processVoiceSelection(availableVoices, text);
+    } else {
+      setIsSpeaking(false);
     }
   };
 
@@ -2444,73 +2477,70 @@ const VeshApp: React.FC = () => {
                         </button>
                       </div>
                     ) : (
-                      // Not signed in - show sign in dropdown
                       <div className="relative" ref={dropdownRef}>
                         <button
                           onClick={() =>
                             setShowUserTypeDropdown(!showUserTypeDropdown)
                           }
-                          className="flex items-center px-6 py-2 rounded-full text-sm font-semibold bg-white text-[#0f172a] shadow-lg hover:shadow-xl transition-all"
+                          className="relative overflow-hidden flex items-center space-x-2 px-3 py-2 rounded-full text-white bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 shadow-lg shadow-black/10 group hover:scale-105 hover:shadow-[0_0_30px_rgba(99,102,241,0.7)]"
                         >
-                          Sign In
-                          <svg
-                            className="w-4 h-4 ml-2"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 9l-7 7-7-7"
-                            />
-                          </svg>
+                          <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          <User className="w-5 h-5 text-gray-200 group-hover:text-white transition-colors relative z-10" />
+                          <ChevronDown className={`w-4 h-4 text-gray-400 group-hover:text-white transition-all duration-300 relative z-10 ${showUserTypeDropdown ? 'rotate-180' : ''}`} />
                         </button>
 
                         {/* Dropdown Menu */}
-                        {showUserTypeDropdown && (
-                          <div className="absolute right-0 mt-2 w-56 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl shadow-xl z-50 overflow-hidden">
-                            <div className="py-2">
+                        <div
+                          className={`absolute right-0 mt-2 w-80 origin-top-right z-50 ${
+                            showUserTypeDropdown
+                              ? "block"
+                              : "hidden"
+                          }`}
+                        >
+                          <div className="bg-[#1a1a1a] backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-hidden p-3">
+                            <div className="space-y-2">
                               <button
                                 onClick={() => {
                                   setShowUserTypeDropdown(false);
                                   router.push("/sign-up?userType=student");
                                 }}
-                                className="w-full px-4 py-3 text-left text-sm text-white flex items-center rounded-xl mx-2 my-1"
+                                className="w-full px-4 py-4 text-left text-white flex items-center rounded-xl hover:bg-gradient-to-r hover:from-[#8b5cf6]/20 hover:to-transparent border border-transparent hover:border-[#8b5cf6]/30 transition-all duration-300 group relative overflow-hidden"
                               >
-                                <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center mr-3">
-                                  <GraduationCap className="w-5 h-5 text-white" />
+                                <div className="absolute inset-0 bg-[#8b5cf6]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <div className="w-12 h-12 rounded-2xl border-2 border-[#8b5cf6] flex items-center justify-center mr-4 shadow-[0_0_15px_rgba(139,92,246,0.3)] group-hover:shadow-[0_0_25px_rgba(139,92,246,0.6)] group-hover:scale-110 transition-all duration-300 bg-[#8b5cf6]/10 relative z-10">
+                                  <GraduationCap className="w-6 h-6 text-[#a78bfa] group-hover:text-white transition-colors" />
                                 </div>
-                                <div>
-                                  <div className="font-semibold">Student</div>
-                                  <div className="text-xs text-gray-400">
+                                <div className="relative z-10">
+                                  <div className="font-bold text-lg mb-0.5 group-hover:text-[#a78bfa] transition-colors">Student</div>
+                                  <div className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
                                     Practice therapy skills
                                   </div>
                                 </div>
                               </button>
+                              
                               <button
                                 onClick={() => {
                                   setShowUserTypeDropdown(false);
                                   router.push("/sign-up?userType=practitioner");
                                 }}
-                                className="w-full px-4 py-3 text-left text-sm text-white flex items-center rounded-xl mx-2 my-1"
+                                className="w-full px-4 py-4 text-left text-white flex items-center rounded-xl hover:bg-gradient-to-r hover:from-[#3b82f6]/20 hover:to-transparent border border-transparent hover:border-[#3b82f6]/30 transition-all duration-300 group relative overflow-hidden"
                               >
-                                <div className="w-10 h-10 bg-gradient-to-r from-[#3b82f6] to-[#06b6d4] rounded-xl flex items-center justify-center mr-3">
-                                  <Shield className="w-5 h-5 text-white" />
+                                <div className="absolute inset-0 bg-[#3b82f6]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <div className="w-12 h-12 rounded-2xl border-2 border-[#3b82f6] flex items-center justify-center mr-4 shadow-[0_0_15px_rgba(59,130,246,0.3)] group-hover:shadow-[0_0_25px_rgba(59,130,246,0.6)] group-hover:scale-110 transition-all duration-300 bg-[#3b82f6]/10 relative z-10">
+                                  <Shield className="w-6 h-6 text-[#60a5fa] group-hover:text-white transition-colors" />
                                 </div>
-                                <div>
-                                  <div className="font-semibold">
+                                <div className="relative z-10">
+                                  <div className="font-bold text-lg mb-0.5 group-hover:text-[#60a5fa] transition-colors">
                                     Practitioner
                                   </div>
-                                  <div className="text-xs text-gray-400">
+                                  <div className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
                                     Professional training
                                   </div>
                                 </div>
                               </button>
                             </div>
                           </div>
-                        )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -2528,21 +2558,28 @@ const VeshApp: React.FC = () => {
                       <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold mb-6 text-white leading-tight drop-shadow-lg">
                         Managing your therapy training
                         <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">with AI.</span>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 drop-shadow-[0_2px_10px_rgba(168,85,247,0.5)]">with AI.</span>
                       </h1>
-                      <p className="text-xl text-gray-100 mb-8 max-w-xl leading-relaxed drop-shadow-md">
+                      <p className="text-xl text-gray-100 mb-8 max-w-xl leading-relaxed drop-shadow-md font-bold">
                         An advanced training platform that uses AI to automate
                         various aspects of therapeutic practice, skill
                         development, and real-time feedback.
                       </p>
                       <button
                         onClick={() => {
-                          router.push("/sign-up?userType=student");
+                          if (isSignedIn) {
+                            goToStep(2);
+                          } else {
+                            router.push("/sign-up?userType=student");
+                          }
                         }}
-                        className="btn-primary-modern px-8 py-4 text-lg flex items-center shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 transition-all duration-300"
+                        className="group relative px-8 py-4 text-lg font-bold text-white rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 shadow-[0_0_20px_rgba(99,102,241,0.5)] hover:shadow-[0_0_30px_rgba(99,102,241,0.7)] hover:scale-105 transition-all duration-300 ease-out overflow-hidden border border-white/10"
                       >
-                        Get started for free
-                        <ArrowRight className="w-5 h-5 ml-2" />
+                        <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <span className="relative flex items-center">
+                          {isSignedIn ? "Start Session" : "Get started for free"}
+                          <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                        </span>
                       </button>
                     </div>
                     {/* Right side empty to show background */}
@@ -3499,73 +3536,12 @@ const VeshApp: React.FC = () => {
                             </span>
                           </div>
                           <div className="space-y-2">
-                            <div className="flex gap-2">
-                              <select
-                                value={selectedVoice || ""}
-                                onChange={(e) =>
-                                  setSelectedVoice(e.target.value || null)
-                                }
-                                className="flex-1 px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-therapy-500 focus:border-transparent bg-white text-gray-900"
-                              >
-                                <option
-                                  value=""
-                                  className="bg-white text-gray-900"
-                                >
-                                  Auto-select best voice
-                                </option>
-                                {availableVoices.length === 0 ? (
-                                  <option
-                                    value=""
-                                    disabled
-                                    className="bg-white text-gray-500"
-                                  >
-                                    Loading voices...
-                                  </option>
-                                ) : (
-                                  availableVoices.map((voice, index) => (
-                                    <option
-                                      key={index}
-                                      value={voice.name}
-                                      className="bg-white text-gray-900"
-                                    >
-                                      {voice.name} ({voice.lang})
-                                    </option>
-                                  ))
-                                )}
-                              </select>
-                              <button
-                                onClick={() => {
-                                  console.log("Refreshing voices...");
-                                  const voices = speechSynthesis.getVoices();
-                                  setAvailableVoices(voices);
-                                  console.log(
-                                    "Refreshed voices:",
-                                    voices.map((v) => v.name)
-                                  );
-                                }}
-                                className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-medium"
-                                title="Refresh voices"
-                              >
-                                ↻
-                              </button>
-                            </div>
                             <button
                               onClick={testAIVoice}
-                              className="text-therapy-600 hover:text-therapy-700 text-sm font-medium"
+                              className="text-therapy-600 hover:text-therapy-700 text-sm font-medium w-full text-left"
                             >
                               [Test AI Voice] ← Click to hear
                             </button>
-                            {selectedVoice && (
-                              <p className="text-xs text-gray-600">
-                                Current voice: {selectedVoice}
-                              </p>
-                            )}
-                            {availableVoices.length === 0 && (
-                              <p className="text-xs text-gray-500">
-                                No voices loaded. Try refreshing or check
-                                browser console.
-                              </p>
-                            )}
                           </div>
                         </div>
                       </div>

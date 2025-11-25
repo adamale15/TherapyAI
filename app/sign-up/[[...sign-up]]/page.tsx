@@ -8,45 +8,60 @@ export default function SignUpPage() {
   const userType = searchParams.get("userType");
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 via-blue-50/80 to-white p-4">
-      <SignUp 
-        appearance={{
-          elements: {
-            rootBox: "mx-auto w-full max-w-[420px]",
-            card: "bg-white shadow-2xl rounded-2xl border-0",
-            headerTitle: "text-2xl font-bold text-gray-900",
-            headerSubtitle: "text-sm text-gray-600",
-            socialButtonsBlockButton: "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-full font-medium",
-            socialButtonsBlockButtonText: "text-gray-700",
-            formButtonPrimary: "bg-gray-900 hover:bg-gray-800 text-white rounded-full font-semibold shadow-md",
-            formFieldInput: "bg-gray-100 border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-gray-400",
-            formFieldLabel: "text-gray-700 font-medium",
-            footerActionLink: "text-blue-600 hover:text-blue-700 font-medium",
-            identityPreviewText: "text-gray-900",
-            identityPreviewEditButton: "text-gray-600 hover:text-gray-900",
-            formResendCodeLink: "text-blue-600 hover:text-blue-700",
-            dividerLine: "bg-gray-200",
-            dividerText: "text-gray-500",
-            alertText: "text-gray-700",
-            formFieldSuccessText: "text-green-600",
-            formFieldErrorText: "text-red-600",
-            formFieldOptionalIndicator: "text-gray-400 text-xs",
-          },
-          variables: {
-            colorPrimary: "#111827",
-            colorText: "#111827",
-            colorTextSecondary: "#6B7280",
-            colorBackground: "#FFFFFF",
-            colorInputBackground: "#F3F4F6",
-            colorInputText: "#111827",
-            borderRadius: "0.5rem",
-            fontFamily: "var(--font-raleway, system-ui, sans-serif)",
-          },
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+      {/* Fixed Background Image */}
+      <div 
+        className="fixed inset-0 z-0"
+        style={{
+          backgroundImage: `url('/Vesh.png')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
         }}
-        afterSignUpUrl={userType ? `/api/auth/set-user-type?userType=${userType}` : "/"}
-        routing="path"
-        path="/sign-up"
-      />
+      >
+        <div className="absolute inset-0 bg-black/30"></div>
+      </div>
+
+      <div className="relative z-10 w-full flex justify-center p-4">
+        <SignUp 
+          appearance={{
+            elements: {
+              rootBox: "mx-auto w-full max-w-[420px]",
+              card: "bg-[#1a1a1a]/80 backdrop-blur-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] rounded-2xl border border-white/10",
+              headerTitle: "text-2xl font-bold text-white",
+              headerSubtitle: "text-sm text-gray-400",
+              socialButtonsBlockButton: "bg-white/5 border border-white/10 text-white hover:bg-white/10 rounded-xl font-medium transition-all duration-300",
+              socialButtonsBlockButtonText: "text-white font-semibold",
+              formButtonPrimary: "bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] hover:from-[#4f46e5] hover:to-[#7c3aed] text-white rounded-xl font-bold shadow-lg shadow-purple-500/25 transition-all duration-300 hover:scale-[1.02]",
+              formFieldInput: "!bg-[#0a0a0a] !border-white/10 !text-white rounded-xl focus:!ring-2 focus:!ring-purple-500/50 focus:!border-purple-500 transition-all duration-300",
+              formFieldLabel: "text-gray-300 font-medium",
+              footerActionLink: "text-purple-400 hover:text-purple-300 font-bold transition-colors",
+              identityPreviewText: "text-white font-medium",
+              identityPreviewEditButton: "text-purple-400 hover:text-purple-300",
+              formResendCodeLink: "text-purple-400 hover:text-purple-300",
+              dividerLine: "bg-white/10",
+              dividerText: "text-gray-500 uppercase text-xs tracking-wider",
+              alertText: "text-gray-300",
+              formFieldSuccessText: "text-green-400",
+              formFieldErrorText: "text-red-400",
+              formFieldOptionalIndicator: "text-gray-500 text-xs",
+            },
+            variables: {
+              colorPrimary: "#8b5cf6",
+              colorText: "#ffffff",
+              colorTextSecondary: "#9ca3af",
+              colorBackground: "#1a1a1a",
+              colorInputBackground: "#0a0a0a",
+              colorInputText: "#ffffff",
+              borderRadius: "0.75rem",
+              fontFamily: "var(--font-raleway, system-ui, sans-serif)",
+            },
+          }}
+          afterSignUpUrl={userType ? `/api/auth/set-user-type?userType=${userType}` : "/"}
+          routing="path"
+          path="/sign-up"
+        />
+      </div>
     </div>
   );
 }

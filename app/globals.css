@@ -312,24 +312,24 @@ input[type="text"],
 input[type="email"],
 input[type="password"],
 textarea {
-  background-color: #1a1a1a !important;
-  color: #ffffff !important;
-  border-color: #2a2a2a !important;
+  background-color: #1a1a1a;
+  color: #ffffff;
+  border-color: #2a2a2a;
 }
 
 input[type="text"]:focus,
 input[type="email"]:focus,
 input[type="password"]:focus,
 textarea:focus {
-  background-color: #1a1a1a !important;
-  color: #ffffff !important;
-  border-color: #6366f1 !important;
-  outline: none !important;
+  background-color: #1a1a1a;
+  color: #ffffff;
+  border-color: #6366f1;
+  outline: none;
 }
 
 input[type="text"]::placeholder,
 input[type="email"]::placeholder,
 input[type="password"]::placeholder,
 textarea::placeholder {
-  color: #6b7280 !important;
+  color: #6b7280;
 }
