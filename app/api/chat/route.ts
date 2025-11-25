@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Normal reply
-      const reply = await therapyReply(
+      const replyData = await therapyReply(
         userText,
         session.history,
         session.persona
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 
       // Update memory
       session.history.push({ role: "user", content: userText });
-      session.history.push({ role: "assistant", content: reply });
+      session.history.push({ role: "assistant", content: replyData.content });
       if (session.history.length > 20) {
         session.history.splice(0, session.history.length - 20);
       }
@@ -59,7 +59,17 @@ export async function POST(request: NextRequest) {
       return Response.json({
         type: "final_stt",
         text: userText,
-        reply: { type: "persona_say", who: "thera", text: reply },
+        reply: { 
+          type: "persona_say", 
+          who: "thera", 
+          text: replyData.content,
+          state: {
+            emotionalState: replyData.emotionalState,
+            rapportLevel: replyData.rapportLevel,
+            engagementLevel: replyData.engagementLevel,
+            feedback: replyData.feedback
+          }
+        },
       });
     }
 

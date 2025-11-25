@@ -80,20 +80,36 @@ export class ElevenLabsService {
    * Play audio from a stream
    * @param stream The audio stream
    */
+  private currentAudio: HTMLAudioElement | null = null;
+
+  /**
+   * Play audio from a stream
+   * @param stream The audio stream
+   */
   async playAudio(stream: ReadableStream<Uint8Array>): Promise<void> {
     try {
+      // Stop any currently playing audio
+      this.stop();
+
       const response = new Response(stream);
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
+      this.currentAudio = audio;
       
       return new Promise((resolve, reject) => {
         audio.onended = () => {
           URL.revokeObjectURL(url);
+          if (this.currentAudio === audio) {
+            this.currentAudio = null;
+          }
           resolve();
         };
         audio.onerror = (e) => {
           URL.revokeObjectURL(url);
+          if (this.currentAudio === audio) {
+            this.currentAudio = null;
+          }
           reject(e);
         };
         audio.play().catch(reject);
@@ -101,6 +117,17 @@ export class ElevenLabsService {
     } catch (error) {
       console.error("Error playing audio:", error);
       throw error;
+    }
+  }
+
+  /**
+   * Stop currently playing audio
+   */
+  stop() {
+    if (this.currentAudio) {
+      this.currentAudio.pause();
+      this.currentAudio.currentTime = 0;
+      this.currentAudio = null;
     }
   }
 }

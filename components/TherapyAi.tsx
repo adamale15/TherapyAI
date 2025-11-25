@@ -44,6 +44,7 @@ import {
   Eye,
   EyeOff,
   ChevronDown,
+  PanelRight,
 } from "lucide-react";
 import { elevenLabsService } from "@/lib/services/elevenlabs-service";
 import { PersonaUploadModal } from "./PersonaUploadModal";
@@ -364,8 +365,11 @@ const VeshApp: React.FC = () => {
   const [currentTranscript, setCurrentTranscript] = useState("");
   const [rapportChange, setRapportChange] = useState<number | null>(null);
   const [showLearnMore, setShowLearnMore] = useState<boolean>(false);
-  const [showSessionSummary, setShowSessionSummary] = useState<boolean>(false);
-  const [sessionSummary, setSessionSummary] = useState<any>(null);
+  const [showSessionSummary, setShowSessionSummary] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [sessionSummary, setSessionSummary] = useState<{
+    duration: number;
+  }>();
   const [emotionalState, setEmotionalState] = useState("anxious");
   const [engagementLevel, setEngagementLevel] = useState(2);
   const [sessionPhase, setSessionPhase] = useState("opening");
@@ -1049,7 +1053,8 @@ const VeshApp: React.FC = () => {
       .replace(/!/g, "! ") // Add space after exclamations
       .replace(/:/g, ": ") // Add space after colons
       .replace(/;/g, "; ") // Add space after semicolons
-      .replace(/\*([^*]+)\*/g, " $1 ") // Handle *actions* like *sigh*
+      .replace(/\*([^*]+)\*/g, "") // Remove *actions*
+      .replace(/\[([^\]]+)\]/g, "") // Remove [actions]
       .replace(/\s+/g, " ") // Clean up multiple spaces
       .trim();
 
@@ -1158,10 +1163,13 @@ const VeshApp: React.FC = () => {
 
   // Stop speech function
   const stopSpeech = () => {
-    if ("speechSynthesis" in window) {
+    console.log("Stopping speech...");
+    if (speechSynthesis.speaking) {
       speechSynthesis.cancel();
-      setIsSpeaking(false);
     }
+    // Also stop ElevenLabs audio if playing
+    elevenLabsService.stop();
+    setIsSpeaking(false);
   };
 
   // Speech recognition functions
@@ -1322,6 +1330,27 @@ const VeshApp: React.FC = () => {
         }
         // Handle reply
         if (data.reply) {
+          // Update dynamic state if available
+          if (data.reply.state) {
+            const { emotionalState, rapportLevel, engagementLevel, feedback } = data.reply.state;
+            
+            if (emotionalState) setEmotionalState(emotionalState);
+            if (rapportLevel) setRapportLevel(rapportLevel);
+            if (engagementLevel) setEngagementLevel(engagementLevel);
+            
+            // Add AI feedback
+            if (feedback && Array.isArray(feedback) && feedback.length > 0) {
+              const newFeedbacks: Feedback[] = feedback.map((msg: string, index: number) => ({
+                id: `ai-feedback-${Date.now()}-${index}`,
+                type: "suggestion",
+                message: `Coach: ${msg}`,
+                icon: "Lightbulb",
+                timestamp: Date.now(),
+              }));
+              setCurrentFeedback((prev) => [...prev, ...newFeedbacks].slice(-8));
+            }
+          }
+
           handleWebSocketMessage(data.reply);
         }
       })
@@ -1816,6 +1845,83 @@ const VeshApp: React.FC = () => {
     setCurrentFeedback(initialFeedback);
   };
 
+  // Download conversation as PDF
+  const downloadConversationPDF = async () => {
+    try {
+      const { jsPDF } = await import("jspdf");
+      const doc = new jsPDF();
+      
+      // Title
+      doc.setFontSize(20);
+      doc.setTextColor(99, 102, 241); // Indigo color
+      doc.text("Therapy Session Report", 20, 20);
+      
+      // Session Info
+      doc.setFontSize(12);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 30);
+      doc.text(`Persona: ${selectedPersona?.name || "Unknown"}`, 20, 36);
+      doc.text(`Duration: ${formatTime(sessionDuration)}`, 20, 42);
+      
+      // Metrics
+      doc.setDrawColor(200, 200, 200);
+      doc.line(20, 48, 190, 48);
+      
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Session Metrics", 20, 58);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(80, 80, 80);
+      doc.text(`Emotional State: ${emotionalState}`, 20, 66);
+      doc.text(`Rapport Level: ${rapportLevel}/10`, 80, 66);
+      doc.text(`Engagement Level: ${engagementLevel}/5`, 140, 66);
+      
+      doc.line(20, 72, 190, 72);
+      
+      // Conversation Log
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Conversation Log", 20, 82);
+      
+      let yPos = 92;
+      const pageHeight = doc.internal.pageSize.height;
+      
+      sessionData.messages.forEach((msg) => {
+        // Check if new page is needed
+        if (yPos > pageHeight - 20) {
+          doc.addPage();
+          yPos = 20;
+        }
+        
+        const isStudent = msg.sender === "student";
+        const senderName = isStudent ? "Therapist (You)" : selectedPersona?.name || "Patient";
+        
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(isStudent ? 99 : 236, isStudent ? 102 : 72, isStudent ? 241 : 153); // Indigo for student, Pink for persona
+        doc.text(`${senderName}:`, 20, yPos);
+        
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(60, 60, 60);
+        
+        const textLines = doc.splitTextToSize(msg.text, 170);
+        doc.text(textLines, 20, yPos + 5);
+        
+        yPos += 5 + (textLines.length * 5) + 5;
+      });
+      
+      // Save PDF
+      doc.save(`therapy-session-${new Date().toISOString().split('T')[0]}.pdf`);
+      
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Failed to generate report. Please try again.");
+    }
+  };
+
+
+
   // Generate session summary
   const generateSessionSummary = () => {
     const totalMessages = sessionData.messages.length;
@@ -2046,228 +2152,6 @@ const VeshApp: React.FC = () => {
     };
   };
 
-  // Generate and download PDF of conversation log
-  const downloadConversationPDF = () => {
-    if (!sessionSummary) return;
-
-    // Create HTML content for PDF
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Vesh Session Report</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
-          .header { text-align: center; margin-bottom: 30px; }
-          .header h1 { color: #667eea; margin-bottom: 10px; }
-          .session-info { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-          .session-info h2 { color: #495057; margin-bottom: 15px; }
-          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-          .info-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #dee2e6; }
-          .info-label { font-weight: bold; color: #6c757d; }
-          .info-value { color: #212529; }
-          .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
-          .metric-card { background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; }
-          .metric-title { font-size: 18px; font-weight: bold; color: #495057; margin-bottom: 10px; }
-          .metric-value { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
-          .metric-bar { background: #e9ecef; height: 8px; border-radius: 4px; margin: 10px 0; }
-          .metric-fill { height: 100%; border-radius: 4px; }
-          .conversation { margin-top: 30px; }
-          .conversation h2 { color: #495057; margin-bottom: 20px; }
-          .message { margin-bottom: 15px; padding: 15px; border-radius: 8px; }
-          .message.student { background: #e3f2fd; border-left: 4px solid #2196f3; }
-          .message.persona { background: #f3e5f5; border-left: 4px solid #9c27b0; }
-          .message-header { font-weight: bold; margin-bottom: 5px; }
-          .message-time { font-size: 12px; color: #6c757d; }
-          .message-text { margin-top: 5px; }
-          .feedback-summary { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-top: 20px; }
-          .feedback-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; text-align: center; }
-          .feedback-item { padding: 15px; }
-          .feedback-count { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
-          .feedback-label { font-size: 14px; color: #6c757d; }
-          .sticky-notes { margin-top: 30px; }
-          .sticky-notes h2 { color: #495057; margin-bottom: 20px; }
-          .notes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }
-          .note-item { background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #6f42c1; }
-          .note-content { font-size: 14px; color: #495057; margin-bottom: 8px; line-height: 1.4; }
-          .note-meta { display: flex; justify-content: space-between; font-size: 12px; color: #6c757d; }
-          .note-time { font-weight: bold; }
-          .note-timestamp { font-style: italic; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>Vesh Session Report</h1>
-          <p>Generated on ${sessionSummary.timestamp}</p>
-        </div>
-
-        <div class="session-info">
-          <h2>Session Overview</h2>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="info-label">Patient:</span>
-              <span class="info-value">${sessionSummary.persona}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Duration:</span>
-              <span class="info-value">${sessionSummary.duration} minutes</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Total Messages:</span>
-              <span class="info-value">${sessionSummary.totalMessages}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Your Messages:</span>
-              <span class="info-value">${sessionSummary.studentMessages}</span>
-            </div>
-            <div class="info-item">
-              <span class="info-label">Patient Messages:</span>
-              <span class="info-value">${sessionSummary.personaMessages}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="metrics">
-          <div class="metric-card">
-            <div class="metric-title">Rapport Level</div>
-            <div class="metric-value" style="color: ${
-              parseFloat(sessionSummary.avgRapport) >= 7
-                ? "#28a745"
-                : parseFloat(sessionSummary.avgRapport) >= 4
-                ? "#ffc107"
-                : "#dc3545"
-            }">${sessionSummary.avgRapport}/10</div>
-            <div class="metric-bar">
-              <div class="metric-fill" style="width: ${
-                (parseFloat(sessionSummary.avgRapport) / 10) * 100
-              }%; background: ${
-      parseFloat(sessionSummary.avgRapport) >= 7
-        ? "#28a745"
-        : parseFloat(sessionSummary.avgRapport) >= 4
-        ? "#ffc107"
-        : "#dc3545"
-    };"></div>
-            </div>
-            <p style="font-size: 14px; color: #6c757d; margin: 0;">
-              ${
-                parseFloat(sessionSummary.avgRapport) >= 7
-                  ? "Excellent rapport building!"
-                  : parseFloat(sessionSummary.avgRapport) >= 4
-                  ? "Good progress with rapport"
-                  : "Keep working on building trust and connection"
-              }
-            </p>
-          </div>
-          <div class="metric-card">
-            <div class="metric-title">Engagement Score</div>
-            <div class="metric-value" style="color: ${
-              sessionSummary.engagementScore >= 8
-                ? "#28a745"
-                : sessionSummary.engagementScore >= 6
-                ? "#ffc107"
-                : "#dc3545"
-            }">${sessionSummary.engagementScore}/10</div>
-            <div class="metric-bar">
-              <div class="metric-fill" style="width: ${
-                (sessionSummary.engagementScore / 10) * 100
-              }%; background: ${
-      sessionSummary.engagementScore >= 8
-        ? "#28a745"
-        : sessionSummary.engagementScore >= 6
-        ? "#ffc107"
-        : "#dc3545"
-    };"></div>
-            </div>
-            <p style="font-size: 14px; color: #6c757d; margin: 0;">Based on message frequency and rapport building</p>
-          </div>
-        </div>
-
-        <div class="feedback-summary">
-          <h2>Coaching Feedback Summary</h2>
-          <div class="feedback-grid">
-            <div class="feedback-item">
-              <div class="feedback-count" style="color: #28a745;">${
-                sessionSummary.feedback.positive
-              }</div>
-              <div class="feedback-label">Positive Points</div>
-            </div>
-            <div class="feedback-item">
-              <div class="feedback-count" style="color: #ffc107;">${
-                sessionSummary.feedback.suggestions
-              }</div>
-              <div class="feedback-label">Suggestions</div>
-            </div>
-            <div class="feedback-item">
-              <div class="feedback-count" style="color: #dc3545;">${
-                sessionSummary.feedback.errors
-              }</div>
-              <div class="feedback-label">Areas to Improve</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="conversation">
-          <h2>Conversation Log</h2>
-          ${sessionData.messages
-            .map(
-              (msg) => `
-            <div class="message ${msg.sender}">
-              <div class="message-header">
-                ${msg.sender === "student" ? "You" : sessionSummary.persona}
-                <span class="message-time">${new Date(
-                  msg.timestamp
-                ).toLocaleTimeString()}</span>
-              </div>
-              <div class="message-text">${msg.text}</div>
-            </div>
-          `
-            )
-            .join("")}
-        </div>
-
-        ${
-          sessionSummary.stickyNotes && sessionSummary.stickyNotes.length > 0
-            ? `
-        <div class="sticky-notes">
-          <h2>Session Notes</h2>
-          <div class="notes-grid">
-            ${sessionSummary.stickyNotes
-              .map(
-                (note: SessionNote) => `
-              <div class="note-item">
-                <div class="note-content">${note.content}</div>
-                <div class="note-meta">
-                  <span class="note-time">Session Time: ${note.sessionTime}</span>
-                  <span class="note-timestamp">${note.timestamp}</span>
-                </div>
-              </div>
-            `
-              )
-              .join("")}
-          </div>
-        </div>
-        `
-            : ""
-        }
-      </body>
-      </html>
-    `;
-
-    // Create blob and download
-    const blob = new Blob([htmlContent], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `Vesh_Session_${sessionSummary.persona.replace(" ", "_")}_${
-      new Date().toISOString().split("T")[0]
-    }.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
   // Close session summary and reset
   const closeSessionSummary = () => {
     setShowSessionSummary(false);
@@ -2385,7 +2269,7 @@ const VeshApp: React.FC = () => {
                 backgroundRepeat: 'no-repeat',
               }}
             >
-              <div className="absolute inset-0 bg-black/30"></div> {/* Optional overlay for text readability */}
+              <div className="absolute inset-0 bg-black/60"></div> {/* Increased opacity for better text visibility */}
             </div>
 
             <div className="relative z-10 flex flex-col">
@@ -2405,7 +2289,7 @@ const VeshApp: React.FC = () => {
                     </button>
                     {isSignedIn ? (
                       // Signed in - show user info and sign out
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-3 bg-black/40 backdrop-blur-md p-2 rounded-2xl border border-white/10">
                         <div
                           className={`flex items-center space-x-2 ${
                             currentUser?.type === "student" ||
@@ -3589,535 +3473,389 @@ const VeshApp: React.FC = () => {
         );
 
       case 5:
+        // Active Therapy Session
         return (
-          <div className="min-h-screen bg-black/60 backdrop-blur-xl text-white">
-            <div className="h-screen flex flex-col">
-              {/* Header */}
-              <div className="bg-[#1a1a1a] border-b border-[#1a1a1a] px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-6">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gradient-to-r from-[#6366f1] to-[#8b5cf6] rounded-xl flex items-center justify-center mr-3">
-                        <MessageCircle className="w-5 h-5 text-white" />
-                      </div>
-                      <h1 className="text-xl font-bold text-white">
-                        THERAPY SESSION - {selectedPersona?.name}
-                      </h1>
+          <div className="h-screen overflow-hidden bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-slate-900 via-purple-900 to-slate-900 text-white flex flex-col">
+            {/* Header */}
+            <div className="bg-black/20 backdrop-blur-xl border-b border-white/10 px-6 py-4 z-20 shrink-0">
+              <div className="flex items-center justify-between max-w-[1920px] mx-auto w-full">
+                <div className="flex items-center space-x-6">
+                  <div className="flex items-center group cursor-default">
+                    <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mr-4 shadow-lg shadow-purple-500/20 group-hover:shadow-purple-500/40 transition-all duration-500">
+                      <MessageCircle className="w-6 h-6 text-white" />
                     </div>
-                    <div className="flex items-center text-gray-300 bg-[#2a2a2a] px-4 py-2 rounded-xl">
-                      <Clock className="w-4 h-4 mr-2 text-purple-400" />
-                      <span className="font-mono font-semibold">
-                        Time Remaining: {formatTime(timeRemaining)}
-                      </span>
+                    <div>
+                      <h1 className="text-xl font-bold text-white tracking-tight">
+                        Therapy Session
+                      </h1>
+                      <div className="flex items-center text-sm text-gray-400">
+                        <span className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
+                        with {selectedPersona?.name}
+                      </div>
                     </div>
                   </div>
+                  <div className="hidden md:flex items-center bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+                    <Clock className="w-4 h-4 mr-2 text-indigo-400" />
+                    <span className="font-mono font-medium text-indigo-100">
+                      {formatTime(timeRemaining)}
+                    </span>
+                  </div>
+                </div>
 
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center text-sm px-3 py-2 rounded-xl transition-all duration-300">
-                      {wsConnected ? (
-                        <div className="flex items-center text-green-400 bg-green-500/20 border border-green-500/30">
-                          <Wifi className="w-4 h-4 mr-2 animate-pulse" />
-                          <span className="font-semibold">Connected</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center text-red-400 bg-red-500/20 border border-red-500/30">
-                          <WifiOff className="w-4 h-4 mr-2" />
-                          <span className="font-semibold">Demo Mode</span>
-                        </div>
-                      )}
-                    </div>
-                    {isSpeaking && (
-                      <button
-                        onClick={stopSpeech}
-                        className="flex items-center px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transform transition-all duration-300 hover:scale-105 animate-pulse"
-                        title="Stop speaking"
-                      >
-                        <VolumeX className="w-4 h-4 mr-2" />
-                        Stop Voice
-                      </button>
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center text-sm px-3 py-2 rounded-xl transition-all duration-300">
+                    {wsConnected ? (
+                      <div className="flex items-center text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-lg">
+                        <Wifi className="w-3.5 h-3.5 mr-2" />
+                        <span className="font-medium text-xs uppercase tracking-wider">Online</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg">
+                        <WifiOff className="w-3.5 h-3.5 mr-2" />
+                        <span className="font-medium text-xs uppercase tracking-wider">Offline</span>
+                      </div>
                     )}
+                  </div>
+                  
+                  {isSpeaking && (
                     <button
-                      onClick={() => {
-                        console.log("End session button clicked");
-                        // End session
-                        stopSpeech(); // Stop any ongoing speech
-                        const summary = generateSessionSummary();
-                        console.log("Generated summary:", summary);
-                        setSessionSummary(summary);
-                        setShowSessionSummary(true);
-                        console.log(
-                          "Session summary modal should now be visible"
-                        );
-                        // Don't reset session immediately, let user see summary first
-                      }}
-                      className="px-4 py-2 bg-red-500/20 backdrop-blur-sm border border-red-500/30 rounded-xl text-sm font-medium text-red-300 hover:bg-red-500/30 hover:text-red-200 transition-colors flex items-center"
-                      title="End Session"
+                      onClick={stopSpeech}
+                      className="flex items-center px-4 py-2 bg-rose-500/80 hover:bg-rose-600 text-white rounded-xl transition-all duration-300 shadow-lg shadow-rose-500/20 hover:shadow-rose-500/40 backdrop-blur-sm"
                     >
-                      <Pause className="w-4 h-4 mr-2" />
-                      End Session
+                      <VolumeX className="w-4 h-4 mr-2" />
+                      <span className="font-medium">Stop Voice</span>
                     </button>
-                    <button
-                      onClick={resetSession}
-                      className="p-2 text-gray-400 hover:text-white hover:bg-[#2a2a2a] rounded-xl transition-all duration-300 hover:scale-110"
-                      title="Reset session"
-                    >
-                      <RotateCcw className="w-5 h-5" />
-                    </button>
+                  )}
+
+                  <div className="h-8 w-px bg-white/10 mx-2"></div>
+
+                  <button
+                    onClick={() => {
+                      stopSpeech();
+                      const summary = generateSessionSummary();
+                      setSessionSummary(summary);
+                      setShowSessionSummary(true);
+                    }}
+                    className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl text-sm font-medium text-gray-300 hover:text-white transition-all duration-200 flex items-center group"
+                  >
+                    <Pause className="w-4 h-4 mr-2 group-hover:text-indigo-400 transition-colors" />
+                    End Session
+                  </button>
+                  
+                  <button
+                    onClick={resetSession}
+                    className="p-2.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200"
+                    title="Reset session"
+                  >
+                    <RotateCcw className="w-5 h-5" />
+                  </button>
+                  
+                  <button
+                    onClick={() => setShowSidebar(!showSidebar)}
+                    className={`p-2.5 rounded-xl transition-all duration-200 ${
+                      showSidebar
+                        ? "text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20"
+                        : "text-gray-400 hover:text-white hover:bg-white/10"
+                    }`}
+                    title={showSidebar ? "Hide Sidebar" : "Show Sidebar"}
+                  >
+                    <PanelRight className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content Area - Flex container that handles the layout */}
+            <div className="flex-1 flex overflow-hidden relative">
+              
+              {/* Left Side: Chat Area */}
+              <div className="flex-1 flex flex-col relative min-w-0">
+                
+                {/* Session Status Pill - Floating */}
+                <div className="absolute top-6 left-0 right-0 z-10 flex justify-center pointer-events-none">
+                  <div className="bg-black/40 backdrop-blur-md border border-white/10 px-5 py-2 rounded-full shadow-xl flex items-center space-x-3">
+                    <div className="relative flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                    </div>
+                    <span className="text-xs font-bold text-emerald-100 tracking-widest uppercase">Live Session</span>
+                  </div>
+                </div>
+
+                {/* Conversation Log - Scrollable Area */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar px-4 md:px-8 pt-20 pb-6">
+                  <div className="max-w-4xl mx-auto space-y-6">
+                    {sessionData.messages.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-[50vh] text-center space-y-6 opacity-0 animate-fade-in-up" style={{ animationFillMode: 'forwards' }}>
+                        <div className="w-24 h-24 bg-gradient-to-tr from-indigo-500/20 to-purple-500/20 rounded-3xl flex items-center justify-center border border-white/5 shadow-2xl shadow-indigo-500/10">
+                          <MessageCircle className="w-10 h-10 text-indigo-400" />
+                        </div>
+                        <div className="space-y-2">
+                          <h3 className="text-2xl font-bold text-white">Ready to listen</h3>
+                          <p className="text-gray-400 max-w-md mx-auto leading-relaxed">
+                            This is a safe space. Feel free to speak openly about whatever is on your mind.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      sessionData.messages.map((message, index) => (
+                        <div
+                          key={message.id}
+                          className={`flex ${message.sender === "student" ? "justify-end" : "justify-start"} animate-slide-up`}
+                          style={{ animationDelay: `${index * 0.05}s` }}
+                        >
+                          <div className={`flex max-w-[85%] md:max-w-[75%] ${message.sender === "student" ? "flex-row-reverse" : "flex-row"} items-end gap-3`}>
+                            
+                            {/* Avatar */}
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-lg ${
+                              message.sender === "student" 
+                                ? "bg-indigo-600 text-white" 
+                                : "bg-gradient-to-br from-purple-500 to-pink-600 text-white"
+                            }`}>
+                              {message.sender === "student" ? "You" : selectedPersona?.name.charAt(0)}
+                            </div>
+
+                            {/* Message Bubble */}
+                            <div className={`group relative p-5 rounded-2xl shadow-md transition-all duration-300 hover:shadow-lg ${
+                              message.sender === "student"
+                                ? "bg-indigo-600 text-white rounded-br-none"
+                                : "bg-white/10 backdrop-blur-md border border-white/10 text-gray-100 rounded-bl-none"
+                            }`}>
+                              <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{message.text}</p>
+                              <span className={`text-[10px] absolute bottom-2 ${message.sender === "student" ? "left-2 text-indigo-200" : "right-2 text-gray-400"} opacity-0 group-hover:opacity-100 transition-opacity`}>
+                                {formatTime(Math.floor((message.timestamp - (sessionData.startTime || 0)) / 1000))}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                    {/* Spacer for scrolling */}
+                    <div className="h-4"></div>
+                  </div>
+                </div>
+
+                {/* Input Area - Floating Glass Bar */}
+                <div className="p-6 z-20 shrink-0">
+                  <div className="max-w-4xl mx-auto">
+                    {/* Speech Status */}
+                    {isListening && (
+                      <div className="mb-4 flex justify-center">
+                        <div className="bg-indigo-900/80 backdrop-blur-md border border-indigo-500/30 px-6 py-2 rounded-full flex items-center space-x-3 shadow-lg animate-pulse">
+                          <div className="flex space-x-1">
+                            <div className="w-1 h-4 bg-indigo-400 rounded-full animate-wave"></div>
+                            <div className="w-1 h-6 bg-indigo-400 rounded-full animate-wave delay-75"></div>
+                            <div className="w-1 h-3 bg-indigo-400 rounded-full animate-wave delay-150"></div>
+                          </div>
+                          <span className="text-indigo-200 font-medium text-sm">Listening...</span>
+                          {currentTranscript && (
+                            <span className="text-white/80 text-sm border-l border-white/10 pl-3 ml-1">
+                              "{currentTranscript}"
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Input Bar */}
+                    <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-2 shadow-2xl flex items-end gap-2 transition-all duration-300 focus-within:border-indigo-500/50 focus-within:bg-black/50 focus-within:shadow-indigo-500/10">
+                      <button
+                        onClick={isListening ? stopListening : startListening}
+                        className={`p-4 rounded-2xl transition-all duration-300 shrink-0 ${
+                          isListening
+                            ? "bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/20"
+                            : "bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white"
+                        }`}
+                      >
+                        {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                      </button>
+
+                      <textarea
+                        value={textInput}
+                        onChange={(e) => setTextInput(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            sendMessage(textInput);
+                          }
+                        }}
+                        placeholder="Type your message or press the mic to speak..."
+                        className="flex-1 bg-transparent border-none focus:ring-0 text-white placeholder-gray-500 resize-none py-4 max-h-32 min-h-[56px] custom-scrollbar"
+                        rows={1}
+                      />
+
+                      <button
+                        onClick={() => sendMessage(textInput)}
+                        disabled={!textInput.trim()}
+                        className="p-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/40 shrink-0"
+                      >
+                        <Send className="w-6 h-6" />
+                      </button>
+                    </div>
+                    
+                    <div className="text-center mt-3">
+                      <p className="text-xs text-gray-500 font-medium">
+                        Press <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-gray-300 font-sans">Enter</kbd> to send
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex-1 flex">
-                {/* Main Session Area */}
-                <div className="flex-1 flex flex-col">
-                  {/* Session Status */}
-                  <div className="bg-gradient-to-r from-therapy-50 to-blue-50 border-b border-therapy-200 px-6 py-4">
-                    <div className="text-center">
-                      <div className="inline-flex items-center px-6 py-2 bg-white rounded-full shadow-lg">
-                        <div className="w-3 h-3 bg-green-500 rounded-full mr-3 animate-pulse"></div>
-                        <h2 className="text-lg font-bold text-therapy-800">
-                          SESSION IN PROGRESS
-                        </h2>
-                      </div>
+              {/* Right Sidebar - Collapsible */}
+              <div
+                className={`${
+                  showSidebar ? "w-96 translate-x-0 opacity-100" : "w-0 translate-x-20 opacity-0"
+                } bg-black/20 backdrop-blur-xl border-l border-white/5 transition-all duration-500 ease-out flex flex-col overflow-hidden shrink-0`}
+              >
+                <div className="h-full overflow-y-auto custom-scrollbar p-6 space-y-6">
+                  
+                  {/* Sidebar Header */}
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-cyan-500 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                      <span className="text-white font-bold text-sm">AI</span>
                     </div>
+                    <h3 className="text-lg font-bold text-white">Session Insights</h3>
                   </div>
 
-                  {/* Conversation Log */}
-                  <div className="flex-1 p-6 overflow-y-auto bg-gradient-to-b from-white to-gray-50">
-                    <div className="max-w-4xl mx-auto">
-                      <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                        <MessageCircle className="w-6 h-6 mr-3 text-therapy-600" />
-                        CONVERSATION LOG
-                      </h3>
-                      <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 max-h-96 overflow-y-auto conversation-log shadow-xl border border-white/20">
-                        {sessionData.messages.length === 0 ? (
-                          <div className="text-center py-12">
-                            <div className="w-16 h-16 bg-gradient-to-br from-therapy-100 to-therapy-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                              <MessageCircle className="w-8 h-8 text-therapy-600" />
-                            </div>
-                            <p className="text-gray-500 text-lg font-medium">
-                              No messages yet. Start the conversation!
-                            </p>
-                            <p className="text-gray-400 text-sm mt-2">
-                              Use the voice button or type your message below
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="space-y-4">
-                            {sessionData.messages.map((message, index) => (
-                              <div
-                                key={message.id}
-                                className={`transform transition-all duration-500 animate-slide-up ${
-                                  message.sender === "student" ? "ml-8" : "mr-8"
-                                }`}
-                                style={{ animationDelay: `${index * 0.1}s` }}
-                              >
-                                <div
-                                  className={`flex items-start space-x-3 p-4 rounded-2xl shadow-sm ${
-                                    message.sender === "student"
-                                      ? "bg-gradient-to-r from-therapy-500 to-therapy-600 text-white"
-                                      : "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800"
-                                  }`}
-                                >
-                                  <div
-                                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                                      message.sender === "student"
-                                        ? "bg-white/20 text-white"
-                                        : "bg-therapy-500 text-white"
-                                    }`}
-                                  >
-                                    {message.sender === "student"
-                                      ? "S"
-                                      : selectedPersona?.name.charAt(0) || "A"}
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="flex items-center space-x-2 mb-1">
-                                      <span className="text-xs font-mono opacity-70">
-                                        {formatTime(
-                                          Math.floor(
-                                            (message.timestamp -
-                                              (sessionData.startTime || 0)) /
-                                              1000
-                                          )
-                                        )}
-                                      </span>
-                                      <span className="text-xs font-semibold">
-                                        {message.sender === "student"
-                                          ? "STUDENT"
-                                          : selectedPersona?.name.toUpperCase() ||
-                                            "AI"}
-                                      </span>
-                                    </div>
-                                    <p className="text-sm leading-relaxed">
-                                      {message.text}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Input Area */}
-                  <div className="border-t border-gray-200 p-6 bg-gradient-to-r from-white to-gray-50">
-                    <div className="max-w-4xl mx-auto">
-                      {/* Speech Recognition Status */}
-                      {isListening && (
-                        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl shadow-lg animate-slide-down">
-                          <div className="flex items-center">
-                            <div className="relative">
-                              <div className="animate-pulse w-4 h-4 bg-blue-500 rounded-full"></div>
-                              <div className="absolute inset-0 animate-ping w-4 h-4 bg-blue-400 rounded-full opacity-75"></div>
-                            </div>
-                            <span className="text-blue-700 font-semibold ml-3">
-                              Listening...
-                            </span>
-                            {currentTranscript && (
-                              <span className="ml-3 text-blue-600 italic bg-white/50 px-3 py-1 rounded-full">
-                                "{currentTranscript}"
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex space-x-4">
-                        <div className="flex-1">
-                          <input
-                            type="text"
-                            value={textInput}
-                            onChange={(e) => setTextInput(e.target.value)}
-                            onKeyPress={(e) =>
-                              e.key === "Enter" && sendMessage(textInput)
-                            }
-                            placeholder="Type your message here or use voice..."
-                            className="w-full px-6 py-4 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-therapy-300 focus:border-therapy-500 transition-all duration-300 text-lg shadow-lg hover:shadow-xl bg-white text-gray-900 placeholder-gray-500"
-                          />
-                        </div>
-
-                        {/* Voice Input Button */}
-                        <button
-                          onClick={startListening}
-                          className={`group px-6 py-4 rounded-2xl flex items-center transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl ${
-                            isListening
-                              ? "bg-gradient-to-r from-red-500 to-red-600 text-white animate-pulse"
-                              : "bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700"
-                          }`}
-                          title={
-                            isListening
-                              ? "Click to stop listening"
-                              : "Click to start speaking"
-                          }
-                        >
-                          {isListening ? (
-                            <MicOff className="w-5 h-5 mr-2" />
-                          ) : (
-                            <Mic className="w-5 h-5 mr-2" />
-                          )}
-                          <span className="font-semibold">
-                            {isListening ? "Stop" : "Speak"}
-                          </span>
-                        </button>
-
-                        {/* Send Button */}
-                        <button
-                          onClick={() => sendMessage(textInput)}
-                          disabled={!textInput.trim()}
-                          className="group px-8 py-4 bg-gradient-to-r from-therapy-600 to-therapy-700 text-white rounded-2xl hover:from-therapy-700 hover:to-therapy-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:transform-none"
-                        >
-                          <Send className="w-5 h-5 mr-2 transition-transform duration-300 group-hover:translate-x-1" />
-                          <span className="font-semibold">Send</span>
-                        </button>
-                      </div>
-
-                      {/* Voice Instructions */}
-                      <div className="mt-4 text-center">
-                        <div className="inline-flex items-center px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-gray-200">
-                          <span className="text-sm text-gray-600 font-medium">
-                            💡 Click "Speak" to start voice input, then click
-                            "Send" or press Enter to submit
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Real-time Feedback Panel */}
-                <div className="w-80 bg-[#1a1a1a]/50 backdrop-blur-sm border-l border-[#1a1a1a] p-6 overflow-y-auto shadow-xl">
-                  <div className="mb-6">
-                    <h3 className="text-lg font-bold text-white mb-2 flex items-center">
-                      <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-white text-xs font-bold">F</span>
-                      </div>
-                      Real-Time Feedback
-                    </h3>
-                    <div className="text-xs text-gray-400">
-                      Live coaching for your session
-                    </div>
-                  </div>
-
-                  {/* Patient Metrics */}
-                  <div className="mb-6 bg-[#2a2a2a]/50 backdrop-blur-sm border border-[#2a2a2a] rounded-xl p-4">
-                    <h4 className="text-sm font-semibold text-white mb-4 flex items-center">
-                      <Heart className="w-4 h-4 mr-2 text-red-400" />
-                      Patient Metrics
+                  {/* Patient Metrics Card */}
+                  <div className="bg-white/5 border border-white/5 rounded-2xl p-5 space-y-5 hover:bg-white/10 transition-colors duration-300">
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center">
+                      <Heart className="w-3.5 h-3.5 mr-2 text-rose-400" />
+                      Patient State
                     </h4>
 
                     {/* Emotional State */}
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-gray-300">
-                          Emotional State
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-300">Emotion</span>
+                        <span className={`font-medium ${
+                          emotionalState === "anxious" ? "text-amber-400" :
+                          emotionalState === "depressed" ? "text-blue-400" :
+                          emotionalState === "calm" ? "text-emerald-400" : "text-gray-200"
+                        }`}>
+                          {emotionalState.charAt(0).toUpperCase() + emotionalState.slice(1)}
                         </span>
-                        <div className="flex items-center">
-                          <span
-                            className={`text-sm font-medium ${
-                              emotionalState === "anxious"
-                                ? "text-orange-400"
-                                : emotionalState === "depressed"
-                                ? "text-blue-400"
-                                : emotionalState === "angry"
-                                ? "text-red-400"
-                                : emotionalState === "calm"
-                                ? "text-green-400"
-                                : "text-gray-400"
-                            }`}
-                          >
-                            {emotionalState === "anxious"
-                              ? "😰 Anxious"
-                              : emotionalState === "depressed"
-                              ? "😔 Depressed"
-                              : emotionalState === "angry"
-                              ? "😠 Angry"
-                              : emotionalState === "calm"
-                              ? "😌 Calm"
-                              : "😐 Neutral"}
-                          </span>
-                        </div>
+                      </div>
+                      <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+                        <div className={`h-full rounded-full ${
+                          emotionalState === "anxious" ? "bg-amber-400" :
+                          emotionalState === "depressed" ? "bg-blue-400" :
+                          emotionalState === "calm" ? "bg-emerald-400" : "bg-gray-400"
+                        } w-3/4`}></div>
                       </div>
                     </div>
 
                     {/* Rapport Level */}
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-gray-300">
-                          Rapport Level
-                        </span>
-                        <div className="flex items-center">
-                          <span
-                            className={`text-sm font-bold ${
-                              rapportLevel >= 7
-                                ? "text-green-400"
-                                : rapportLevel >= 4
-                                ? "text-yellow-400"
-                                : "text-red-400"
-                            }`}
-                          >
-                            {rapportLevel.toFixed(1)}/10
-                          </span>
-                          {rapportChange !== null && (
-                            <span
-                              className={`ml-2 text-xs font-bold animate-pulse ${
-                                rapportChange > 0
-                                  ? "text-green-400"
-                                  : "text-red-400"
-                              }`}
-                            >
-                              {rapportChange > 0 ? "+" : ""}
-                              {rapportChange.toFixed(1)}
-                            </span>
-                          )}
-                        </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-300">Rapport</span>
+                        <span className="font-medium text-white">{rapportLevel.toFixed(1)}/10</span>
                       </div>
-                      <div className="w-full bg-gray-700 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full transition-all duration-500 ${
-                            rapportLevel >= 7
-                              ? "bg-gradient-to-r from-green-400 to-green-500"
-                              : rapportLevel >= 4
-                              ? "bg-gradient-to-r from-yellow-400 to-yellow-500"
-                              : "bg-gradient-to-r from-red-400 to-red-500"
-                          }`}
+                      <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+                        <div 
+                          className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-1000"
                           style={{ width: `${(rapportLevel / 10) * 100}%` }}
                         ></div>
                       </div>
-                      <div className="mt-1 text-xs text-gray-400">
-                        {rapportLevel >= 7
-                          ? "Strong therapeutic alliance"
-                          : rapportLevel >= 4
-                          ? "Building trust"
-                          : "Needs more connection"}
-                      </div>
-                    </div>
-
-                    {/* Engagement Level */}
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-gray-300">
-                          Engagement
-                        </span>
-                        <span className="text-sm font-medium text-white">
-                          {engagementLevel}/5
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-700 rounded-full h-2">
-                        <div
-                          className="bg-gradient-to-r from-blue-400 to-blue-500 h-2 rounded-full transition-all duration-500"
-                          style={{ width: `${(engagementLevel / 5) * 100}%` }}
-                        ></div>
-                      </div>
                     </div>
                   </div>
 
-                  {/* Session Phase */}
-                  <div className="mb-6">
-                    <div className="bg-blue-900/30 border border-blue-700/50 rounded-xl p-3">
-                      <div className="flex items-center mb-2">
-                        <Clock className="w-4 h-4 mr-2 text-blue-400" />
-                        <span className="text-sm font-semibold text-blue-300">
-                          Session Phase
-                        </span>
-                      </div>
-                      <div className="text-sm text-blue-200 capitalize">
-                        {sessionPhase === "opening"
-                          ? "Opening & Rapport Building"
-                          : sessionPhase === "exploration"
-                          ? "Exploration & Assessment"
-                          : sessionPhase === "working"
-                          ? "Working Through Issues"
-                          : "Closure & Planning"}
-                      </div>
+                  {/* Session Phase Card */}
+                  <div className="bg-gradient-to-br from-indigo-900/20 to-blue-900/20 border border-indigo-500/20 rounded-2xl p-5">
+                    <div className="flex items-center mb-3">
+                      <Clock className="w-4 h-4 mr-2 text-indigo-400" />
+                      <span className="text-xs font-bold text-indigo-200 uppercase tracking-wider">Current Phase</span>
                     </div>
+                    <div className="text-lg font-semibold text-white capitalize">
+                      {sessionPhase}
+                    </div>
+                    <p className="text-xs text-indigo-300/70 mt-1">
+                      {sessionPhase === "opening" ? "Establishing connection and safety." :
+                       sessionPhase === "exploration" ? "Exploring core issues and patterns." :
+                       "Working towards resolution."}
+                    </p>
                   </div>
 
                   {/* Live Coaching Tips */}
-                  <div>
-                    <h4 className="text-sm font-semibold text-white mb-3 flex items-center">
-                      <Lightbulb className="w-4 h-4 mr-2 text-yellow-400" />
-                      Live Coaching Tips
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center">
+                      <Lightbulb className="w-3.5 h-3.5 mr-2 text-amber-400" />
+                      Live Suggestions
                     </h4>
-                    <div className="space-y-3">
-                      {currentFeedback.length === 0 ? (
-                        <div className="bg-[#2a2a2a]/50 border border-[#2a2a2a] rounded-xl p-4 text-center">
-                          <div className="text-gray-400 text-sm">
-                            Start the conversation to receive personalized
-                            coaching tips
-                          </div>
+                    
+                    {currentFeedback.length === 0 ? (
+                      <div className="bg-white/5 border border-white/5 rounded-xl p-4 text-center">
+                        <p className="text-gray-500 text-sm">Listening for coaching opportunities...</p>
+                      </div>
+                    ) : (
+                      currentFeedback.map((feedback) => (
+                        <div
+                          key={feedback.id}
+                          className={`rounded-xl p-4 border-l-2 ${
+                            feedback.type === "positive"
+                              ? "bg-emerald-500/10 border-emerald-500"
+                              : "bg-amber-500/10 border-amber-500"
+                          } animate-fade-in`}
+                        >
+                          <p className="text-sm text-gray-200 leading-relaxed">{feedback.message}</p>
                         </div>
-                      ) : (
-                        currentFeedback.map((feedback) => (
-                          <div
-                            key={feedback.id}
-                            className={`rounded-xl p-3 ${
-                              feedback.type === "positive"
-                                ? "bg-green-900/30 border-l-4 border-green-400"
-                                : feedback.type === "suggestion"
-                                ? "bg-yellow-900/30 border-l-4 border-yellow-400"
-                                : "bg-red-900/30 border-l-4 border-red-400"
-                            }`}
-                          >
-                            <div className="flex items-start">
-                              {feedback.icon === "CheckCircle" && (
-                                <CheckCircle className="w-4 h-4 text-green-400 mr-2 mt-0.5 flex-shrink-0" />
-                              )}
-                              {feedback.icon === "MessageCircle" && (
-                                <MessageCircle className="w-4 h-4 text-purple-400 mr-2 mt-0.5 flex-shrink-0" />
-                              )}
-                              {feedback.icon === "Clock" && (
-                                <Clock className="w-4 h-4 text-blue-400 mr-2 mt-0.5 flex-shrink-0" />
-                              )}
-                              {feedback.icon === "Lightbulb" && (
-                                <Lightbulb className="w-4 h-4 text-yellow-400 mr-2 mt-0.5 flex-shrink-0" />
-                              )}
-                              <span className="text-sm text-gray-200 leading-relaxed">
-                                {feedback.message}
-                              </span>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
+                      ))
+                    )}
                   </div>
 
-                  {/* Sticky Notes Section */}
-                  <div className="mt-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-sm font-semibold text-white flex items-center">
-                        <MessageSquare className="w-4 h-4 mr-2 text-purple-400" />
-                        Session Notes
+                  {/* Sticky Notes */}
+                  <div className="space-y-3 pt-4 border-t border-white/10">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center">
+                        <MessageSquare className="w-3.5 h-3.5 mr-2 text-purple-400" />
+                        Notes
                       </h4>
                       <button
                         onClick={() => setShowStickyNotes(!showStickyNotes)}
-                        className="text-xs text-purple-400 hover:text-purple-300 font-medium"
+                        className="text-[10px] text-purple-400 hover:text-purple-300 font-medium uppercase tracking-wider"
                       >
-                        {showStickyNotes ? "Hide" : "Show"} Notes
+                        {showStickyNotes ? "Hide" : "Show"}
                       </button>
                     </div>
 
                     {showStickyNotes && (
-                      <div className="space-y-4">
-                        {/* Add New Note */}
-                        <div className="bg-[#2a2a2a]/50 border border-[#2a2a2a] rounded-xl p-4">
-                          <div className="flex space-x-2">
-                            <input
-                              type="text"
-                              value={newNote}
-                              onChange={(e) => setNewNote(e.target.value)}
-                              onKeyPress={(e) =>
-                                e.key === "Enter" && addStickyNote()
-                              }
-                              placeholder="Add a note about this session..."
-                              className="flex-1 px-3 py-2 text-sm bg-gray-700 border border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-white placeholder-gray-400"
-                            />
-                            <button
-                              onClick={addStickyNote}
-                              disabled={!newNote.trim()}
-                              className="px-3 py-2 bg-purple-500 text-white text-sm rounded-xl hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                            >
-                              <Plus className="w-4 h-4" />
-                            </button>
-                          </div>
+                      <div className="space-y-3">
+                        <div className="flex space-x-2">
+                          <input
+                            type="text"
+                            value={newNote}
+                            onChange={(e) => setNewNote(e.target.value)}
+                            onKeyPress={(e) => e.key === "Enter" && addStickyNote()}
+                            placeholder="Add note..."
+                            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-gray-500 focus:ring-1 focus:ring-purple-500 focus:border-purple-500 outline-none"
+                          />
+                          <button
+                            onClick={addStickyNote}
+                            disabled={!newNote.trim()}
+                            className="p-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl disabled:opacity-50 transition-colors"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
                         </div>
 
-                        {/* Display Notes */}
-                        <div className="space-y-2 max-h-48 overflow-y-auto">
-                          {stickyNotes.length === 0 ? (
-                            <div className="text-center py-4 text-gray-400 text-sm">
-                              No notes yet. Add your first note above!
-                            </div>
-                          ) : (
-                            stickyNotes.map((note) => (
-                              <div
-                                key={note.id}
-                                className={`p-3 rounded-xl border-l-4 ${note.color} relative group`}
+                        <div className="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+                          {stickyNotes.map((note) => (
+                            <div key={note.id} className={`p-3 rounded-xl bg-white/5 border-l-2 ${note.color} group relative`}>
+                              <p className="text-sm text-gray-300">{note.content}</p>
+                              <button
+                                onClick={() => deleteStickyNote(note.id)}
+                                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-gray-500 hover:text-rose-400 transition-opacity"
                               >
-                                <div className="flex justify-between items-start">
-                                  <div className="flex-1">
-                                    <p className="text-sm text-gray-200 mb-1">
-                                      {note.content}
-                                    </p>
-                                    <div className="text-xs text-gray-400">
-                                      {formatSessionTime(note.sessionTime)}
-                                    </div>
-                                  </div>
-                                  <button
-                                    onClick={() => deleteStickyNote(note.id)}
-                                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-opacity"
-                                  >
-                                    <X className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              </div>
-                            ))
-                          )}
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}
                   </div>
+
                 </div>
               </div>
             </div>
