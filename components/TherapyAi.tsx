@@ -367,9 +367,29 @@ const VeshApp: React.FC = () => {
   const [showLearnMore, setShowLearnMore] = useState<boolean>(false);
   const [showSessionSummary, setShowSessionSummary] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
-  const [sessionSummary, setSessionSummary] = useState<{
-    duration: number;
-  }>();
+interface SessionSummary {
+  persona: string;
+  duration: number;
+  totalMessages: number;
+  studentMessages: number;
+  personaMessages: number;
+  avgRapport: string;
+  engagementScore: number;
+  feedback: {
+    positive: number;
+    suggestions: number;
+    errors: number;
+    total: number;
+  };
+  stickyNotes: {
+    content: string;
+    sessionTime: string;
+    timestamp: string;
+  }[];
+  timestamp: string;
+}
+
+  const [sessionSummary, setSessionSummary] = useState<SessionSummary | null>(null);
   const [emotionalState, setEmotionalState] = useState("anxious");
   const [engagementLevel, setEngagementLevel] = useState(2);
   const [sessionPhase, setSessionPhase] = useState("opening");
