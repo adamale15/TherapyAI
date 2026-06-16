@@ -793,14 +793,7 @@ export default function BoldVeshApp() {
       )}
 
       {view === "student" && (
-        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 md:grid-cols-[78px_1fr_300px]">
-          <aside className="vesh-rail hidden p-3 md:grid md:content-start md:justify-items-center md:gap-3">
-            {["Log", "Cases", "Reports"].map((item) => (
-              <span key={item} className="vesh-chip w-full px-1 text-[10px]">
-                {item}
-              </span>
-            ))}
-          </aside>
+        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 md:grid-cols-[1fr_300px]">
           <div className="p-6">
             <div className="vesh-kicker">Training journal</div>
             <h1 className="vesh-heading mt-2 text-4xl">Practice journal</h1>
@@ -1175,7 +1168,7 @@ export default function BoldVeshApp() {
                   if (event.key === "Enter") void sendMessage();
                 }}
                 placeholder="Write or speak your next response..."
-                className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm outline-none placeholder:text-[var(--vesh-muted)]"
+                className="vesh-session-input min-w-0 flex-1 bg-transparent px-2 py-2 text-sm outline-none placeholder:text-[var(--vesh-muted)]"
               />
               <button
                 className={`vesh-chip ${isListening ? "vesh-chip-active" : ""}`}

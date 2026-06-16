@@ -118,6 +118,17 @@ describe("bold notebook UI system", () => {
     expect(app).not.toContain("scoreRows.flatMap");
   });
 
+  test("journal has no mystery sidebar and session composer has no red focus outline", () => {
+    const app = read("components/BoldVeshApp.tsx");
+    const css = read("app/globals.css");
+
+    expect(app).not.toContain('["Log", "Cases", "Reports"]');
+    expect(app).not.toContain('md:grid-cols-[78px_1fr_300px]');
+    expect(app).toContain("vesh-session-input");
+    expect(css).toContain(".vesh-session-input:focus-visible");
+    expect(css).toContain("outline: none");
+  });
+
   test("product copy does not expose mockup placeholders", () => {
     const app = read("components/BoldVeshApp.tsx");
 

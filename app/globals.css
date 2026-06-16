@@ -218,6 +218,11 @@
     color: var(--vesh-muted);
   }
 
+  .vesh-session-input:focus-visible {
+    outline: none;
+    outline-offset: 0;
+  }
+
   .vesh-rail {
     border-right: 1.5px solid var(--vesh-black);
     background: rgba(255, 75, 53, 0.07);
