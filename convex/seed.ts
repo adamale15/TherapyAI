@@ -1,0 +1,1 @@
+export { seedDefaults } from "./personas";

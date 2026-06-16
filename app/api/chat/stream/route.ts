@@ -1,12 +1,16 @@
 import { NextRequest } from "next/server";
-import { supabaseSessionStore } from "@/lib/supabase-session-store";
+import { getConvexServerClient } from "@/lib/convex/server";
+import { convexFunctions } from "@/lib/convex/functions";
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const sessionId = searchParams.get("sessionId") || `session-${Date.now()}`;
   
   // Initialize session if it doesn't exist
-  await supabaseSessionStore.getSession(sessionId);
+  const convex = getConvexServerClient();
+  await convex.mutation(convexFunctions.chatSessions.getOrCreate, {
+    sessionKey: sessionId,
+  });
 
   const stream = new ReadableStream({
     async start(controller) {

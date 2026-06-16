@@ -1,18 +1,29 @@
 import { NextRequest } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { therapyReply } from "@/lib/llm";
 import { detectCrisis, crisisResponse } from "@/lib/safety";
-import { supabaseSessionStore } from "@/lib/supabase-session-store";
+import { getConvexServerClient } from "@/lib/convex/server";
+import { convexFunctions } from "@/lib/convex/functions";
 
 export async function POST(request: NextRequest) {
   try {
     const sessionId = request.headers.get("x-session-id") || `session-${Date.now()}`;
+    const { userId } = await auth();
+    const convex = getConvexServerClient();
     const body = await request.json();
     const { type, text, persona } = body;
 
-    const session = await supabaseSessionStore.getSession(sessionId);
+    const session = await convex.mutation(convexFunctions.chatSessions.getOrCreate, {
+      sessionKey: sessionId,
+      ownerClerkId: userId ?? undefined,
+    });
 
     if (type === "set_persona") {
-      await supabaseSessionStore.updatePersona(sessionId, persona || "sarah");
+      await convex.mutation(convexFunctions.chatSessions.setPersona, {
+        sessionKey: sessionId,
+        personaId: persona || "sarah",
+        ownerClerkId: userId ?? undefined,
+      });
       return Response.json({
         type: "info",
         message: `Persona set to: ${persona || "sarah"}`,
@@ -28,10 +39,14 @@ export async function POST(request: NextRequest) {
       // Crisis detection
       if (detectCrisis(userText)) {
         const reply = crisisResponse();
-        session.history.push({ role: "user", content: userText });
-        session.history.push({ role: "assistant", content: reply });
-        // Save to Supabase
-        await supabaseSessionStore.setSession(sessionId, session);
+        await convex.mutation(convexFunctions.chatSessions.appendTurns, {
+          sessionKey: sessionId,
+          ownerClerkId: userId ?? undefined,
+          turns: [
+            { role: "user", content: userText },
+            { role: "assistant", content: reply },
+          ],
+        });
         
         return Response.json({
           type: "final_stt",
@@ -40,21 +55,28 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      const personaData = await convex.query(convexFunctions.personas.getById, {
+        personaId: session.personaId || "sarah",
+        ownerClerkId: userId ?? undefined,
+      });
+
       // Normal reply
       const replyData = await therapyReply(
         userText,
         session.history,
-        session.persona
+        session.personaId,
+        personaData
       );
 
       // Update memory
-      session.history.push({ role: "user", content: userText });
-      session.history.push({ role: "assistant", content: replyData.content });
-      if (session.history.length > 20) {
-        session.history.splice(0, session.history.length - 20);
-      }
-      // Save to Supabase
-      await supabaseSessionStore.setSession(sessionId, session);
+      await convex.mutation(convexFunctions.chatSessions.appendTurns, {
+        sessionKey: sessionId,
+        ownerClerkId: userId ?? undefined,
+        turns: [
+          { role: "user", content: userText },
+          { role: "assistant", content: replyData.content },
+        ],
+      });
 
       return Response.json({
         type: "final_stt",
@@ -74,7 +96,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (type === "reset") {
-      await supabaseSessionStore.clearHistory(sessionId);
+      await convex.mutation(convexFunctions.chatSessions.clearHistory, {
+        sessionKey: sessionId,
+      });
       return Response.json({
         type: "info",
         message: "Memory cleared",

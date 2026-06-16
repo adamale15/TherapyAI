@@ -1,13 +1,15 @@
 import "dotenv/config";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { PersonaData } from "@/lib/knowledge-base/services/persona-loader";
+import { PersonaData } from "@/lib/personas/default-personas";
 
 export class PersonaGenerator {
   private genAI: GoogleGenerativeAI;
 
   constructor() {
-    const apiKey =
-      process.env.GEMINI_API_KEY || "AIzaSyAwtycf6ZId6_hs6wFTNbHQzVVtEQC7ijI";
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is required");
+    }
     this.genAI = new GoogleGenerativeAI(apiKey);
   }
 

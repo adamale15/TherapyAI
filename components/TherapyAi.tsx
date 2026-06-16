@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useUser, useAuth, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import { useQuery } from "convex/react";
 import {
   Play,
   Users,
@@ -51,6 +52,7 @@ import { PersonaUploadModal } from "./PersonaUploadModal";
 import { PersonaManagement } from "./PersonaManagement";
 import { StudentDashboard } from "./StudentDashboard";
 import { PractitionerDashboard } from "./PractitionerDashboard";
+import { convexFunctions } from "@/lib/convex/functions";
 
 // Types
 interface StickyNote {
@@ -402,6 +404,9 @@ interface SessionSummary {
   const [showUploadModal, setShowUploadModal] = useState(false);
   // Get userId from Clerk user
   const userId = user?.id || "default-user";
+  const convexPersonas = useQuery(convexFunctions.personas.listForUser, {
+    ownerClerkId: user?.id,
+  });
 
   // Sticky notes state
   const [stickyNotes, setStickyNotes] = useState<StickyNote[]>([]);
@@ -603,99 +608,16 @@ interface SessionSummary {
     return () => clearTimeout(timer);
   }, []);
 
-  // Load personas from API
+  // Load personas from Convex with bundled defaults as a first-run fallback.
   useEffect(() => {
-    // Always set fallback personas first to ensure they're available immediately
-    console.log("Setting fallback personas:", personas.length);
-    setAllPersonas(personas);
-    if (!selectedPersona && personas.length > 0) {
-      setSelectedPersona(personas[0]);
+    const nextPersonas =
+      convexPersonas && convexPersonas.length > 0 ? convexPersonas : personas;
+
+    setAllPersonas(nextPersonas as Persona[]);
+    if (!selectedPersona && nextPersonas.length > 0) {
+      setSelectedPersona(nextPersonas[0] as Persona);
     }
-
-    // Then try to load from API (will replace fallback if API returns personas)
-    loadPersonas();
-  }, [userId]);
-
-  const loadPersonas = async () => {
-    // Skip API call if userId is invalid
-    if (!userId || userId === "default-user" || userId === "undefined") {
-      console.log("Using fallback personas for default user");
-      setAllPersonas(personas);
-      if (!selectedPersona && personas.length > 0) {
-        setSelectedPersona(personas[0]);
-      }
-      return;
-    }
-
-    try {
-      const apiUrl = buildApiUrl(`/api/personas/all/${userId}`);
-      console.log("Loading personas from:", apiUrl);
-
-      // Add timeout to fetch
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      console.log("API response:", {
-        success: result.success,
-        personaCount: result.personas?.length || 0,
-      });
-
-      if (
-        result.success &&
-        result.personas &&
-        Array.isArray(result.personas) &&
-        result.personas.length > 0
-      ) {
-        // API returned personas - use them
-        console.log("Using personas from API:", result.personas.length);
-        setAllPersonas(result.personas);
-        // If no persona is selected, select the first one
-        if (!selectedPersona) {
-          setSelectedPersona(result.personas[0]);
-        }
-      } else {
-        // API returned empty or no personas - keep fallback
-        console.log(
-          "API returned empty, keeping fallback personas:",
-          personas.length
-        );
-        setAllPersonas(personas);
-        if (!selectedPersona && personas.length > 0) {
-          setSelectedPersona(personas[0]);
-        }
-      }
-    } catch (error: any) {
-      // Silently handle abort errors (timeout)
-      if (error?.name === "AbortError") {
-        console.warn("Persona loading timed out, using fallback personas");
-      } else {
-        console.warn(
-          "Error loading personas from API, using fallback:",
-          error?.message || error
-        );
-      }
-      // Fallback to hardcoded personas
-      setAllPersonas(personas);
-      if (!selectedPersona && personas.length > 0) {
-        setSelectedPersona(personas[0]);
-      }
-    }
-  };
+  }, [convexPersonas, selectedPersona]);
 
   const handlePersonaUpload = (newPersona: any) => {
     setAllPersonas((prev) => [...prev, newPersona]);

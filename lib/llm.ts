@@ -1,14 +1,13 @@
 import "dotenv/config";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { SupabasePersonaLoader } from "@/lib/knowledge-base/services/supabase-persona-loader";
-import type { PersonaData } from "@/lib/knowledge-base/services/persona-loader";
+import {
+  defaultPersonaById,
+  type PersonaData,
+} from "@/lib/personas/default-personas";
 
 // Use Gemini API key from environment
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-
-// Initialize persona loader
-const personaLoader = new SupabasePersonaLoader();
 
 export type ChatTurn = { role: "user" | "assistant"; content: string };
 
@@ -32,24 +31,19 @@ export async function therapyReply(
   message: string,
   history: ChatTurn[],
   persona: string = "sarah",
-  userId?: string
+  personaOverride?: PersonaData | null
 ): Promise<TherapyResponse> {
-  // Load persona data from knowledge base
-  let personaData: PersonaData | null = null;
-
-  try {
-    personaData = await personaLoader.loadPersona(persona, userId);
-  } catch (error) {
-    console.error("Error loading persona:", error);
-  }
+  const personaData = personaOverride ?? defaultPersonaById.get(persona) ?? null;
 
   // Fallback to default system prompt if persona not found
   let system = "";
   let fewShot: ChatTurn[] = [];
 
   if (personaData) {
-    system = personaData.systemPrompt;
-    fewShot = personaData.fewShotExamples;
+    system =
+      personaData.systemPrompt ||
+      `You are ${personaData.name}, a patient seeking therapy. You are not a therapist. Respond naturally according to this case: ${personaData.description}`;
+    fewShot = personaData.fewShotExamples || [];
   } else {
     // Fallback to hardcoded Sarah if persona not found
     system = `

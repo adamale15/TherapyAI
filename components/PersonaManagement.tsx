@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useMutation, useQuery } from "convex/react";
 import { Plus, Trash2, Edit3, User, Calendar, AlertCircle } from "lucide-react";
 import { PersonaUploadModal } from "./PersonaUploadModal";
+import { convexFunctions } from "@/lib/convex/functions";
 
 interface PersonaData {
   id: string;
@@ -40,105 +42,21 @@ export const PersonaManagement: React.FC<PersonaManagementProps> = ({
   onPersonaSelect,
   selectedPersonaId,
 }) => {
+  const convexPersonas = useQuery(convexFunctions.personas.listForUser, {
+    ownerClerkId: userId === "default-user" ? undefined : userId,
+  });
+  const deletePersona = useMutation(convexFunctions.personas.deleteCustom);
   const [personas, setPersonas] = useState<PersonaData[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Build API URL helper
-  const getApiBaseUrl = () => {
-    // In browser, always use relative URLs (Next.js handles this automatically)
-    if (typeof window !== "undefined") {
-      // Only use env URL if it's explicitly set and valid
-      const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
-      if (envUrl && envUrl !== "undefined" && envUrl !== "") {
-        return envUrl.replace(/\/$/, "");
-      }
-      // Otherwise, use relative URLs (empty string means relative)
-      return "";
-    }
-    // Server-side: use env URL or empty for relative
-    const envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
-    if (envUrl && envUrl !== "undefined" && envUrl !== "") {
-      return envUrl.replace(/\/$/, "");
-    }
-    return "";
-  };
-
-  const buildApiUrl = (path: string) => {
-    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-    const baseUrl = getApiBaseUrl();
-    
-    // If baseUrl is empty or invalid, use relative URL
-    if (!baseUrl || baseUrl === "undefined") {
-      return normalizedPath;
-    }
-    
-    return `${baseUrl}${normalizedPath}`;
-  };
-
   useEffect(() => {
-    loadPersonas();
-  }, [userId]);
-
-  const loadPersonas = async () => {
-    // Skip API call if userId is invalid
-    if (!userId || userId === "default-user" || userId === "undefined") {
-      console.log("PersonaManagement: Using empty personas for default user");
-      setPersonas([]);
-      setLoading(false);
+    if (convexPersonas) {
+      setPersonas(convexPersonas as PersonaData[]);
       setError(null);
-      return;
     }
-
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const apiUrl = buildApiUrl(`/api/personas/all/${userId}`);
-      console.log("PersonaManagement: Loading personas from:", apiUrl);
-      
-      // Add timeout to fetch
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-      
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        signal: controller.signal,
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
-
-      if (result.success && result.personas && Array.isArray(result.personas)) {
-        setPersonas(result.personas || []);
-      } else {
-        // No error message - just use empty array
-        console.warn("PersonaManagement: No personas returned from API");
-        setPersonas([]);
-      }
-    } catch (error: any) {
-      // Silently handle errors - don't show error message
-      if (error?.name === "AbortError") {
-        console.warn("PersonaManagement: Loading timed out");
-      } else {
-        console.warn("PersonaManagement: Error loading personas:", error?.message || error);
-      }
-      setPersonas([]);
-      // Don't set error state - just show empty state
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [convexPersonas]);
 
   const handlePersonaUpload = (newPersona: PersonaData) => {
     setPersonas((prev) => [...prev, newPersona]);
@@ -150,20 +68,11 @@ export const PersonaManagement: React.FC<PersonaManagementProps> = ({
 
     try {
       setDeletingId(personaId);
-      const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_API_URL || ""
-        }/api/personas/${personaId}/${userId}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (response.ok) {
-        setPersonas((prev) => prev.filter((p) => p.id !== personaId));
-      } else {
-        setError("Failed to delete persona");
-      }
+      await deletePersona({
+        personaId,
+        ownerClerkId: userId === "default-user" ? undefined : userId,
+      });
+      setPersonas((prev) => prev.filter((p) => p.id !== personaId));
     } catch (error) {
       setError("Failed to delete persona");
     } finally {
@@ -189,7 +98,7 @@ export const PersonaManagement: React.FC<PersonaManagementProps> = ({
     return new Date(dateString).toLocaleDateString();
   };
 
-  if (loading) {
+  if (!convexPersonas) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">

@@ -4,8 +4,8 @@ export class ElevenLabsService {
   private baseUrl = "https://api.elevenlabs.io/v1";
 
   constructor(apiKey?: string) {
-    // Use provided key or fallback to env var
-    this.apiKey = apiKey || process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY || "";
+    // Browser playback goes through /api/elevenlabs; the server owns the key.
+    this.apiKey = apiKey || "";
     
     if (!this.apiKey) {
       console.warn("ElevenLabs API key is missing. TTS will not work.");

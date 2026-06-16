@@ -92,15 +92,10 @@ export const PersonaUploadModal: React.FC<PersonaUploadModalProps> = ({
     formData.append("personaFile", file);
 
     try {
-      const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_API_URL || ""
-        }/api/personas/preview`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const response = await fetch("/api/personas/preview", {
+        method: "POST",
+        body: formData,
+      });
 
       const result = await response.json();
 
@@ -132,15 +127,10 @@ export const PersonaUploadModal: React.FC<PersonaUploadModalProps> = ({
     formData.append("fileName", file.name);
 
     try {
-      const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_API_URL || ""
-        }/api/personas/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const response = await fetch("/api/personas/upload", {
+        method: "POST",
+        body: formData,
+      });
 
       const result = await response.json();
 

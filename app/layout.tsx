@@ -2,6 +2,7 @@ import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
 import { Montserrat } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -35,7 +36,7 @@ export default function RootLayout({
           <meta name="theme-color" content="#4f46e5" />
         </head>
         <body className={`${montserrat.className} antialiased`}>
-          {children}
+          <ConvexClientProvider>{children}</ConvexClientProvider>
           <Analytics />
         </body>
       </html>

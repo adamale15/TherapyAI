@@ -5,7 +5,7 @@ This guide will help you deploy the TherapyAI application to Vercel.
 ## Prerequisites
 
 1. A Vercel account ([vercel.com](https://vercel.com))
-2. A Supabase project ([supabase.com](https://supabase.com))
+2. A Convex project ([convex.dev](https://convex.dev))
 3. A Clerk account ([clerk.com](https://clerk.com))
 4. A Google Gemini API key ([ai.google.dev](https://ai.google.dev))
 
@@ -23,14 +23,12 @@ Make sure your code is pushed to a Git repository (GitHub, GitLab, or Bitbucket)
    - Enable email/password authentication
    - Configure sign-up and sign-in settings
 
-## Step 3: Set Up Supabase
+## Step 3: Set Up Convex
 
-1. Go to [supabase.com](https://supabase.com) and create a project
-2. Copy your **Project URL**, **Anon Key**, and **Service Role Key**
-3. In Supabase SQL Editor, run the schema:
-   - Navigate to SQL Editor
-   - Run the SQL from `supabase/schema.sql` (if it exists)
-   - Run `supabase/seed-default-personas.sql` (if it exists)
+1. Run `npx convex dev` locally and create or link a Convex project
+2. Copy the generated `NEXT_PUBLIC_CONVEX_URL` and `CONVEX_DEPLOYMENT`
+3. Configure `CLERK_JWT_ISSUER_DOMAIN` for Convex
+4. Seed default personas with `npx convex run personas:seedDefaults`
 
 ## Step 4: Deploy to Vercel
 
@@ -73,16 +71,16 @@ In your Vercel project dashboard, go to **Settings → Environment Variables** a
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
 
-# Supabase Database
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+# Convex Database
+NEXT_PUBLIC_CONVEX_URL=https://your-deployment.convex.cloud
+CONVEX_DEPLOYMENT=your-convex-deployment
+CLERK_JWT_ISSUER_DOMAIN=https://your-clerk-issuer
 
 # Google Gemini API
 GEMINI_API_KEY=your-gemini-api-key
 
-# Optional: API URL (auto-detected on Vercel)
-NEXT_PUBLIC_API_URL=https://your-app.vercel.app
+# ElevenLabs TTS
+ELEVENLABS_API_KEY=your-elevenlabs-api-key
 ```
 
 ### Environment Variable Setup
@@ -119,14 +117,14 @@ If you encounter build errors:
 ### Runtime Errors
 
 1. **Clerk Authentication**: Verify Clerk keys are correct and URLs are whitelisted
-2. **Supabase Connection**: Check Supabase credentials and database schema
+2. **Convex Connection**: Check Convex URL, deployment, and seeded personas
 3. **API Routes**: Ensure API routes are working (check Vercel function logs)
 
 ### Common Issues
 
 - **"Missing environment variables"**: Add all required env vars in Vercel dashboard
 - **"Clerk authentication failed"**: Check Clerk dashboard for allowed origins
-- **"Supabase connection failed"**: Verify Supabase project is active and credentials are correct
+- **"Missing NEXT_PUBLIC_CONVEX_URL"**: Run `npx convex dev` and add the generated URL to Vercel
 
 ## Post-Deployment
 
@@ -149,5 +147,5 @@ For issues:
 1. Check Vercel deployment logs
 2. Check Vercel function logs
 3. Verify all environment variables are set
-4. Ensure database schema is properly set up in Supabase
+4. Ensure Convex functions are deployed and default personas are seeded
 
