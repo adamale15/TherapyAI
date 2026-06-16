@@ -726,7 +726,6 @@ export default function BoldVeshApp() {
       {view === "home" && (
         <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 gap-8 p-6 lg:grid-cols-[1fr_440px] lg:items-center lg:p-10">
           <div>
-            <div className="vesh-kicker mb-4">Clinical training lab</div>
             <h1 className="vesh-heading max-w-3xl">
               Clinical practice that finally feels{" "}
               <span className="inline-block bg-[var(--vesh-black)] px-3 pb-2 text-[var(--vesh-paper-soft)]">
@@ -758,11 +757,11 @@ export default function BoldVeshApp() {
             </div>
           </div>
 
-          <div className="vesh-card grid min-h-[470px] grid-cols-[80px_1fr] overflow-hidden">
-            <div className="border-r-[1.5px] border-[var(--vesh-black)] bg-[rgba(255,75,53,0.09)] p-5 text-center text-2xl font-black text-[var(--vesh-coral)]">
+          <div className="vesh-card vesh-demo-card grid grid-cols-[64px_1fr] items-stretch overflow-hidden">
+            <div className="flex items-start justify-center border-r-[1.5px] border-[var(--vesh-black)] bg-[rgba(255,75,53,0.09)] px-3 py-5 text-center text-xl font-black text-[var(--vesh-coral)]">
               Live
             </div>
-            <div className="p-5">
+            <div className="grid content-start gap-4 p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="vesh-kicker text-[var(--vesh-muted)]">
@@ -774,7 +773,7 @@ export default function BoldVeshApp() {
                 </div>
                 <span className="vesh-chip vesh-chip-active">Briefing</span>
               </div>
-              <div className="my-4 h-[1.5px] bg-[var(--vesh-black)]" />
+              <div className="h-[1.5px] bg-[var(--vesh-black)]" />
               <div className="vesh-note">
                 <strong>Coach margin</strong>
                 <p className="mt-1 text-sm text-[var(--vesh-ink)]">
@@ -782,10 +781,10 @@ export default function BoldVeshApp() {
                   heard.
                 </p>
               </div>
-              <div className="mt-4 grid grid-cols-3 gap-3">
+              <div className="vesh-demo-metrics grid gap-3 sm:grid-cols-3">
                 <Metric label="Alliance" value="4.2/5" detail="bond/tasks" compact />
                 <Metric label="Questions" value="Open" detail="single focus" compact />
-                <Metric label="Risk screen" value="Ready" detail="if cued" compact />
+                <Metric label="Safety" value="Ready" detail="if cued" compact />
               </div>
             </div>
           </div>

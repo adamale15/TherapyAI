@@ -129,6 +129,17 @@ describe("bold notebook UI system", () => {
     expect(css).toContain("outline: none");
   });
 
+  test("landing preview removes mockup labels and keeps the demo card aligned", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).not.toContain("Clinical training lab");
+    expect(app).not.toContain("min-h-[470px]");
+    expect(app).toContain("vesh-demo-card");
+    expect(app).toContain("vesh-demo-metrics");
+    expect(app).toContain("grid-cols-[64px_1fr]");
+    expect(app).toContain("sm:grid-cols-3");
+  });
+
   test("product copy does not expose mockup placeholders", () => {
     const app = read("components/BoldVeshApp.tsx");
 
