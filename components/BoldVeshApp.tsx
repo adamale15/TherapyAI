@@ -9,6 +9,7 @@ import {
   ArrowRight,
   CheckCircle,
   Clock,
+  Download,
   FileText,
   LogOut,
   MessageSquare,
@@ -65,6 +66,7 @@ const scoreRows = [
 
 const sessionDurations = [10, 25, 45] as const;
 type SessionDuration = (typeof sessionDurations)[number];
+type SessionEndReason = "manual" | "time";
 
 function formatTimeRemaining(totalSeconds: number) {
   const clamped = Math.max(0, totalSeconds);
@@ -290,6 +292,7 @@ export default function BoldVeshApp() {
   const [sessionDuration, setSessionDuration] = useState<SessionDuration>(25);
   const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState(sessionDuration * 60);
+  const [sessionEndReason, setSessionEndReason] = useState<SessionEndReason | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const sessionId = useRef(`session-${Date.now()}`);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -500,6 +503,7 @@ export default function BoldVeshApp() {
     setInput("");
     setSessionStartedAt(null);
     setRemainingSeconds(sessionDuration * 60);
+    setSessionEndReason(null);
     setFeedback([
       "Review the case brief, choose a session length, then begin.",
       "The client will wait for your first therapeutic response.",
@@ -517,6 +521,7 @@ export default function BoldVeshApp() {
     const startedAt = Date.now();
     setSessionStartedAt(startedAt);
     setRemainingSeconds(sessionDuration * 60);
+    setSessionEndReason(null);
     setMessages([]);
     setInput("");
     setFeedback([
@@ -591,13 +596,103 @@ export default function BoldVeshApp() {
     }
   };
 
-  const finishSession = () => {
+  const finishSession = (reason: SessionEndReason = "manual") => {
     stopVoice();
     stopListening();
+    if (reason === "time") {
+      setRemainingSeconds(0);
+    }
+    setSessionEndReason(reason);
     setView("summary");
   };
 
   const selectedOrFirst = selectedPersona ?? personas[0];
+  const completionLabel =
+    sessionEndReason === "time" ? "Time limit reached" : "Ended by learner";
+
+  useEffect(() => {
+    if (view === "session" && sessionStartedAt && remainingSeconds === 0) {
+      finishSession("time");
+    }
+  }, [remainingSeconds, sessionStartedAt, view]);
+
+  const downloadReportPdf = async () => {
+    if (!selectedOrFirst) return;
+
+    try {
+      const { jsPDF } = await import("jspdf");
+      const doc = new jsPDF();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 18;
+      const lineHeight = 7;
+      let y = 20;
+
+      const addText = (text: string, size = 11, bold = false) => {
+        doc.setFont("helvetica", bold ? "bold" : "normal");
+        doc.setFontSize(size);
+        const lines = doc.splitTextToSize(text, 174) as string[];
+        lines.forEach((line) => {
+          if (y > pageHeight - 18) {
+            doc.addPage();
+            y = 20;
+          }
+          doc.text(line, margin, y);
+          y += lineHeight;
+        });
+      };
+
+      const addSection = (title: string) => {
+        y += 4;
+        doc.setDrawColor(17, 17, 15);
+        doc.line(margin, y, 192, y);
+        y += 9;
+        addText(title, 13, true);
+      };
+
+      const safeName = selectedOrFirst.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const generatedDate = new Date();
+      const learnerTurns = messages.filter((message) => message.role === "trainee").length;
+      const clientTurns = messages.filter((message) => message.role === "client").length;
+
+      doc.setTextColor(17, 17, 15);
+      addText("Vesh Session Report", 20, true);
+      addText(`${selectedOrFirst.name} / ${selectedOrFirst.condition}`, 14, true);
+      addText(`Generated ${generatedDate.toLocaleString()}`);
+      addText(`Status: ${completionLabel}`);
+      addText(`Session length: ${sessionDuration} minutes`);
+      addText(`Transcript: ${learnerTurns} trainee turns, ${clientTurns} client turns`);
+
+      addSection("Case Focus");
+      addText(`Training objective: ${selectedOrFirst.background.sessionGoals[0]}`);
+      addText(`Primary watch point: ${selectedOrFirst.background.therapeuticConsiderations[0]}`);
+
+      addSection("Scores");
+      addText("Empathy: 4.6 strong");
+      addText("Technique: 4.1 developing");
+      addText("Risk: 3.9 contained");
+
+      addSection("Coach Notes");
+      feedback.slice(0, 3).forEach((item, index) => {
+        addText(`${index + 1}. ${item}`);
+      });
+
+      addSection("Transcript");
+      if (messages.length === 0) {
+        addText("No trainee-client turns were recorded in this session.");
+      } else {
+        messages.forEach((message) => {
+          const speaker = message.role === "trainee" ? "Trainee" : selectedOrFirst.name;
+          addText(`${speaker}: ${message.text}`);
+          y += 2;
+        });
+      }
+
+      doc.save(`vesh-session-${safeName}-${generatedDate.toISOString().slice(0, 10)}.pdf`);
+    } catch (error) {
+      console.error("PDF export failed", error);
+      window.alert("Could not create the PDF report. Please try again.");
+    }
+  };
 
   return (
     <main className="vesh-shell min-h-screen">
@@ -975,7 +1070,10 @@ export default function BoldVeshApp() {
                 <span className={`vesh-chip min-h-10 ${remainingSeconds === 0 ? "bg-[var(--vesh-coral)] text-[var(--vesh-paper-soft)]" : "vesh-chip-active"}`}>
                   Time left {timeRemainingLabel}
                 </span>
-                <button onClick={finishSession} className="vesh-button vesh-button-green">
+                <button
+                  onClick={() => finishSession("manual")}
+                  className="vesh-button vesh-button-green"
+                >
                   End session
                 </button>
               </div>
@@ -1083,6 +1181,9 @@ export default function BoldVeshApp() {
               {sessionDuration} minute rehearsal completed with {messages.length} learner and
               client turns.
             </p>
+            <div className="mt-4 inline-flex border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-yellow)] px-3 py-2 text-xs font-black uppercase">
+              {completionLabel}
+            </div>
             <div className="mt-5 grid gap-3 md:grid-cols-3">
               <Metric label="Empathy" value="4.6" detail="strong" />
               <Metric label="Technique" value="4.1" detail="developing" />
@@ -1123,9 +1224,19 @@ export default function BoldVeshApp() {
                 Repeat the same case with a stricter time limit.
               </p>
             </div>
-            <button onClick={() => setView("student")} className="vesh-button mt-5 w-full">
+            <button
+              onClick={() => void downloadReportPdf()}
+              className="vesh-button mt-5 w-full"
+            >
+              <Download className="h-4 w-4" />
+              Download PDF
+            </button>
+            <button
+              onClick={() => setView("student")}
+              className="vesh-button vesh-button-yellow mt-3 w-full"
+            >
               <CheckCircle className="h-4 w-4" />
-              Save report
+              Back to journal
             </button>
           </aside>
         </section>

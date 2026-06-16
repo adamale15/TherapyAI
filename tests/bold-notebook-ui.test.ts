@@ -84,6 +84,19 @@ describe("bold notebook UI system", () => {
     expect(app).toContain('label="Time left"');
   });
 
+  test("session auto-finishes at time limit and exports the summary as a PDF", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain('type SessionEndReason = "manual" | "time"');
+    expect(app).toContain("sessionEndReason");
+    expect(app).toContain('finishSession("time")');
+    expect(app).toContain("Time limit reached");
+    expect(app).toContain("downloadReportPdf");
+    expect(app).toContain('import("jspdf")');
+    expect(app).toContain("doc.save");
+    expect(app).toContain("Download PDF");
+  });
+
   test("product copy does not expose mockup placeholders", () => {
     const app = read("components/BoldVeshApp.tsx");
 
