@@ -1,6 +1,6 @@
-import sarah from "@/lib/knowledge-base/personas/sarah-chen.json";
-import marcus from "@/lib/knowledge-base/personas/marcus-williams.json";
-import elena from "@/lib/knowledge-base/personas/elena-rodriguez.json";
+import sarah from "../knowledge-base/personas/sarah-chen.json";
+import marcus from "../knowledge-base/personas/marcus-williams.json";
+import elena from "../knowledge-base/personas/elena-rodriguez.json";
 
 export interface PersonaData {
   id: string;
