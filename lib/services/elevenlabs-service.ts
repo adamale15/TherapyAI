@@ -6,10 +6,6 @@ export class ElevenLabsService {
   constructor(apiKey?: string) {
     // Browser playback goes through /api/elevenlabs; the server owns the key.
     this.apiKey = apiKey || "";
-    
-    if (!this.apiKey) {
-      console.warn("ElevenLabs API key is missing. TTS will not work.");
-    }
   }
 
   /**

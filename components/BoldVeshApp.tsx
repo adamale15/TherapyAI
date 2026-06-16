@@ -20,6 +20,7 @@ import {
 import { PersonaUploadModal } from "./PersonaUploadModal";
 import { convexFunctions } from "@/lib/convex/functions";
 import { defaultPersonas, type PersonaData } from "@/lib/personas/default-personas";
+import { elevenLabsService } from "@/lib/services/elevenlabs-service";
 
 type View =
   | "home"
@@ -33,6 +34,25 @@ type Message = {
   id: string;
   role: "client" | "trainee";
   text: string;
+};
+
+type SpeechRecognitionLike = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  maxAlternatives: number;
+  onstart: (() => void) | null;
+  onresult: ((event: any) => void) | null;
+  onend: (() => void) | null;
+  onerror: ((event: any) => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+const personaVoiceIds: Record<string, string> = {
+  "Sarah Chen": "EXAVITQu4vr4xnSDxMaL",
+  "Marcus Williams": "ErXwobaYiN019PkySvjV",
+  "Elena Rodriguez": "21m00Tcm4TlvDq8ikWAM",
 };
 
 const scoreRows = [
@@ -253,8 +273,12 @@ export default function BoldVeshApp() {
     "Ask one question at a time.",
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState("Voice ready");
   const [showUploadModal, setShowUploadModal] = useState(false);
   const sessionId = useRef(`session-${Date.now()}`);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   const convexPersonas = useQuery(convexFunctions.personas.listForUser, {
     ownerClerkId: user?.id,
@@ -280,10 +304,158 @@ export default function BoldVeshApp() {
   };
 
   const handleSignOut = async () => {
+    stopVoice();
+    stopListening();
     await signOut();
     setView("home");
     setSelectedPersona(null);
     setMessages([]);
+  };
+
+  const speakText = async (text: string, persona: PersonaData | null) => {
+    if (typeof window === "undefined") return;
+
+    const cleanText = text
+      .replace(/\*([^*]+)\*/g, "")
+      .replace(/\[([^\]]+)\]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!cleanText) return;
+
+    stopVoice();
+    setIsSpeaking(true);
+    setVoiceStatus("Speaking");
+
+    const voiceId = persona ? personaVoiceIds[persona.name] : undefined;
+
+    if (voiceId) {
+      try {
+        const stream = await elevenLabsService.streamAudio(cleanText, voiceId);
+        if (stream) {
+          await elevenLabsService.playAudio(stream);
+          setIsSpeaking(false);
+          setVoiceStatus("Voice ready");
+          return;
+        }
+      } catch (error) {
+        console.warn("ElevenLabs playback failed, using browser voice.", error);
+      }
+    }
+
+    if (!("speechSynthesis" in window)) {
+      setIsSpeaking(false);
+      setVoiceStatus("Voice unavailable");
+      return;
+    }
+
+    const speakWithVoices = (voices: SpeechSynthesisVoice[]) => {
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      const lowerName = persona?.name.toLowerCase() ?? "";
+      const preferFemale = lowerName.includes("sarah") || lowerName.includes("elena");
+      const voice = voices.find((candidate) => {
+        const name = candidate.name.toLowerCase();
+        return preferFemale
+          ? ["female", "samantha", "victoria", "jenny", "aria"].some((key) => name.includes(key))
+          : ["male", "david", "mark", "guy", "alex", "antoni"].some((key) => name.includes(key));
+      }) ?? voices.find((candidate) => /google|microsoft|natural/i.test(candidate.name)) ?? voices[0];
+
+      if (voice) utterance.voice = voice;
+      utterance.rate = lowerName.includes("marcus") ? 0.92 : 1;
+      utterance.pitch = lowerName.includes("marcus") ? 0.92 : 1;
+      utterance.volume = 0.9;
+      utterance.onend = () => {
+        setIsSpeaking(false);
+        setVoiceStatus("Voice ready");
+      };
+      utterance.onerror = () => {
+        setIsSpeaking(false);
+        setVoiceStatus("Voice unavailable");
+      };
+      window.speechSynthesis.speak(utterance);
+    };
+
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      speakWithVoices(voices);
+      return;
+    }
+
+    window.speechSynthesis.addEventListener(
+      "voiceschanged",
+      () => speakWithVoices(window.speechSynthesis.getVoices()),
+      { once: true }
+    );
+  };
+
+  const stopVoice = () => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    elevenLabsService.stop();
+    setIsSpeaking(false);
+  };
+
+  const stopListening = () => {
+    if (!recognitionRef.current) return;
+
+    try {
+      recognitionRef.current.stop();
+    } catch {
+      // Recognition may already be stopped by the browser.
+    }
+
+    recognitionRef.current = null;
+    setIsListening(false);
+    setVoiceStatus("Voice ready");
+  };
+
+  const toggleListening = () => {
+    if (typeof window === "undefined") return;
+
+    if (isListening) {
+      stopListening();
+      return;
+    }
+
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setVoiceStatus("Mic unsupported");
+      return;
+    }
+
+    stopVoice();
+    const recognition = new SpeechRecognition() as SpeechRecognitionLike;
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+    recognition.maxAlternatives = 1;
+    recognition.onstart = () => {
+      setIsListening(true);
+      setVoiceStatus("Listening");
+    };
+    recognition.onresult = (event: any) => {
+      let transcript = "";
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        transcript += event.results[index][0].transcript;
+      }
+      setInput(transcript.trim());
+    };
+    recognition.onend = () => {
+      recognitionRef.current = null;
+      setIsListening(false);
+      setVoiceStatus("Voice ready");
+    };
+    recognition.onerror = (event: any) => {
+      recognitionRef.current = null;
+      setIsListening(false);
+      setVoiceStatus(event?.error === "not-allowed" ? "Mic blocked" : "Mic error");
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
   };
 
   const startSession = async (persona: PersonaData) => {
@@ -292,23 +464,17 @@ export default function BoldVeshApp() {
       return;
     }
 
+    stopVoice();
+    stopListening();
+    sessionId.current = `session-${Date.now()}`;
     setSelectedPersona(persona);
-    setMessages([
-      {
-        id: "opening",
-        role: "client",
-        text:
-          persona.id === "marcus"
-            ? "I do not really know what I am supposed to say. Work is fine, I guess."
-            : persona.id === "elena"
-            ? "I am here because I have to be, not because I trust this will help."
-            : "I keep checking my score predictor. It makes me feel worse, but I still do it.",
-      },
-    ]);
+    setMessages([]);
+    setInput("");
     setFeedback([
-      "Start with the feeling underneath the problem.",
-      "Avoid reassurance until you understand what certainty does for the client.",
+      "Begin the session with your first therapeutic response.",
+      "The client will answer after you send or speak your line.",
     ]);
+    setVoiceStatus("Voice ready");
     setView("session");
 
     await fetch("/api/chat", {
@@ -354,25 +520,31 @@ export default function BoldVeshApp() {
         { id: `a-${Date.now()}`, role: "client", text: replyText },
       ]);
       setFeedback(coachFeedback.slice(-3));
+      void speakText(replyText, selectedOrFirst);
     } catch {
+      const fallbackReply =
+        "Part of me wants to answer, and part of me feels embarrassed saying it out loud.";
       setMessages((prev) => [
         ...prev,
         {
           id: `a-${Date.now()}`,
           role: "client",
-          text: "Part of me wants to answer, and part of me feels embarrassed saying it out loud.",
+          text: fallbackReply,
         },
       ]);
       setFeedback([
         "The reply named ambivalence well.",
         "Try a grounded follow-up question next.",
       ]);
+      void speakText(fallbackReply, selectedOrFirst);
     } finally {
       setIsLoading(false);
     }
   };
 
   const finishSession = () => {
+    stopVoice();
+    stopListening();
     setView("summary");
   };
 
@@ -638,7 +810,7 @@ export default function BoldVeshApp() {
               value={selectedOrFirst.name.split(" ")[0]}
             />
             <RailItem icon={Clock} label="Session" value="25 min" />
-            <RailItem icon={Mic} label="Voice" value="Ready" />
+            <RailItem icon={Mic} label="Voice" value={voiceStatus} />
           </aside>
           <div className="grid grid-rows-[auto_1fr_auto] gap-4 p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -654,6 +826,15 @@ export default function BoldVeshApp() {
             </div>
 
             <div className="grid content-start gap-3 overflow-y-auto pr-2">
+              {messages.length === 0 && (
+                <div className="vesh-card max-w-[620px] p-4 text-sm leading-relaxed">
+                  <div className="vesh-kicker mb-2 text-[var(--vesh-muted)]">
+                    Your first move
+                  </div>
+                  Start by greeting the client or naming what you notice. The
+                  simulated client will respond after your first line.
+                </div>
+              )}
               {messages.map((message) => (
                 <div
                   key={message.id}
@@ -696,10 +877,15 @@ export default function BoldVeshApp() {
                 placeholder="Write or speak your next response..."
                 className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm outline-none placeholder:text-[var(--vesh-muted)]"
               />
-              <button className="vesh-chip" title="Voice input placeholder">
+              <button
+                className={`vesh-chip ${isListening ? "vesh-chip-active" : ""}`}
+                title={isListening ? "Stop listening" : "Start voice input"}
+                type="button"
+                onClick={toggleListening}
+              >
                 <Mic className="h-4 w-4" />
               </button>
-              <button onClick={sendMessage} className="vesh-button">
+              <button onClick={sendMessage} className="vesh-button" disabled={isLoading || isSpeaking}>
                 <Send className="h-4 w-4" />
                 Send
               </button>

@@ -43,4 +43,17 @@ describe("bold notebook UI system", () => {
     expect(app).not.toContain("<strong>Try next</strong>");
     expect(app).not.toContain("<strong>Watch</strong>");
   });
+
+  test("session starts empty and wires voice features", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain("setMessages([])");
+    expect(app).toMatch(/The\s+simulated client will respond after your first line\./);
+    expect(app).toContain("elevenLabsService.streamAudio");
+    expect(app).toContain("window.speechSynthesis.speak");
+    expect(app).toContain("webkitSpeechRecognition");
+    expect(app).toContain("toggleListening");
+    expect(app).not.toContain('id: "opening"');
+    expect(app).not.toContain("I do not really know what I am supposed to say.");
+  });
 });
