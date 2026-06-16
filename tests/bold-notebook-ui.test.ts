@@ -142,20 +142,22 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("Cohort performance");
   });
 
-  test("landing preview removes mockup labels and keeps the demo card aligned", () => {
+  test("landing hero is an interactive notebook wired to the chat API", () => {
     const app = read("components/BoldVeshApp.tsx");
+    const hero = read("components/NotebookHero.tsx");
 
     expect(app).not.toContain("Clinical training lab");
     expect(app).not.toContain("min-h-[470px]");
-    expect(app).toContain("vesh-demo-card");
-    expect(app).toContain("vesh-demo-metrics");
-    expect(app).toContain("grid-cols-[64px_1fr]");
-    expect(app).toContain("sm:grid-cols-3");
-    expect(app).toContain("function DemoStat");
-    expect(app).toContain("vesh-demo-stat");
-    expect(app).toContain("gap-5 p-6");
-    expect(app).toContain("text-[clamp(1.15rem,2.4vw,1.7rem)]");
-    expect(app).not.toContain('<Metric label="Safety" value="Ready" detail="if cued" compact />');
+    expect(app).toContain("NotebookHero");
+    expect(app).toContain("onStartRehearsal");
+    expect(app).not.toContain("vesh-demo-card");
+    expect(app).not.toContain("function DemoStat");
+
+    expect(hero).toContain("/api/chat");
+    expect(hero).toContain('"set_persona"');
+    expect(hero).toContain('"text_input"');
+    expect(hero).toContain("analyzeClinicalSession");
+    expect(hero).toContain("onStartRehearsal");
   });
 
   test("product copy does not expose mockup placeholders", () => {

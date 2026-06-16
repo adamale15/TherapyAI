@@ -19,6 +19,7 @@ import {
   Upload,
 } from "lucide-react";
 import { PersonaUploadModal } from "./PersonaUploadModal";
+import NotebookHero from "./NotebookHero";
 import {
   analyzeClinicalSession,
   summarizeClinicalHistory,
@@ -210,26 +211,6 @@ function Metric({
         {value}
       </div>
       <p className="mt-2 text-xs text-[var(--vesh-muted)]">{detail}</p>
-    </div>
-  );
-}
-
-function DemoStat({
-  label,
-  value,
-  detail,
-}: {
-  label: string;
-  value: string;
-  detail: string;
-}) {
-  return (
-    <div className="vesh-demo-stat min-w-0 border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] p-4 shadow-[5px_5px_0_rgba(17,17,15,0.14)]">
-      <div className="vesh-kicker text-[var(--vesh-muted)]">{label}</div>
-      <div className="mt-3 font-black uppercase leading-none text-[clamp(1.15rem,2.4vw,1.7rem)]">
-        {value}
-      </div>
-      <p className="mt-3 text-xs leading-snug text-[var(--vesh-muted)]">{detail}</p>
     </div>
   );
 }
@@ -777,37 +758,13 @@ export default function BoldVeshApp() {
             </div>
           </div>
 
-          <div className="vesh-card vesh-demo-card grid grid-cols-[64px_1fr] items-stretch overflow-hidden">
-            <div className="flex items-start justify-center border-r-[1.5px] border-[var(--vesh-black)] bg-[rgba(255,75,53,0.09)] px-3 py-6 text-center text-xl font-black text-[var(--vesh-coral)]">
-              Live
-            </div>
-            <div className="grid content-start gap-5 p-6">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="vesh-kicker text-[var(--vesh-muted)]">
-                    Live rehearsal
-                  </div>
-                  <h2 className="mt-2 text-xl font-black uppercase leading-none">
-                    Sarah Chen / anxiety intake
-                  </h2>
-                </div>
-                <span className="vesh-chip vesh-chip-active">Briefing</span>
-              </div>
-              <div className="h-[1.5px] bg-[var(--vesh-black)]" />
-              <div className="vesh-note">
-                <strong>Coach margin</strong>
-                <p className="mt-1 text-sm text-[var(--vesh-ink)]">
-                  Reflect the pressure first. Assessment comes after she feels
-                  heard.
-                </p>
-              </div>
-              <div className="vesh-demo-metrics grid gap-3 sm:grid-cols-3">
-                <DemoStat label="Alliance" value="4.2/5" detail="bond/tasks" />
-                <DemoStat label="Questions" value="Open" detail="single focus" />
-                <DemoStat label="Safety" value="Ready" detail="if cued" />
-              </div>
-            </div>
-          </div>
+          <NotebookHero
+            onStartRehearsal={() =>
+              signedIn
+                ? setView(currentUserType === "practitioner" ? "practitioner" : "student")
+                : router.push("/sign-up?userType=student")
+            }
+          />
         </section>
       )}
 
