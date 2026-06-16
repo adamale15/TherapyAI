@@ -71,4 +71,30 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("setSessionDuration");
     expect(app).toContain("sessionDuration} minute rehearsal");
   });
+
+  test("session shows a live countdown instead of only the configured length", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain("formatTimeRemaining");
+    expect(app).toContain("remainingSeconds");
+    expect(app).toContain("sessionStartedAt");
+    expect(app).toContain("window.setInterval");
+    expect(app).toContain("Time left");
+    expect(app).toContain("Time up");
+    expect(app).toContain('label="Time left"');
+  });
+
+  test("product copy does not expose mockup placeholders", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).not.toContain("Landing page");
+    expect(app).not.toContain("Student dashboard");
+    expect(app).not.toContain("Practitioner dashboard");
+    expect(app).not.toContain("Persona management");
+    expect(app).not.toContain("Selected file");
+    expect(app).not.toContain("Default set");
+    expect(app).not.toContain("View demo case");
+    expect(app).not.toContain("Cohort 04");
+    expect(app).not.toContain("Rushed closing");
+  });
 });

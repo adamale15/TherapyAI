@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
@@ -57,14 +57,21 @@ const personaVoiceIds: Record<string, string> = {
 };
 
 const scoreRows = [
-  ["A. Damale", "4.8", "3.9", "Sarah B", "Review crisis branch"],
-  ["M. Patel", "4.5", "4.0", "Marcus A", "Rushed closing"],
-  ["S. Nguyen", "4.1", "4.4", "Elena A", "Strong grounding"],
-  ["J. Rivera", "3.4", "4.7", "Custom", "Safety plan good"],
+  ["Opening intake", "4.8", "3.9", "Sarah Chen", "Review risk screen"],
+  ["Resistance practice", "4.5", "4.0", "Marcus Williams", "Needs slower closing"],
+  ["Grounding practice", "4.1", "4.4", "Elena Rodriguez", "Strong pacing"],
+  ["Custom upload", "3.4", "4.7", "Uploaded case", "Safety plan good"],
 ];
 
 const sessionDurations = [10, 25, 45] as const;
 type SessionDuration = (typeof sessionDurations)[number];
+
+function formatTimeRemaining(totalSeconds: number) {
+  const clamped = Math.max(0, totalSeconds);
+  const minutes = Math.floor(clamped / 60);
+  const seconds = clamped % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
 
 function initials(name: string) {
   return name
@@ -281,6 +288,8 @@ export default function BoldVeshApp() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceStatus, setVoiceStatus] = useState("Voice ready");
   const [sessionDuration, setSessionDuration] = useState<SessionDuration>(25);
+  const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
+  const [remainingSeconds, setRemainingSeconds] = useState(sessionDuration * 60);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const sessionId = useRef(`session-${Date.now()}`);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -299,6 +308,21 @@ export default function BoldVeshApp() {
     "student";
 
   const signedIn = !!user && isLoaded;
+  const timeRemainingLabel =
+    remainingSeconds > 0 ? formatTimeRemaining(remainingSeconds) : "Time up";
+
+  useEffect(() => {
+    if (view !== "session" || !sessionStartedAt) return;
+
+    const updateRemaining = () => {
+      const elapsedSeconds = Math.floor((Date.now() - sessionStartedAt) / 1000);
+      setRemainingSeconds(Math.max(0, sessionDuration * 60 - elapsedSeconds));
+    };
+
+    updateRemaining();
+    const timer = window.setInterval(updateRemaining, 1000);
+    return () => window.clearInterval(timer);
+  }, [sessionDuration, sessionStartedAt, view]);
 
   const navigate = (target: View) => {
     if (!signedIn && target !== "home") {
@@ -474,6 +498,8 @@ export default function BoldVeshApp() {
     setSelectedPersona(persona);
     setMessages([]);
     setInput("");
+    setSessionStartedAt(null);
+    setRemainingSeconds(sessionDuration * 60);
     setFeedback([
       "Review the case brief, choose a session length, then begin.",
       "The client will wait for your first therapeutic response.",
@@ -488,6 +514,9 @@ export default function BoldVeshApp() {
     stopVoice();
     stopListening();
     sessionId.current = `session-${Date.now()}`;
+    const startedAt = Date.now();
+    setSessionStartedAt(startedAt);
+    setRemainingSeconds(sessionDuration * 60);
     setMessages([]);
     setInput("");
     setFeedback([
@@ -582,7 +611,7 @@ export default function BoldVeshApp() {
       {view === "home" && (
         <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 gap-8 p-6 lg:grid-cols-[1fr_440px] lg:items-center lg:p-10">
           <div>
-            <div className="vesh-kicker mb-4">Landing page</div>
+            <div className="vesh-kicker mb-4">Clinical training lab</div>
             <h1 className="vesh-heading max-w-3xl">
               Clinical practice that finally feels{" "}
               <span className="inline-block bg-[var(--vesh-black)] px-3 pb-2 text-[var(--vesh-paper-soft)]">
@@ -609,14 +638,14 @@ export default function BoldVeshApp() {
                 onClick={() => selectedOrFirst && startSession(selectedOrFirst)}
                 className="vesh-button vesh-button-yellow"
               >
-                View demo case
+                Preview case
               </button>
             </div>
           </div>
 
           <div className="vesh-card grid min-h-[470px] grid-cols-[80px_1fr] overflow-hidden">
             <div className="border-r-[1.5px] border-[var(--vesh-black)] bg-[rgba(255,75,53,0.09)] p-5 text-center text-2xl font-black text-[var(--vesh-coral)]">
-              04
+              Live
             </div>
             <div className="p-5">
               <div className="flex items-start justify-between gap-3">
@@ -628,7 +657,7 @@ export default function BoldVeshApp() {
                     Sarah Chen / anxiety intake
                   </h2>
                 </div>
-                <span className="vesh-chip vesh-chip-active">Ready</span>
+                <span className="vesh-chip vesh-chip-active">Briefing</span>
               </div>
               <div className="my-4 h-[1.5px] bg-[var(--vesh-black)]" />
               <div className="vesh-note">
@@ -658,7 +687,7 @@ export default function BoldVeshApp() {
             ))}
           </aside>
           <div className="p-6">
-            <div className="vesh-kicker">Student dashboard</div>
+            <div className="vesh-kicker">Training journal</div>
             <h1 className="vesh-heading mt-2 text-4xl">Practice journal</h1>
             <div className="mt-5 grid gap-3 md:grid-cols-3">
               <Metric label="Sessions" value="12" detail="3 this week" />
@@ -679,7 +708,7 @@ export default function BoldVeshApp() {
           </div>
           <aside className="border-t-[1.5px] border-[var(--vesh-black)] bg-[rgba(15,61,50,0.06)] p-6 md:border-l-[1.5px] md:border-t-0">
             <div className="vesh-note">
-              <strong>This week</strong>
+              <strong>Coaching focus</strong>
               <p className="mt-1 text-sm text-[var(--vesh-ink)]">
                 You are improving at naming emotion. Next: ask fewer stacked
                 questions.
@@ -712,10 +741,10 @@ export default function BoldVeshApp() {
         <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 md:grid-cols-[220px_1fr]">
           <aside className="bg-[var(--vesh-black)] p-6 text-[var(--vesh-paper-soft)]">
             <h1 className="text-4xl font-black uppercase tracking-[-0.03em]">
-              Desk
+              Supervisor
             </h1>
             <p className="mt-2 text-sm text-[#cabca0]">
-              Cohort 04 / supervision queue
+              Training cohort / supervision queue
             </p>
             <div className="mt-6 grid gap-2">
               {["Review queue", "Rubrics", "Personas", "Exports"].map((item, index) => (
@@ -733,7 +762,7 @@ export default function BoldVeshApp() {
           <div className="p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <div className="vesh-kicker">Practitioner dashboard</div>
+                <div className="vesh-kicker">Supervisor workspace</div>
                 <h1 className="vesh-heading mt-2 text-4xl">
                   Clinical skills matrix
                 </h1>
@@ -743,12 +772,12 @@ export default function BoldVeshApp() {
               </button>
             </div>
             <div className="mt-5 grid gap-3 md:grid-cols-3">
-              <Metric label="Students" value="42" detail="cohort 04" />
+              <Metric label="Learners" value="42" detail="active roster" />
               <Metric label="Reviewed" value="68%" detail="this week" />
               <Metric label="Flags" value="7" detail="need attention" />
             </div>
             <div className="vesh-table mt-5 grid-cols-[1.1fr_0.8fr_0.8fr_1fr_1.2fr]">
-              {["Learner", "Rapport", "Risk", "Case", "Note"].map((head) => (
+              {["Session", "Rapport", "Risk", "Case", "Note"].map((head) => (
                 <div key={head} className="vesh-table-head">
                   {head}
                 </div>
@@ -783,7 +812,7 @@ export default function BoldVeshApp() {
           <div>
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
               <div>
-                <div className="vesh-kicker">Persona management</div>
+                <div className="vesh-kicker">Case library</div>
                 <h1 className="vesh-heading mt-2 text-4xl">Case file library</h1>
               </div>
               <button onClick={() => setShowUploadModal(true)} className="vesh-button">
@@ -804,14 +833,14 @@ export default function BoldVeshApp() {
           </div>
           <aside>
             <div className="vesh-note vesh-note-green">
-              <strong>Selected file</strong>
+              <strong>Case context</strong>
               <p className="mt-1 text-sm text-[var(--vesh-ink)]">
                 Case files show clinical context, difficulty, and the next
                 learning move without becoming generic profile cards.
               </p>
             </div>
               <div className="vesh-card mt-4 p-4">
-              <div className="vesh-kicker text-[var(--vesh-muted)]">Default set</div>
+              <div className="vesh-kicker text-[var(--vesh-muted)]">Built-in cases</div>
               <p className="mt-2 text-sm text-[var(--vesh-muted)]">
                 Sarah, Marcus, and Elena stay ready for fast practice. Custom
                 uploads appear in the same library.
@@ -931,6 +960,7 @@ export default function BoldVeshApp() {
               value={selectedOrFirst.name.split(" ")[0]}
             />
             <RailItem icon={Clock} label="Session" value={`${sessionDuration} min`} />
+            <RailItem icon={Clock} label="Time left" value={timeRemainingLabel} />
             <RailItem icon={Mic} label="Voice" value={voiceStatus} />
           </aside>
           <div className="grid grid-rows-[auto_1fr_auto] gap-4 p-6">
@@ -941,9 +971,14 @@ export default function BoldVeshApp() {
                   {selectedOrFirst.name} rehearsal
                 </h1>
               </div>
-              <button onClick={finishSession} className="vesh-button vesh-button-green">
-                End session
-              </button>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className={`vesh-chip min-h-10 ${remainingSeconds === 0 ? "bg-[var(--vesh-coral)] text-[var(--vesh-paper-soft)]" : "vesh-chip-active"}`}>
+                  Time left {timeRemainingLabel}
+                </span>
+                <button onClick={finishSession} className="vesh-button vesh-button-green">
+                  End session
+                </button>
+              </div>
             </div>
 
             <div className="grid content-start gap-3 overflow-y-auto pr-2">
