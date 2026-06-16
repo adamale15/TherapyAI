@@ -878,84 +878,101 @@ export default function BoldVeshApp() {
       )}
 
       {view === "practitioner" && (
-        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 md:grid-cols-[220px_1fr]">
-          <aside className="bg-[var(--vesh-black)] p-6 text-[var(--vesh-paper-soft)]">
-            <h1 className="text-4xl font-black uppercase tracking-[-0.03em]">
-              Supervisor
-            </h1>
-            <p className="mt-2 text-sm text-[#cabca0]">
-              Training cohort / supervision queue
-            </p>
-            <div className="mt-6 grid gap-2">
-              {["Review queue", "Rubrics", "Personas", "Exports"].map((item, index) => (
-                <span
-                  key={item}
-                  className={`vesh-chip ${
-                    index === 0 ? "vesh-chip-active" : "bg-transparent text-[var(--vesh-paper-soft)]"
-                  }`}
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
-          </aside>
-          <div className="p-6">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="vesh-kicker">Supervisor workspace</div>
-                <h1 className="vesh-heading mt-2 text-4xl">
-                  Clinical skills matrix
-                </h1>
+        <section className="vesh-program-shell min-h-[calc(100vh-58px)] p-6 lg:p-10">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <div className="vesh-kicker text-[var(--vesh-muted)]">
+                Cohort performance
               </div>
-              <button onClick={() => setView("personas")} className="vesh-button vesh-button-green">
-                Assign case
-              </button>
+              <h1 className="vesh-heading mt-2 text-4xl">
+                Program outcomes
+              </h1>
+              <p className="vesh-subheading mt-3 max-w-2xl">
+                Review completed sessions, spot low-skill patterns, and assign
+                the next case from the same workspace.
+              </p>
             </div>
-            <div className="mt-5 grid gap-3 md:grid-cols-3">
-              <Metric
-                label="Reviewed sessions"
-                value={String(clinicalDashboard.completedSessions)}
-                detail="completed reports"
-              />
-              <Metric
-                label="Alliance mean"
-                value={clinicalDashboard.allianceMeanDisplay}
-                detail="bond/tasks/goals"
-              />
-              <Metric
-                label="Needs review"
-                value={String(needsReviewCount)}
-                detail="risk or low skill score"
-              />
-            </div>
-            <div className="vesh-table mt-5 grid-cols-[1.1fr_0.8fr_0.8fr_1fr_1.2fr]">
-              {["Case", "Alliance", "Empathy", "Turns", "Date"].map((head) => (
-                <div key={head} className="vesh-table-head">
-                  {head}
-                </div>
-              ))}
-              {(clinicalDashboard.latestRows.length > 0
-                ? clinicalDashboard.latestRows
-                : [["No completed sessions", "No data", "No data", "0 turns", ""]]
-              ).flatMap((row, rowIndex) =>
-                row.map((cell, cellIndex) => (
-                  <div
-                    key={`${rowIndex}-${cellIndex}`}
-                    className={
-                      cellIndex === 1 && rowIndex !== clinicalDashboard.latestRows.length
-                        ? "bg-[#c8f2d9]"
-                        : cellIndex === 1
-                          ? "bg-[#fff0ad]"
-                          : cellIndex === 2 && rowIndex !== clinicalDashboard.latestRows.length
-                            ? "bg-[#c8f2d9]"
-                            : ""
-                    }
-                  >
-                    {cell}
+            <button onClick={() => setView("personas")} className="vesh-button vesh-button-green">
+              Assign case
+            </button>
+          </div>
+
+          <div className="mt-6 grid gap-4 xl:grid-cols-[1fr_320px]">
+            <div>
+              <div className="grid gap-3 md:grid-cols-3">
+                <Metric
+                  label="Reviewed sessions"
+                  value={String(clinicalDashboard.completedSessions)}
+                  detail="completed reports"
+                />
+                <Metric
+                  label="Alliance mean"
+                  value={clinicalDashboard.allianceMeanDisplay}
+                  detail="bond/tasks/goals"
+                />
+                <Metric
+                  label="Needs review"
+                  value={String(needsReviewCount)}
+                  detail="risk or low skill score"
+                />
+              </div>
+
+              <div className="vesh-card mt-5 overflow-hidden">
+                <div className="border-b-[1.5px] border-[var(--vesh-black)] p-4">
+                  <div className="vesh-kicker text-[var(--vesh-muted)]">
+                    Clinical skills matrix
                   </div>
-                ))
-              )}
+                </div>
+                <div className="vesh-table vesh-program-table grid-cols-[1.1fr_0.8fr_0.8fr_1fr_1.2fr]">
+                  {["Case", "Alliance", "Empathy", "Turns", "Date"].map((head) => (
+                    <div key={head} className="vesh-table-head">
+                      {head}
+                    </div>
+                  ))}
+                  {(clinicalDashboard.latestRows.length > 0
+                    ? clinicalDashboard.latestRows
+                    : [["No completed sessions", "No data", "No data", "0 turns", ""]]
+                  ).flatMap((row, rowIndex) =>
+                    row.map((cell, cellIndex) => (
+                      <div
+                        key={`${rowIndex}-${cellIndex}`}
+                        className={
+                          cellIndex === 1 && rowIndex !== clinicalDashboard.latestRows.length
+                            ? "bg-[#c8f2d9]"
+                            : cellIndex === 1
+                              ? "bg-[#fff0ad]"
+                              : cellIndex === 2 && rowIndex !== clinicalDashboard.latestRows.length
+                                ? "bg-[#c8f2d9]"
+                                : ""
+                        }
+                      >
+                        {cell}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
+
+            <aside className="grid content-start gap-4">
+              <div className="vesh-note vesh-note-green">
+                <strong>{clinicalDashboard.practiceFocus}</strong>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--vesh-ink)]">
+                  {clinicalDashboard.completedSessions > 0
+                    ? "Next assignment should target the lowest average score across recent completed sessions."
+                    : "Completed sessions will turn this panel into a live coaching priority."}
+                </p>
+              </div>
+              <div className="vesh-card p-4">
+                <div className="vesh-kicker text-[var(--vesh-muted)]">
+                  Active signal
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-[var(--vesh-muted)]">
+                  Alliance, empathy, risk screening, and turn quality are pulled
+                  from saved rehearsal reports instead of static demo values.
+                </p>
+              </div>
+            </aside>
           </div>
         </section>
       )}

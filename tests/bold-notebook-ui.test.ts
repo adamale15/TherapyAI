@@ -129,6 +129,19 @@ describe("bold notebook UI system", () => {
     expect(css).toContain("outline: none");
   });
 
+  test("programs page removes the text sidebar and uses a full width matrix", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).not.toContain("Training cohort / supervision queue");
+    expect(app).not.toContain('["Review queue", "Rubrics", "Personas", "Exports"]');
+    expect(app).not.toContain("Supervisor workspace");
+    expect(app).not.toContain("md:grid-cols-[220px_1fr]");
+    expect(app).toContain("vesh-program-shell");
+    expect(app).toContain("vesh-program-table");
+    expect(app).toContain("Program outcomes");
+    expect(app).toContain("Cohort performance");
+  });
+
   test("landing preview removes mockup labels and keeps the demo card aligned", () => {
     const app = read("components/BoldVeshApp.tsx");
 
