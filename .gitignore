@@ -3,6 +3,7 @@ node_modules/
 .env.local
 .env
 *.log
+tsconfig.tsbuildinfo
 dist/
 uploads/
 lib/knowledge-base/custom-personas/

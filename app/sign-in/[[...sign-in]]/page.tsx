@@ -44,16 +44,12 @@ export default function SignInPage() {
             },
             variables: {
               colorPrimary: "#8b5cf6",
-              colorText: "#ffffff",
-              colorTextSecondary: "#9ca3af",
               colorBackground: "#1a1a1a",
-              colorInputBackground: "#0a0a0a",
-              colorInputText: "#ffffff",
               borderRadius: "0.75rem",
               fontFamily: "var(--font-raleway, system-ui, sans-serif)",
             },
           }}
-          afterSignInUrl="/"
+          fallbackRedirectUrl="/"
           routing="path"
           path="/sign-in"
         />

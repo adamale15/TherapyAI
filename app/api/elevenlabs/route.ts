@@ -3,7 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   try {
     const { text, voiceId } = await req.json();
-    const apiKey = process.env.ELEVENLABS_API_KEY;
+    const apiKey =
+      process.env.ELEVENLABS_API_KEY ||
+      process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY;
 
     if (!apiKey) {
       return NextResponse.json(

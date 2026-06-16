@@ -48,16 +48,15 @@ export default function SignUpPage() {
             },
             variables: {
               colorPrimary: "#8b5cf6",
-              colorText: "#ffffff",
-              colorTextSecondary: "#9ca3af",
               colorBackground: "#1a1a1a",
-              colorInputBackground: "#0a0a0a",
-              colorInputText: "#ffffff",
               borderRadius: "0.75rem",
               fontFamily: "var(--font-raleway, system-ui, sans-serif)",
             },
           }}
-          afterSignUpUrl={userType ? `/api/auth/set-user-type?userType=${userType}` : "/"}
+          forceRedirectUrl={
+            userType ? `/api/auth/set-user-type?userType=${userType}` : undefined
+          }
+          fallbackRedirectUrl="/"
           routing="path"
           path="/sign-up"
         />
