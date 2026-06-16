@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import {
   AlertTriangle,
   ArrowRight,
@@ -19,6 +19,11 @@ import {
   Upload,
 } from "lucide-react";
 import { PersonaUploadModal } from "./PersonaUploadModal";
+import {
+  analyzeClinicalSession,
+  summarizeClinicalHistory,
+  type CompletedClinicalSession,
+} from "@/lib/clinical-metrics";
 import { convexFunctions } from "@/lib/convex/functions";
 import { defaultPersonas, type PersonaData } from "@/lib/personas/default-personas";
 import { elevenLabsService } from "@/lib/services/elevenlabs-service";
@@ -56,13 +61,6 @@ const personaVoiceIds: Record<string, string> = {
   "Marcus Williams": "ErXwobaYiN019PkySvjV",
   "Elena Rodriguez": "21m00Tcm4TlvDq8ikWAM",
 };
-
-const scoreRows = [
-  ["Opening intake", "4.8", "3.9", "Sarah Chen", "Review risk screen"],
-  ["Resistance practice", "4.5", "4.0", "Marcus Williams", "Needs slower closing"],
-  ["Grounding practice", "4.1", "4.4", "Elena Rodriguez", "Strong pacing"],
-  ["Custom upload", "3.4", "4.7", "Uploaded case", "Safety plan good"],
-];
 
 const sessionDurations = [10, 25, 45] as const;
 type SessionDuration = (typeof sessionDurations)[number];
@@ -281,10 +279,6 @@ export default function BoldVeshApp() {
   const [selectedPersona, setSelectedPersona] = useState<PersonaData | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [feedback, setFeedback] = useState<string[]>([
-    "Reflect the pressure before moving into assessment.",
-    "Ask one question at a time.",
-  ]);
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -295,11 +289,17 @@ export default function BoldVeshApp() {
   const [sessionEndReason, setSessionEndReason] = useState<SessionEndReason | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const sessionId = useRef(`session-${Date.now()}`);
+  const savedSessionKeys = useRef<Set<string>>(new Set());
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   const convexPersonas = useQuery(convexFunctions.personas.listForUser, {
     ownerClerkId: user?.id,
   });
+  const completedSessions = useQuery(
+    convexFunctions.chatSessions.listCompletedForUser,
+    user?.id ? { ownerClerkId: user.id } : "skip"
+  );
+  const saveCompletedSession = useMutation(convexFunctions.chatSessions.saveCompleted);
 
   const personas = useMemo(
     () => ((convexPersonas as PersonaData[] | undefined) ?? defaultPersonas),
@@ -313,6 +313,24 @@ export default function BoldVeshApp() {
   const signedIn = !!user && isLoaded;
   const timeRemainingLabel =
     remainingSeconds > 0 ? formatTimeRemaining(remainingSeconds) : "Time up";
+  const selectedOrFirst = selectedPersona ?? personas[0];
+  const sessionAnalysis = useMemo(() => analyzeClinicalSession(messages), [messages]);
+  const clinicalDashboard = useMemo(
+    () => summarizeClinicalHistory((completedSessions ?? []) as CompletedClinicalSession[]),
+    [completedSessions]
+  );
+  const needsReviewCount = ((completedSessions ?? []) as CompletedClinicalSession[]).filter(
+    (session) => {
+      const scores = session.scores ?? {};
+      return (
+        (typeof scores.alliance === "number" && scores.alliance < 3) ||
+        (typeof scores.empathicAccuracy === "number" && scores.empathicAccuracy < 3) ||
+        (typeof scores.riskScreen === "number" && scores.riskScreen < 5)
+      );
+    }
+  ).length;
+  const completionLabel =
+    sessionEndReason === "time" ? "Time limit reached" : "Ended by learner";
 
   useEffect(() => {
     if (view !== "session" || !sessionStartedAt) return;
@@ -504,10 +522,6 @@ export default function BoldVeshApp() {
     setSessionStartedAt(null);
     setRemainingSeconds(sessionDuration * 60);
     setSessionEndReason(null);
-    setFeedback([
-      "Review the case brief, choose a session length, then begin.",
-      "The client will wait for your first therapeutic response.",
-    ]);
     setVoiceStatus("Voice ready");
     setView("briefing");
   };
@@ -524,10 +538,6 @@ export default function BoldVeshApp() {
     setSessionEndReason(null);
     setMessages([]);
     setInput("");
-    setFeedback([
-      "Begin the session with your first therapeutic response.",
-      "The client will answer after you send or speak your line.",
-    ]);
     setVoiceStatus("Voice ready");
     setView("session");
 
@@ -565,15 +575,11 @@ export default function BoldVeshApp() {
       const replyText =
         data?.reply?.text ||
         "I hear you, but I am not sure I believe this can actually help.";
-      const coachFeedback = Array.isArray(data?.reply?.state?.feedback)
-        ? data.reply.state.feedback
-        : ["Good reflection. Stay with the emotion before giving direction."];
 
       setMessages((prev) => [
         ...prev,
         { id: `a-${Date.now()}`, role: "client", text: replyText },
       ]);
-      setFeedback(coachFeedback.slice(-3));
       void speakText(replyText, selectedOrFirst);
     } catch {
       const fallbackReply =
@@ -586,14 +592,31 @@ export default function BoldVeshApp() {
           text: fallbackReply,
         },
       ]);
-      setFeedback([
-        "The reply named ambivalence well.",
-        "Try a grounded follow-up question next.",
-      ]);
       void speakText(fallbackReply, selectedOrFirst);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const persistCompletedSession = async () => {
+    if (!user?.id || !selectedOrFirst || savedSessionKeys.current.has(sessionId.current)) {
+      return;
+    }
+
+    savedSessionKeys.current.add(sessionId.current);
+
+    await saveCompletedSession({
+      ownerClerkId: user.id,
+      personaId: selectedOrFirst.id,
+      personaName: selectedOrFirst.name,
+      duration: sessionDuration,
+      totalMessages: messages.length,
+      scores: sessionAnalysis.scores,
+      messages,
+    }).catch((error) => {
+      savedSessionKeys.current.delete(sessionId.current);
+      console.error("Could not save completed session", error);
+    });
   };
 
   const finishSession = (reason: SessionEndReason = "manual") => {
@@ -603,12 +626,9 @@ export default function BoldVeshApp() {
       setRemainingSeconds(0);
     }
     setSessionEndReason(reason);
+    void persistCompletedSession();
     setView("summary");
   };
-
-  const selectedOrFirst = selectedPersona ?? personas[0];
-  const completionLabel =
-    sessionEndReason === "time" ? "Time limit reached" : "Ended by learner";
 
   useEffect(() => {
     if (view === "session" && sessionStartedAt && remainingSeconds === 0) {
@@ -667,13 +687,13 @@ export default function BoldVeshApp() {
       addText(`Primary watch point: ${selectedOrFirst.background.therapeuticConsiderations[0]}`);
 
       addSection("Scores");
-      addText("Empathy: 4.6 strong");
-      addText("Technique: 4.1 developing");
-      addText("Risk: 3.9 contained");
+      sessionAnalysis.metrics.forEach((item) => {
+        addText(`${item.label}: ${item.display} (${item.detail})`);
+      });
 
       addSection("Coach Notes");
-      feedback.slice(0, 3).forEach((item, index) => {
-        addText(`${index + 1}. ${item}`);
+      sessionAnalysis.suggestions.forEach((item, index) => {
+        addText(`${index + 1}. ${item.title}: ${item.body}`);
       });
 
       addSection("Transcript");
@@ -763,9 +783,9 @@ export default function BoldVeshApp() {
                 </p>
               </div>
               <div className="mt-4 grid grid-cols-3 gap-3">
-                <Metric label="Rapport" value="82%" detail="opening phase" compact />
-                <Metric label="Pace" value="Good" detail="steady" compact />
-                <Metric label="Risk" value="Low" detail="stable" compact />
+                <Metric label="Alliance" value="4.2/5" detail="bond/tasks" compact />
+                <Metric label="Questions" value="Open" detail="single focus" compact />
+                <Metric label="Risk screen" value="Ready" detail="if cued" compact />
               </div>
             </div>
           </div>
@@ -774,9 +794,9 @@ export default function BoldVeshApp() {
 
       {view === "student" && (
         <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 md:grid-cols-[78px_1fr_300px]">
-          <aside className="vesh-rail hidden p-4 md:grid md:content-start md:justify-items-center md:gap-3">
-            {["J", "C", "R"].map((item) => (
-              <span key={item} className="vesh-chip w-10 px-0">
+          <aside className="vesh-rail hidden p-3 md:grid md:content-start md:justify-items-center md:gap-3">
+            {["Log", "Cases", "Reports"].map((item) => (
+              <span key={item} className="vesh-chip w-full px-1 text-[10px]">
                 {item}
               </span>
             ))}
@@ -785,9 +805,21 @@ export default function BoldVeshApp() {
             <div className="vesh-kicker">Training journal</div>
             <h1 className="vesh-heading mt-2 text-4xl">Practice journal</h1>
             <div className="mt-5 grid gap-3 md:grid-cols-3">
-              <Metric label="Sessions" value="12" detail="3 this week" />
-              <Metric label="Rapport" value="4.2" detail="steady rise" />
-              <Metric label="Focus" value="Pace" detail="recommended skill" />
+              <Metric
+                label="Completed cases"
+                value={String(clinicalDashboard.completedSessions)}
+                detail="saved reports"
+              />
+              <Metric
+                label="Alliance mean"
+                value={clinicalDashboard.allianceMeanDisplay}
+                detail="working alliance"
+              />
+              <Metric
+                label="Practice focus"
+                value={clinicalDashboard.practiceFocus}
+                detail="lowest scored skill"
+              />
             </div>
             <div className="my-5 h-[1.5px] bg-[var(--vesh-black)]" />
             <div className="grid gap-4 md:grid-cols-3">
@@ -803,31 +835,32 @@ export default function BoldVeshApp() {
           </div>
           <aside className="border-t-[1.5px] border-[var(--vesh-black)] bg-[rgba(15,61,50,0.06)] p-6 md:border-l-[1.5px] md:border-t-0">
             <div className="vesh-note">
-              <strong>Coaching focus</strong>
+              <strong>{clinicalDashboard.practiceFocus}</strong>
               <p className="mt-1 text-sm text-[var(--vesh-ink)]">
-                You are improving at naming emotion. Next: ask fewer stacked
-                questions.
+                {clinicalDashboard.completedSessions > 0
+                  ? "Your next practice target is based on your lowest average clinical skill score."
+                  : "Complete a session to unlock trend-based coaching."}
               </p>
             </div>
-            <div className="mt-5 h-20 grid-cols-[repeat(18,1fr)] items-end gap-1 grid">
-              {[28, 42, 35, 54, 30, 48, 62, 38, 44, 58, 31, 49, 60, 37, 53, 43, 57, 46].map(
-                (height, index) => (
-                  <span
-                    key={index}
-                    className="block min-h-2 border-[1.5px] border-[var(--vesh-black)]"
-                    style={{
-                      height,
-                      background:
-                        index % 5 === 1
-                          ? "var(--vesh-coral)"
-                          : index % 4 === 0
-                          ? "var(--vesh-yellow)"
-                          : "var(--vesh-green-bright)",
-                    }}
-                  />
-                )
-              )}
-            </div>
+            {clinicalDashboard.latestRows.length > 0 ? (
+              <div className="mt-5 h-20 grid-cols-[repeat(12,1fr)] items-end gap-1 grid">
+                {((completedSessions ?? []) as CompletedClinicalSession[]).slice(0, 12).map((session) => {
+                  const alliance =
+                    typeof session.scores?.alliance === "number" ? session.scores.alliance : 1;
+                  return (
+                    <span
+                      key={`${session.createdAt}-${session.personaName}`}
+                      className="block min-h-2 border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-green-bright)]"
+                      style={{ height: Math.max(12, alliance * 14) }}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="vesh-card mt-5 p-4 text-sm text-[var(--vesh-muted)]">
+                No completed reports yet.
+              </div>
+            )}
           </aside>
         </section>
       )}
@@ -867,30 +900,43 @@ export default function BoldVeshApp() {
               </button>
             </div>
             <div className="mt-5 grid gap-3 md:grid-cols-3">
-              <Metric label="Learners" value="42" detail="active roster" />
-              <Metric label="Reviewed" value="68%" detail="this week" />
-              <Metric label="Flags" value="7" detail="need attention" />
+              <Metric
+                label="Reviewed sessions"
+                value={String(clinicalDashboard.completedSessions)}
+                detail="completed reports"
+              />
+              <Metric
+                label="Alliance mean"
+                value={clinicalDashboard.allianceMeanDisplay}
+                detail="bond/tasks/goals"
+              />
+              <Metric
+                label="Needs review"
+                value={String(needsReviewCount)}
+                detail="risk or low skill score"
+              />
             </div>
             <div className="vesh-table mt-5 grid-cols-[1.1fr_0.8fr_0.8fr_1fr_1.2fr]">
-              {["Session", "Rapport", "Risk", "Case", "Note"].map((head) => (
+              {["Case", "Alliance", "Empathy", "Turns", "Date"].map((head) => (
                 <div key={head} className="vesh-table-head">
                   {head}
                 </div>
               ))}
-              {scoreRows.flatMap((row, rowIndex) =>
+              {(clinicalDashboard.latestRows.length > 0
+                ? clinicalDashboard.latestRows
+                : [["No completed sessions", "No data", "No data", "0 turns", ""]]
+              ).flatMap((row, rowIndex) =>
                 row.map((cell, cellIndex) => (
                   <div
                     key={`${rowIndex}-${cellIndex}`}
                     className={
-                      cellIndex === 1 && rowIndex !== 3
+                      cellIndex === 1 && rowIndex !== clinicalDashboard.latestRows.length
                         ? "bg-[#c8f2d9]"
                         : cellIndex === 1
-                        ? "bg-[#ffc6ba]"
-                        : cellIndex === 2 && rowIndex === 0
-                        ? "bg-[#fff0ad]"
-                        : cellIndex === 2 && rowIndex > 1
-                        ? "bg-[#c8f2d9]"
-                        : ""
+                          ? "bg-[#fff0ad]"
+                          : cellIndex === 2 && rowIndex !== clinicalDashboard.latestRows.length
+                            ? "bg-[#c8f2d9]"
+                            : ""
                     }
                   >
                     {cell}
@@ -1152,18 +1198,29 @@ export default function BoldVeshApp() {
                 Feedback on your latest trainee response.
               </p>
             </div>
-            <CoachCard tone="good" eyebrow="What worked" title="Stay with the feeling">
-              You noticed the client was guarded instead of forcing a quick
-              assessment.
+            <CoachCard
+              tone={sessionAnalysis.suggestions[0].tone}
+              eyebrow="What worked"
+              title={sessionAnalysis.suggestions[0].title}
+            >
+              {sessionAnalysis.suggestions[0].body}
             </CoachCard>
             <div className="mt-3">
-              <CoachCard tone="next" eyebrow="Next move" title="Make one clean follow-up">
-                {feedback[0] ?? "Ask what safety would feel like in the body."}
+              <CoachCard
+                tone={sessionAnalysis.suggestions[1].tone}
+                eyebrow="Next move"
+                title={sessionAnalysis.suggestions[1].title}
+              >
+                {sessionAnalysis.suggestions[1].body}
               </CoachCard>
             </div>
             <div className="mt-3">
-              <CoachCard tone="watch" eyebrow="Clinical watch" title="Avoid shallow check-ins">
-                {feedback[1] ?? "Avoid advice before exploring shame."}
+              <CoachCard
+                tone={sessionAnalysis.suggestions[2].tone}
+                eyebrow="Clinical watch"
+                title={sessionAnalysis.suggestions[2].title}
+              >
+                {sessionAnalysis.suggestions[2].body}
               </CoachCard>
             </div>
           </aside>
@@ -1185,21 +1242,22 @@ export default function BoldVeshApp() {
               {completionLabel}
             </div>
             <div className="mt-5 grid gap-3 md:grid-cols-3">
-              <Metric label="Empathy" value="4.6" detail="strong" />
-              <Metric label="Technique" value="4.1" detail="developing" />
-              <Metric label="Risk" value="3.9" detail="contained" />
+              {sessionAnalysis.metrics.map((item) => (
+                <Metric
+                  key={item.key}
+                  label={item.label}
+                  value={item.display}
+                  detail={item.detail}
+                />
+              ))}
             </div>
             <div className="vesh-table mt-5 grid-cols-[1.1fr_1fr_1fr_1.4fr]">
-              {["Moment", "Skill", "Score", "Faculty note"].map((head) => (
+              {["Domain", "Rating", "Score", "Faculty note"].map((head) => (
                 <div key={head} className="vesh-table-head">
                   {head}
                 </div>
               ))}
-              {[
-                ["Opening", "Validation", "Strong", "Accurately named pressure."],
-                ["Middle", "Assessment", "Okay", "Asked two questions at once."],
-                ["Closing", "Containment", "Good", "Clear next-step summary."],
-              ].flatMap((row, rowIndex) =>
+              {sessionAnalysis.facultyRows.flatMap((row, rowIndex) =>
                 row.map((cell, cellIndex) => (
                   <div
                     key={`${rowIndex}-${cellIndex}`}
@@ -1213,15 +1271,15 @@ export default function BoldVeshApp() {
           </main>
           <aside>
             <div className="vesh-note vesh-note-green">
-              <strong>Keep practicing</strong>
+              <strong>{sessionAnalysis.suggestions[1].title}</strong>
               <p className="mt-1 text-sm text-[var(--vesh-ink)]">
-                Emotion reflection before problem solving.
+                {sessionAnalysis.suggestions[1].body}
               </p>
             </div>
             <div className="vesh-note mt-3">
-              <strong>Next assignment</strong>
+              <strong>{sessionAnalysis.suggestions[2].title}</strong>
               <p className="mt-1 text-sm text-[var(--vesh-ink)]">
-                Repeat the same case with a stricter time limit.
+                {sessionAnalysis.suggestions[2].body}
               </p>
             </div>
             <button

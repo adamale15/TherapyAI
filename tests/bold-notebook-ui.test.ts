@@ -97,6 +97,27 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("Download PDF");
   });
 
+  test("dashboard and summary use dynamic clinical metrics", () => {
+    const app = read("components/BoldVeshApp.tsx");
+    const convexRefs = read("lib/convex/functions.ts");
+    const metrics = read("lib/clinical-metrics.ts");
+
+    expect(app).toContain("analyzeClinicalSession");
+    expect(app).toContain("summarizeClinicalHistory");
+    expect(app).toContain("completedSessions");
+    expect(app).toContain("sessionAnalysis.metrics");
+    expect(app).toContain("clinicalDashboard.latestRows");
+    expect(metrics).toContain("Working alliance");
+    expect(metrics).toContain("Question quality");
+    expect(metrics).toContain("Reflection ratio");
+    expect(metrics).toContain("Risk screen");
+    expect(convexRefs).toContain("listCompletedForUser");
+    expect(convexRefs).toContain("saveCompleted");
+    expect(app).not.toContain('<Metric label="Sessions" value="12"');
+    expect(app).not.toContain('<Metric label="Empathy" value="4.6"');
+    expect(app).not.toContain("scoreRows.flatMap");
+  });
+
   test("product copy does not expose mockup placeholders", () => {
     const app = read("components/BoldVeshApp.tsx");
 

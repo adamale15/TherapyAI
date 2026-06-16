@@ -1,6 +1,7 @@
 import { makeFunctionReference } from "convex/server";
 import type { PersonaData } from "@/lib/personas/default-personas";
 import type { ChatTurn } from "@/lib/llm";
+import type { ClinicalMessage, ClinicalScores } from "@/lib/clinical-metrics";
 
 export const convexFunctions = {
   personas: {
@@ -57,5 +58,31 @@ export const convexFunctions = {
       { sessionKey: string },
       { success: boolean }
     >("chatSessions:clearHistory"),
+    listCompletedForUser: makeFunctionReference<
+      "query",
+      { ownerClerkId?: string },
+      Array<{
+        personaId: string;
+        personaName: string;
+        duration: number;
+        totalMessages: number;
+        scores: Partial<ClinicalScores>;
+        messages: ClinicalMessage[];
+        createdAt: string;
+      }>
+    >("chatSessions:listCompletedForUser"),
+    saveCompleted: makeFunctionReference<
+      "mutation",
+      {
+        ownerClerkId: string;
+        personaId: string;
+        personaName: string;
+        duration: number;
+        totalMessages: number;
+        scores: ClinicalScores;
+        messages: ClinicalMessage[];
+      },
+      { success: boolean }
+    >("chatSessions:saveCompleted"),
   },
 };

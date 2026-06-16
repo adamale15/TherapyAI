@@ -136,6 +136,22 @@ export const clearHistory = mutation({
   },
 });
 
+export const listCompletedForUser = query({
+  args: {
+    ownerClerkId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const ownerClerkId = await callerClerkId(ctx, args.ownerClerkId);
+    if (!ownerClerkId) return [];
+
+    return await ctx.db
+      .query("sessionHistory")
+      .withIndex("by_owner", (q) => q.eq("ownerClerkId", ownerClerkId))
+      .order("desc")
+      .take(25);
+  },
+});
+
 export const saveCompleted = mutation({
   args: {
     ownerClerkId: v.string(),
