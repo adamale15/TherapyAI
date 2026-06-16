@@ -7,3 +7,5 @@ tsconfig.tsbuildinfo
 dist/
 uploads/
 lib/knowledge-base/custom-personas/
+.superpowers/
+ui-samples/

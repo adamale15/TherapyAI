@@ -1,5 +1,5 @@
-import VeshApp from "@/components/TherapyAi";
+import BoldVeshApp from "@/components/BoldVeshApp";
 
 export default function Page() {
-  return <VeshApp />;
+  return <BoldVeshApp />;
 }

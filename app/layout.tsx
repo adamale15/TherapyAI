@@ -1,13 +1,13 @@
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
-import { Montserrat } from "next/font/google";
+import { Archivo } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
 
-const montserrat = Montserrat({
+const archivo = Archivo({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-montserrat",
+  variable: "--font-archivo",
 });
 
 export const metadata = {
@@ -30,12 +30,12 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en" className={montserrat.variable} suppressHydrationWarning>
+      <html lang="en" className={archivo.variable} suppressHydrationWarning>
         <head>
           <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <meta name="theme-color" content="#4f46e5" />
+          <meta name="theme-color" content="#ff4b35" />
         </head>
-        <body className={`${montserrat.className} antialiased`}>
+        <body className={`${archivo.className} antialiased`}>
           <ConvexClientProvider>{children}</ConvexClientProvider>
           <Analytics />
         </body>
