@@ -27,6 +27,7 @@ type View =
   | "student"
   | "practitioner"
   | "personas"
+  | "briefing"
   | "session"
   | "summary";
 
@@ -61,6 +62,9 @@ const scoreRows = [
   ["S. Nguyen", "4.1", "4.4", "Elena A", "Strong grounding"],
   ["J. Rivera", "3.4", "4.7", "Custom", "Safety plan good"],
 ];
+
+const sessionDurations = [10, 25, 45] as const;
+type SessionDuration = (typeof sessionDurations)[number];
 
 function initials(name: string) {
   return name
@@ -276,6 +280,7 @@ export default function BoldVeshApp() {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceStatus, setVoiceStatus] = useState("Voice ready");
+  const [sessionDuration, setSessionDuration] = useState<SessionDuration>(25);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const sessionId = useRef(`session-${Date.now()}`);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -458,7 +463,7 @@ export default function BoldVeshApp() {
     recognition.start();
   };
 
-  const startSession = async (persona: PersonaData) => {
+  const startSession = (persona: PersonaData) => {
     if (!signedIn) {
       router.push("/sign-up?userType=student");
       return;
@@ -466,8 +471,23 @@ export default function BoldVeshApp() {
 
     stopVoice();
     stopListening();
-    sessionId.current = `session-${Date.now()}`;
     setSelectedPersona(persona);
+    setMessages([]);
+    setInput("");
+    setFeedback([
+      "Review the case brief, choose a session length, then begin.",
+      "The client will wait for your first therapeutic response.",
+    ]);
+    setVoiceStatus("Voice ready");
+    setView("briefing");
+  };
+
+  const beginSession = async () => {
+    if (!selectedOrFirst) return;
+
+    stopVoice();
+    stopListening();
+    sessionId.current = `session-${Date.now()}`;
     setMessages([]);
     setInput("");
     setFeedback([
@@ -483,7 +503,7 @@ export default function BoldVeshApp() {
         "Content-Type": "application/json",
         "X-Session-Id": sessionId.current,
       },
-      body: JSON.stringify({ type: "set_persona", persona: persona.id }),
+      body: JSON.stringify({ type: "set_persona", persona: selectedOrFirst.id }),
     }).catch(() => undefined);
   };
 
@@ -790,13 +810,114 @@ export default function BoldVeshApp() {
                 learning move without becoming generic profile cards.
               </p>
             </div>
-            <div className="vesh-card mt-4 p-4">
+              <div className="vesh-card mt-4 p-4">
               <div className="vesh-kicker text-[var(--vesh-muted)]">Default set</div>
               <p className="mt-2 text-sm text-[var(--vesh-muted)]">
                 Sarah, Marcus, and Elena stay ready for fast practice. Custom
                 uploads appear in the same library.
               </p>
             </div>
+          </aside>
+        </section>
+      )}
+
+      {view === "briefing" && selectedOrFirst && (
+        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 gap-5 p-6 lg:grid-cols-[1fr_360px]">
+          <main className="vesh-card vesh-paper p-6 lg:p-8">
+            <div className="vesh-kicker text-[var(--vesh-muted)]">Pre-session briefing</div>
+            <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h1 className="vesh-heading text-4xl">
+                  {selectedOrFirst.name}
+                </h1>
+                <p className="vesh-subheading mt-3 max-w-2xl">
+                  {selectedOrFirst.age}, {selectedOrFirst.occupation}.{" "}
+                  {selectedOrFirst.description}
+                </p>
+              </div>
+              <span className={`vesh-chip ${difficultyClass(selectedOrFirst.difficulty)}`}>
+                {selectedOrFirst.difficulty}
+              </span>
+            </div>
+
+            <div className="my-6 h-[1.5px] bg-[var(--vesh-black)]" />
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="vesh-note vesh-note-green">
+                <strong>Training objective</strong>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--vesh-ink)]">
+                  {selectedOrFirst.background.sessionGoals[0]} while keeping the
+                  opening grounded, collaborative, and clinically paced.
+                </p>
+              </div>
+              <div className="vesh-note">
+                <strong>Encounter frame</strong>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--vesh-ink)]">
+                  Early-session practice. The client may be guarded at first and
+                  should open up gradually as rapport improves.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-4 lg:grid-cols-3">
+              <div className="vesh-card p-4">
+                <div className="vesh-kicker text-[var(--vesh-muted)]">Background</div>
+                <ul className="mt-3 space-y-2 text-sm leading-relaxed text-[var(--vesh-muted)]">
+                  {selectedOrFirst.background.demographics.slice(1).map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="vesh-card p-4">
+                <div className="vesh-kicker text-[var(--vesh-muted)]">Presenting concerns</div>
+                <ul className="mt-3 space-y-2 text-sm leading-relaxed text-[var(--vesh-muted)]">
+                  {selectedOrFirst.background.presentingConcerns.slice(0, 4).map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="vesh-card p-4">
+                <div className="vesh-kicker text-[var(--vesh-muted)]">Clinical notes</div>
+                <ul className="mt-3 space-y-2 text-sm leading-relaxed text-[var(--vesh-muted)]">
+                  {selectedOrFirst.background.clinicalNotes.slice(0, 4).map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </main>
+
+          <aside className="grid content-start gap-4">
+            <div className="vesh-card p-4">
+              <div className="vesh-kicker text-[var(--vesh-muted)]">Session length</div>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {sessionDurations.map((duration) => (
+                  <button
+                    key={duration}
+                    type="button"
+                    onClick={() => setSessionDuration(duration)}
+                    className={`vesh-chip min-h-12 ${
+                      sessionDuration === duration ? "vesh-chip-active" : ""
+                    }`}
+                  >
+                    {duration} min
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="vesh-note vesh-note-red">
+              <strong>Watch for</strong>
+              <p className="mt-2 text-sm leading-relaxed text-[var(--vesh-ink)]">
+                {selectedOrFirst.background.therapeuticConsiderations[0]}
+              </p>
+            </div>
+            <button onClick={() => void beginSession()} className="vesh-button w-full">
+              Begin session
+              <ArrowRight className="h-4 w-4" />
+            </button>
+            <button onClick={() => setView("personas")} className="vesh-button vesh-button-yellow w-full">
+              Choose another case
+            </button>
           </aside>
         </section>
       )}
@@ -809,7 +930,7 @@ export default function BoldVeshApp() {
               label="Case"
               value={selectedOrFirst.name.split(" ")[0]}
             />
-            <RailItem icon={Clock} label="Session" value="25 min" />
+            <RailItem icon={Clock} label="Session" value={`${sessionDuration} min`} />
             <RailItem icon={Mic} label="Voice" value={voiceStatus} />
           </aside>
           <div className="grid grid-rows-[auto_1fr_auto] gap-4 p-6">
@@ -924,7 +1045,7 @@ export default function BoldVeshApp() {
               {selectedOrFirst.name} / {selectedOrFirst.condition}
             </h1>
             <p className="vesh-subheading mt-3">
-              25 minute rehearsal completed with {messages.length} learner and
+              {sessionDuration} minute rehearsal completed with {messages.length} learner and
               client turns.
             </p>
             <div className="mt-5 grid gap-3 md:grid-cols-3">

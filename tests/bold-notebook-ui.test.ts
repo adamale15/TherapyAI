@@ -56,4 +56,19 @@ describe("bold notebook UI system", () => {
     expect(app).not.toContain('id: "opening"');
     expect(app).not.toContain("I do not really know what I am supposed to say.");
   });
+
+  test("pre-session briefing gives case background and duration controls", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain('"briefing"');
+    expect(app).toContain("Pre-session briefing");
+    expect(app).toContain("Session length");
+    expect(app).toContain("Training objective");
+    expect(app).toContain("Presenting concerns");
+    expect(app).toContain("Clinical notes");
+    expect(app).toContain("Begin session");
+    expect(app).toContain("sessionDurations");
+    expect(app).toContain("setSessionDuration");
+    expect(app).toContain("sessionDuration} minute rehearsal");
+  });
 });

@@ -1,6 +1,9 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { defaultPersonas } from "../lib/personas/default-personas";
+import {
+  defaultPersonaById,
+  defaultPersonas,
+} from "../lib/personas/default-personas";
 
 const personaArgs = {
   personaId: v.string(),
@@ -70,11 +73,6 @@ export const listForUser = query({
   args: { ownerClerkId: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const ownerClerkId = await callerClerkId(ctx, args.ownerClerkId);
-    const defaults = await ctx.db
-      .query("personas")
-      .withIndex("by_default", (q) => q.eq("isDefault", true))
-      .collect();
-
     const custom = ownerClerkId
       ? await ctx.db
           .query("personas")
@@ -82,7 +80,7 @@ export const listForUser = query({
           .collect()
       : [];
 
-    return [...defaults, ...custom].map(toPersona);
+    return [...defaultPersonas, ...custom.map(toPersona)];
   },
 });
 
@@ -93,14 +91,15 @@ export const getById = query({
   },
   handler: async (ctx, args) => {
     const ownerClerkId = await callerClerkId(ctx, args.ownerClerkId);
+    const bundledDefault = defaultPersonaById.get(args.personaId);
+    if (bundledDefault) return bundledDefault;
+
     const matches = await ctx.db
       .query("personas")
       .withIndex("by_persona_id", (q) => q.eq("personaId", args.personaId))
       .collect();
 
-    const persona =
-      matches.find((row) => row.isDefault) ||
-      matches.find((row) => row.ownerClerkId === ownerClerkId);
+    const persona = matches.find((row) => row.ownerClerkId === ownerClerkId);
 
     return persona ? toPersona(persona) : null;
   },
