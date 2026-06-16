@@ -145,7 +145,7 @@ export default function NotebookHero({
 
       <div
         ref={scrollRef}
-        className="vesh-paper max-h-[236px] min-h-[184px] overflow-y-auto px-4 py-3"
+        className="vesh-paper max-h-[320px] min-h-[260px] overflow-y-auto px-5 py-4"
       >
         <div className="mb-2 inline-flex border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-yellow)] px-2 py-1 text-[10px] font-black uppercase tracking-[0.04em]">
           Sarah Chen · anxiety intake
@@ -155,7 +155,7 @@ export default function NotebookHero({
           const isYou = message.role === "trainee";
           const shown = message.id === typingId ? message.text.slice(0, reveal) : message.text;
           return (
-            <p key={message.id} className="animate-slide-up py-0.5 font-mono text-[13px] leading-6">
+            <p key={message.id} className="animate-slide-up py-0.5 font-mono text-[14px] leading-7">
               <span
                 className={`font-black ${isYou ? "text-[var(--vesh-green)]" : "text-[var(--vesh-coral-dark)]"}`}
               >
@@ -172,7 +172,7 @@ export default function NotebookHero({
         })}
 
         {busy && !typingId && (
-          <p className="py-0.5 font-mono text-[13px] leading-6 text-[var(--vesh-muted)]">
+          <p className="py-0.5 font-mono text-[14px] leading-7 text-[var(--vesh-muted)]">
             <span className="font-black text-[var(--vesh-coral-dark)]">{HERO_PERSONA_NAME}:</span>{" "}
             typing…
           </p>
