@@ -27,4 +27,20 @@ describe("bold notebook UI system", () => {
     expect(combined).not.toContain("purple");
     expect(combined).not.toContain("from-[#6366f1]");
   });
+
+  test("session UI uses explicit coaching and sidebar labels", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain("Live supervisor");
+    expect(app).toContain("Client response");
+    expect(app).toContain("What worked");
+    expect(app).toContain("Next move");
+    expect(app).toContain("Clinical watch");
+    expect(app).toContain('label="Case"');
+    expect(app).toContain('label="Session"');
+    expect(app).toContain('label="Voice"');
+    expect(app).not.toContain("<strong>Good move</strong>");
+    expect(app).not.toContain("<strong>Try next</strong>");
+    expect(app).not.toContain("<strong>Watch</strong>");
+  });
 });

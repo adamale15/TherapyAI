@@ -5,12 +5,16 @@ import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import {
+  AlertTriangle,
   ArrowRight,
   CheckCircle,
+  Clock,
+  FileText,
   LogOut,
   MessageSquare,
   Mic,
   Send,
+  Target,
   Upload,
 } from "lucide-react";
 import { PersonaUploadModal } from "./PersonaUploadModal";
@@ -175,6 +179,63 @@ function Metric({
         {value}
       </div>
       <p className="mt-2 text-xs text-[var(--vesh-muted)]">{detail}</p>
+    </div>
+  );
+}
+
+function RailItem({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="w-full border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] p-3 shadow-[4px_4px_0_rgba(17,17,15,0.14)]">
+      <div className="flex items-center gap-2 text-[var(--vesh-muted)]">
+        <Icon className="h-4 w-4" />
+        <span className="vesh-kicker">{label}</span>
+      </div>
+      <div className="mt-2 text-sm font-black uppercase leading-tight">{value}</div>
+    </div>
+  );
+}
+
+function CoachCard({
+  tone,
+  eyebrow,
+  title,
+  children,
+}: {
+  tone: "good" | "next" | "watch";
+  eyebrow: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  const Icon = tone === "watch" ? AlertTriangle : tone === "next" ? Target : CheckCircle;
+  const toneClass =
+    tone === "watch"
+      ? "vesh-note-red"
+      : tone === "good"
+        ? "vesh-note-green"
+        : "";
+
+  return (
+    <div className={`vesh-note ${toneClass}`}>
+      <div className="flex items-start gap-3">
+        <span className="grid h-8 w-8 shrink-0 place-items-center border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)]">
+          <Icon className="h-4 w-4" />
+        </span>
+        <div>
+          <div className="vesh-kicker text-[var(--vesh-muted)]">{eyebrow}</div>
+          <strong className="mt-1 block text-lg leading-none">{title}</strong>
+        </div>
+      </div>
+      <p className="mt-3 text-sm leading-relaxed text-[var(--vesh-ink)]">
+        {children}
+      </p>
     </div>
   );
 }
@@ -569,11 +630,15 @@ export default function BoldVeshApp() {
       )}
 
       {view === "session" && selectedOrFirst && (
-        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 md:grid-cols-[78px_1fr_310px]">
-          <aside className="vesh-rail hidden p-4 md:grid md:content-start md:justify-items-center md:gap-3">
-            <span className="vesh-chip w-10 px-0">{initials(selectedOrFirst.name)[0]}</span>
-            <span className="vesh-chip w-10 px-0">25</span>
-            <span className="vesh-chip w-10 px-0">Mic</span>
+        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 md:grid-cols-[150px_1fr_320px] xl:grid-cols-[170px_1fr_360px]">
+          <aside className="vesh-rail hidden p-4 md:grid md:content-start md:gap-3">
+            <RailItem
+              icon={FileText}
+              label="Case"
+              value={selectedOrFirst.name.split(" ")[0]}
+            />
+            <RailItem icon={Clock} label="Session" value="25 min" />
+            <RailItem icon={Mic} label="Voice" value="Ready" />
           </aside>
           <div className="grid grid-rows-[auto_1fr_auto] gap-4 p-6">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -592,17 +657,29 @@ export default function BoldVeshApp() {
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`vesh-card max-w-[78%] p-3 text-sm leading-relaxed ${
+                  className={`vesh-card max-w-[82%] p-3 text-sm leading-relaxed ${
                     message.role === "trainee"
                       ? "justify-self-end bg-[var(--vesh-green)] text-[var(--vesh-paper-soft)]"
                       : "justify-self-start"
                   }`}
                 >
-                  {message.text}
+                  <div
+                    className={`vesh-kicker mb-2 ${
+                      message.role === "trainee"
+                        ? "text-[#bff3db]"
+                        : "text-[var(--vesh-muted)]"
+                    }`}
+                  >
+                    {message.role === "trainee" ? "You" : "Client response"}
+                  </div>
+                  <div>{message.text}</div>
                 </div>
               ))}
               {isLoading && (
                 <div className="vesh-card max-w-[78%] p-3 text-sm">
+                  <div className="vesh-kicker mb-2 text-[var(--vesh-muted)]">
+                    Client response
+                  </div>
                   Thinking through the case...
                 </div>
               )}
@@ -629,23 +706,25 @@ export default function BoldVeshApp() {
             </div>
           </div>
           <aside className="border-t-[1.5px] border-[var(--vesh-black)] bg-[rgba(15,61,50,0.06)] p-6 md:border-l-[1.5px] md:border-t-0">
-            <div className="vesh-note vesh-note-green">
-              <strong>Good move</strong>
-              <p className="mt-1 text-sm text-[var(--vesh-ink)]">
-                You reflected the function of reassurance seeking.
+            <div className="mb-4">
+              <div className="vesh-kicker">Live supervisor</div>
+              <p className="mt-2 text-sm leading-relaxed text-[var(--vesh-muted)]">
+                Feedback on your latest trainee response.
               </p>
             </div>
-            <div className="vesh-note mt-3">
-              <strong>Try next</strong>
-              <p className="mt-1 text-sm text-[var(--vesh-ink)]">
+            <CoachCard tone="good" eyebrow="What worked" title="Stay with the feeling">
+              You noticed the client was guarded instead of forcing a quick
+              assessment.
+            </CoachCard>
+            <div className="mt-3">
+              <CoachCard tone="next" eyebrow="Next move" title="Make one clean follow-up">
                 {feedback[0] ?? "Ask what safety would feel like in the body."}
-              </p>
+              </CoachCard>
             </div>
-            <div className="vesh-note vesh-note-red mt-3">
-              <strong>Watch</strong>
-              <p className="mt-1 text-sm text-[var(--vesh-ink)]">
+            <div className="mt-3">
+              <CoachCard tone="watch" eyebrow="Clinical watch" title="Avoid shallow check-ins">
                 {feedback[1] ?? "Avoid advice before exploring shame."}
-              </p>
+              </CoachCard>
             </div>
           </aside>
         </section>
