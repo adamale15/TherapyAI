@@ -63,7 +63,7 @@
   textarea:focus-visible,
   select:focus-visible,
   a:focus-visible {
-    outline: 3px solid var(--vesh-coral);
+    outline: 3px solid var(--vesh-black);
     outline-offset: 3px;
   }
 }
@@ -132,7 +132,7 @@
     gap: 0.5rem;
     border: 1.5px solid var(--vesh-black);
     border-radius: 0.25rem;
-    background: var(--vesh-coral);
+    background: var(--vesh-coral-dark);
     color: var(--vesh-paper-soft);
     box-shadow: 4px 4px 0 var(--vesh-black);
     padding: 0.55rem 0.9rem;

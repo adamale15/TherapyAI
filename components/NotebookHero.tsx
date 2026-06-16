@@ -214,7 +214,7 @@ export default function NotebookHero({
             <button
               type="button"
               onClick={onStartRehearsal}
-              className="vesh-chip bg-[var(--vesh-coral)] text-[var(--vesh-paper-soft)]"
+              className="vesh-chip bg-[var(--vesh-coral-dark)] text-[var(--vesh-paper-soft)]"
             >
               Start full rehearsal
               <ArrowRight className="ml-1 h-3 w-3" />
