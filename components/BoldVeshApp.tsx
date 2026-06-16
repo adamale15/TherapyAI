@@ -214,6 +214,26 @@ function Metric({
   );
 }
 
+function DemoStat({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <div className="vesh-demo-stat min-w-0 border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] p-4 shadow-[5px_5px_0_rgba(17,17,15,0.14)]">
+      <div className="vesh-kicker text-[var(--vesh-muted)]">{label}</div>
+      <div className="mt-3 font-black uppercase leading-none text-[clamp(1.15rem,2.4vw,1.7rem)]">
+        {value}
+      </div>
+      <p className="mt-3 text-xs leading-snug text-[var(--vesh-muted)]">{detail}</p>
+    </div>
+  );
+}
+
 function RailItem({
   icon: Icon,
   label,
@@ -758,10 +778,10 @@ export default function BoldVeshApp() {
           </div>
 
           <div className="vesh-card vesh-demo-card grid grid-cols-[64px_1fr] items-stretch overflow-hidden">
-            <div className="flex items-start justify-center border-r-[1.5px] border-[var(--vesh-black)] bg-[rgba(255,75,53,0.09)] px-3 py-5 text-center text-xl font-black text-[var(--vesh-coral)]">
+            <div className="flex items-start justify-center border-r-[1.5px] border-[var(--vesh-black)] bg-[rgba(255,75,53,0.09)] px-3 py-6 text-center text-xl font-black text-[var(--vesh-coral)]">
               Live
             </div>
-            <div className="grid content-start gap-4 p-5">
+            <div className="grid content-start gap-5 p-6">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="vesh-kicker text-[var(--vesh-muted)]">
@@ -782,9 +802,9 @@ export default function BoldVeshApp() {
                 </p>
               </div>
               <div className="vesh-demo-metrics grid gap-3 sm:grid-cols-3">
-                <Metric label="Alliance" value="4.2/5" detail="bond/tasks" compact />
-                <Metric label="Questions" value="Open" detail="single focus" compact />
-                <Metric label="Safety" value="Ready" detail="if cued" compact />
+                <DemoStat label="Alliance" value="4.2/5" detail="bond/tasks" />
+                <DemoStat label="Questions" value="Open" detail="single focus" />
+                <DemoStat label="Safety" value="Ready" detail="if cued" />
               </div>
             </div>
           </div>

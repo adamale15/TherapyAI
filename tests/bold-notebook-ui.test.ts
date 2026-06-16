@@ -138,6 +138,11 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("vesh-demo-metrics");
     expect(app).toContain("grid-cols-[64px_1fr]");
     expect(app).toContain("sm:grid-cols-3");
+    expect(app).toContain("function DemoStat");
+    expect(app).toContain("vesh-demo-stat");
+    expect(app).toContain("gap-5 p-6");
+    expect(app).toContain("text-[clamp(1.15rem,2.4vw,1.7rem)]");
+    expect(app).not.toContain('<Metric label="Safety" value="Ready" detail="if cued" compact />');
   });
 
   test("product copy does not expose mockup placeholders", () => {
