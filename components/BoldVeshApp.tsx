@@ -151,11 +151,27 @@ function PersonaCard({
   );
 }
 
-function Metric({ label, value, detail }: { label: string; value: string; detail: string }) {
+function Metric({
+  label,
+  value,
+  detail,
+  compact = false,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  compact?: boolean;
+}) {
   return (
-    <div className="vesh-card p-4">
+    <div className={`vesh-card min-w-0 ${compact ? "p-3" : "p-4"}`}>
       <div className="vesh-kicker text-[var(--vesh-muted)]">{label}</div>
-      <div className="mt-2 text-4xl font-black uppercase leading-none tracking-[-0.03em]">
+      <div
+        className={`mt-2 font-black uppercase leading-none tracking-[-0.03em] ${
+          compact
+            ? "whitespace-nowrap text-[clamp(1.35rem,1.35vw,1.55rem)]"
+            : "text-4xl"
+        }`}
+      >
         {value}
       </div>
       <p className="mt-2 text-xs text-[var(--vesh-muted)]">{detail}</p>
@@ -370,9 +386,9 @@ export default function BoldVeshApp() {
                 </p>
               </div>
               <div className="mt-4 grid grid-cols-3 gap-3">
-                <Metric label="Rapport" value="82%" detail="opening phase" />
-                <Metric label="Pace" value="Good" detail="steady" />
-                <Metric label="Risk" value="Low" detail="stable" />
+                <Metric label="Rapport" value="82%" detail="opening phase" compact />
+                <Metric label="Pace" value="Good" detail="steady" compact />
+                <Metric label="Risk" value="Low" detail="stable" compact />
               </div>
             </div>
           </div>
