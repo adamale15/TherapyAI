@@ -168,14 +168,14 @@ export const PersonaUploadModal: React.FC<PersonaUploadModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-[rgba(17,17,15,0.68)] p-4">
-      <div className="vesh-card max-h-[90vh] w-full max-w-2xl overflow-y-auto bg-[var(--vesh-paper-soft)] p-5">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-[rgba(17,17,15,0.68)] p-3 sm:p-4">
+      <div className="vesh-card max-h-[92vh] w-full max-w-2xl overflow-y-auto bg-[var(--vesh-paper-soft)] p-4 sm:max-h-[90vh] sm:p-5">
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <div className="vesh-kicker text-[var(--vesh-muted)]">
               Create custom persona
             </div>
-            <h2 className="mt-1 text-3xl font-black uppercase leading-none tracking-[-0.03em] text-[var(--vesh-black)]">
+            <h2 className="mt-1 text-[clamp(1.65rem,9vw,2rem)] font-black uppercase leading-none tracking-[0] text-[var(--vesh-black)] sm:text-3xl">
               Import case file
             </h2>
           </div>
@@ -191,7 +191,7 @@ export const PersonaUploadModal: React.FC<PersonaUploadModalProps> = ({
 
         {step === "upload" && (
           <div className="space-y-5">
-            <div className="grid min-h-44 place-items-center border-2 border-dashed border-[var(--vesh-coral)] bg-[rgba(255,75,53,0.08)] p-8 text-center">
+            <div className="grid min-h-40 place-items-center border-2 border-dashed border-[var(--vesh-coral)] bg-[rgba(255,75,53,0.08)] p-4 text-center sm:min-h-44 sm:p-8">
               <FileText className="mx-auto mb-4 h-12 w-12 text-[var(--vesh-coral)]" />
               <input
                 ref={fileInputRef}
@@ -230,7 +230,7 @@ export const PersonaUploadModal: React.FC<PersonaUploadModalProps> = ({
               <span>Document analyzed successfully</span>
             </div>
 
-            <div className="vesh-card p-5">
+            <div className="vesh-card p-4 sm:p-5">
               <h3 className="mb-4 text-xl font-black uppercase text-[var(--vesh-black)]">
                 Persona preview
               </h3>
@@ -303,7 +303,7 @@ export const PersonaUploadModal: React.FC<PersonaUploadModalProps> = ({
               </div>
             )}
 
-            <div className="flex gap-3">
+            <div className="grid gap-3 sm:flex">
               <button
                 onClick={() => setStep("upload")}
                 className="vesh-button vesh-button-yellow flex-1"

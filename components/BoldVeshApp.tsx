@@ -110,43 +110,67 @@ function Topbar({
   signedIn: boolean;
 }) {
   return (
-    <header className="vesh-topbar sticky top-0 z-30">
-      <button onClick={() => onNavigate("home")} className="text-left">
-        <Brand />
-      </button>
-      <nav className="hidden items-center justify-center gap-2 md:flex">
-        <button
-          onClick={() => onNavigate("student")}
-          className={`vesh-chip ${view === "student" ? "vesh-chip-active" : ""}`}
-        >
-          Journal
+    <>
+      <header className="vesh-topbar sticky top-0 z-30">
+        <button onClick={() => onNavigate("home")} className="text-left">
+          <Brand />
         </button>
-        <button
-          onClick={() => onNavigate("personas")}
-          className={`vesh-chip ${view === "personas" ? "vesh-chip-active" : ""}`}
-        >
-          Personas
-        </button>
-        <button
-          onClick={() => onNavigate("practitioner")}
-          className={`vesh-chip ${view === "practitioner" ? "vesh-chip-active" : ""}`}
-        >
-          Programs
-        </button>
-      </nav>
-      <div className="flex items-center gap-2">
-        {signedIn ? (
-          <button onClick={onSignOut} className="vesh-button vesh-button-green">
-            <LogOut className="h-4 w-4" />
-            Sign out
+        <nav className="hidden items-center justify-center gap-2 md:flex">
+          <button
+            onClick={() => onNavigate("student")}
+            className={`vesh-chip ${view === "student" ? "vesh-chip-active" : ""}`}
+          >
+            Journal
           </button>
-        ) : (
-          <button onClick={() => onNavigate("student")} className="vesh-button">
-            Start free
+          <button
+            onClick={() => onNavigate("personas")}
+            className={`vesh-chip ${view === "personas" ? "vesh-chip-active" : ""}`}
+          >
+            Personas
           </button>
-        )}
-      </div>
-    </header>
+          <button
+            onClick={() => onNavigate("practitioner")}
+            className={`vesh-chip ${view === "practitioner" ? "vesh-chip-active" : ""}`}
+          >
+            Programs
+          </button>
+        </nav>
+        <div className="flex items-center gap-2">
+          {signedIn ? (
+            <button onClick={onSignOut} className="vesh-button vesh-button-green">
+              <LogOut className="h-4 w-4" />
+              <span>Out</span>
+            </button>
+          ) : (
+            <button onClick={() => onNavigate("student")} className="vesh-button">
+              Start free
+            </button>
+          )}
+        </div>
+      </header>
+      {signedIn && (
+        <nav className="vesh-mobile-nav md:hidden">
+          <button
+            onClick={() => onNavigate("student")}
+            className={`vesh-chip flex-1 ${view === "student" ? "vesh-chip-active" : ""}`}
+          >
+            Journal
+          </button>
+          <button
+            onClick={() => onNavigate("personas")}
+            className={`vesh-chip flex-1 ${view === "personas" ? "vesh-chip-active" : ""}`}
+          >
+            Personas
+          </button>
+          <button
+            onClick={() => onNavigate("practitioner")}
+            className={`vesh-chip flex-1 ${view === "practitioner" ? "vesh-chip-active" : ""}`}
+          >
+            Programs
+          </button>
+        </nav>
+      )}
+    </>
   );
 }
 
@@ -202,10 +226,10 @@ function Metric({
     <div className={`vesh-card min-w-0 ${compact ? "p-3" : "p-4"}`}>
       <div className="vesh-kicker text-[var(--vesh-muted)]">{label}</div>
       <div
-        className={`mt-2 font-black uppercase leading-none tracking-[-0.03em] ${
+        className={`mt-2 break-words font-black uppercase leading-none tracking-[0] ${
           compact
             ? "whitespace-nowrap text-[clamp(1.35rem,1.35vw,1.55rem)]"
-            : "text-4xl"
+            : "text-[clamp(1.7rem,9vw,2.25rem)] sm:text-4xl"
         }`}
       >
         {value}
@@ -725,11 +749,11 @@ export default function BoldVeshApp() {
       />
 
       {view === "home" && (
-        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 gap-8 p-6 lg:grid-cols-[minmax(320px,0.75fr)_minmax(560px,1.25fr)] lg:items-center lg:p-10">
+        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 gap-6 p-4 sm:p-6 lg:grid-cols-[minmax(320px,0.75fr)_minmax(560px,1.25fr)] lg:items-center lg:gap-8 lg:p-10">
           <div>
             <h1 className="vesh-heading max-w-3xl">
               Clinical practice that finally feels{" "}
-              <span className="inline-block bg-[var(--vesh-black)] px-3 pb-2 text-[var(--vesh-paper-soft)]">
+              <span className="inline-block bg-[var(--vesh-black)] px-2 pb-1 text-[var(--vesh-paper-soft)] sm:px-3 sm:pb-2">
                 alive.
               </span>
             </h1>
@@ -737,7 +761,7 @@ export default function BoldVeshApp() {
               AI clients, live supervision cues, and review-ready session notes
               for therapy students who need reps before real stakes.
             </p>
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap">
               <button
                 onClick={() =>
                   signedIn
@@ -770,9 +794,9 @@ export default function BoldVeshApp() {
 
       {view === "student" && (
         <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 md:grid-cols-[1fr_300px]">
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <div className="vesh-kicker">Training journal</div>
-            <h1 className="vesh-heading mt-2 text-4xl">Practice journal</h1>
+            <h1 className="vesh-heading mt-2">Practice journal</h1>
             <div className="mt-5 grid gap-3 md:grid-cols-3">
               <Metric
                 label="Completed cases"
@@ -802,7 +826,7 @@ export default function BoldVeshApp() {
               ))}
             </div>
           </div>
-          <aside className="border-t-[1.5px] border-[var(--vesh-black)] bg-[rgba(15,61,50,0.06)] p-6 md:border-l-[1.5px] md:border-t-0">
+          <aside className="border-t-[1.5px] border-[var(--vesh-black)] bg-[rgba(15,61,50,0.06)] p-4 sm:p-6 md:border-l-[1.5px] md:border-t-0">
             <div className="vesh-note">
               <strong>{clinicalDashboard.practiceFocus}</strong>
               <p className="mt-1 text-sm text-[var(--vesh-ink)]">
@@ -835,13 +859,13 @@ export default function BoldVeshApp() {
       )}
 
       {view === "practitioner" && (
-        <section className="vesh-program-shell min-h-[calc(100vh-58px)] p-6 lg:p-10">
+        <section className="vesh-program-shell min-h-[calc(100vh-58px)] p-4 sm:p-6 lg:p-10">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="vesh-kicker text-[var(--vesh-muted)]">
                 Cohort performance
               </div>
-              <h1 className="vesh-heading mt-2 text-4xl">
+              <h1 className="vesh-heading mt-2">
                 Program outcomes
               </h1>
               <p className="vesh-subheading mt-3 max-w-2xl">
@@ -880,33 +904,35 @@ export default function BoldVeshApp() {
                     Clinical skills matrix
                   </div>
                 </div>
-                <div className="vesh-table vesh-program-table grid-cols-[1.1fr_0.8fr_0.8fr_1fr_1.2fr]">
-                  {["Case", "Alliance", "Empathy", "Turns", "Date"].map((head) => (
-                    <div key={head} className="vesh-table-head">
-                      {head}
-                    </div>
-                  ))}
-                  {(clinicalDashboard.latestRows.length > 0
-                    ? clinicalDashboard.latestRows
-                    : [["No completed sessions", "No data", "No data", "0 turns", ""]]
-                  ).flatMap((row, rowIndex) =>
-                    row.map((cell, cellIndex) => (
-                      <div
-                        key={`${rowIndex}-${cellIndex}`}
-                        className={
-                          cellIndex === 1 && rowIndex !== clinicalDashboard.latestRows.length
-                            ? "bg-[#c8f2d9]"
-                            : cellIndex === 1
-                              ? "bg-[#fff0ad]"
-                              : cellIndex === 2 && rowIndex !== clinicalDashboard.latestRows.length
-                                ? "bg-[#c8f2d9]"
-                                : ""
-                        }
-                      >
-                        {cell}
+                <div className="overflow-x-auto">
+                  <div className="vesh-table vesh-program-table min-w-[620px] grid-cols-[1.1fr_0.8fr_0.8fr_1fr_1.2fr]">
+                    {["Case", "Alliance", "Empathy", "Turns", "Date"].map((head) => (
+                      <div key={head} className="vesh-table-head">
+                        {head}
                       </div>
-                    ))
-                  )}
+                    ))}
+                    {(clinicalDashboard.latestRows.length > 0
+                      ? clinicalDashboard.latestRows
+                      : [["No completed sessions", "No data", "No data", "0 turns", ""]]
+                    ).flatMap((row, rowIndex) =>
+                      row.map((cell, cellIndex) => (
+                        <div
+                          key={`${rowIndex}-${cellIndex}`}
+                          className={
+                            cellIndex === 1 && rowIndex !== clinicalDashboard.latestRows.length
+                              ? "bg-[#c8f2d9]"
+                              : cellIndex === 1
+                                ? "bg-[#fff0ad]"
+                                : cellIndex === 2 && rowIndex !== clinicalDashboard.latestRows.length
+                                  ? "bg-[#c8f2d9]"
+                                  : ""
+                          }
+                        >
+                          {cell}
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -935,12 +961,12 @@ export default function BoldVeshApp() {
       )}
 
       {view === "personas" && (
-        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 gap-5 p-6 lg:grid-cols-[1fr_330px]">
+        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 gap-5 p-4 sm:p-6 lg:grid-cols-[1fr_330px]">
           <div>
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="vesh-kicker">Case library</div>
-                <h1 className="vesh-heading mt-2 text-4xl">Case file library</h1>
+                <h1 className="vesh-heading mt-2">Case file library</h1>
               </div>
               <button onClick={() => setShowUploadModal(true)} className="vesh-button">
                 <Upload className="h-4 w-4" />
@@ -978,12 +1004,12 @@ export default function BoldVeshApp() {
       )}
 
       {view === "briefing" && selectedOrFirst && (
-        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 gap-5 p-6 lg:grid-cols-[1fr_360px]">
-          <main className="vesh-card vesh-paper p-6 lg:p-8">
+        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 gap-5 p-4 sm:p-6 lg:grid-cols-[1fr_360px]">
+          <main className="vesh-card vesh-paper p-4 sm:p-6 lg:p-8">
             <div className="vesh-kicker text-[var(--vesh-muted)]">Pre-session briefing</div>
             <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h1 className="vesh-heading text-4xl">
+                <h1 className="vesh-heading">
                   {selectedOrFirst.name}
                 </h1>
                 <p className="vesh-subheading mt-3 max-w-2xl">
@@ -1090,11 +1116,11 @@ export default function BoldVeshApp() {
             <RailItem icon={Clock} label="Time left" value={timeRemainingLabel} />
             <RailItem icon={Mic} label="Voice" value={voiceStatus} />
           </aside>
-          <div className="grid grid-rows-[auto_1fr_auto] gap-4 p-6">
+          <div className="grid min-h-[calc(100vh-58px)] grid-rows-[auto_minmax(280px,1fr)_auto] gap-4 p-4 sm:p-6 md:min-h-0">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="vesh-kicker">Live session notebook</div>
-                <h1 className="vesh-heading mt-2 text-4xl">
+                <h1 className="vesh-heading mt-2">
                   {selectedOrFirst.name} rehearsal
                 </h1>
               </div>
@@ -1111,7 +1137,7 @@ export default function BoldVeshApp() {
               </div>
             </div>
 
-            <div className="grid content-start gap-3 overflow-y-auto pr-2">
+            <div className="grid content-start gap-3 overflow-y-auto pr-1 sm:pr-2">
               {messages.length === 0 && (
                 <div className="vesh-card max-w-[620px] p-4 text-sm leading-relaxed">
                   <div className="vesh-kicker mb-2 text-[var(--vesh-muted)]">
@@ -1124,7 +1150,7 @@ export default function BoldVeshApp() {
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`vesh-card max-w-[82%] p-3 text-sm leading-relaxed ${
+                  className={`vesh-card max-w-[92%] p-3 text-sm leading-relaxed sm:max-w-[82%] ${
                     message.role === "trainee"
                       ? "justify-self-end bg-[var(--vesh-green)] text-[var(--vesh-paper-soft)]"
                       : "justify-self-start"
@@ -1152,8 +1178,8 @@ export default function BoldVeshApp() {
               )}
             </div>
 
-            <div className="vesh-card flex items-center gap-2 p-2">
-              <MessageSquare className="ml-2 h-4 w-4 text-[var(--vesh-muted)]" />
+            <div className="vesh-card flex flex-wrap items-center gap-2 p-2 sm:flex-nowrap">
+              <MessageSquare className="ml-1 hidden h-4 w-4 text-[var(--vesh-muted)] sm:block" />
               <input
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
@@ -1161,23 +1187,23 @@ export default function BoldVeshApp() {
                   if (event.key === "Enter") void sendMessage();
                 }}
                 placeholder="Write or speak your next response..."
-                className="vesh-session-input min-w-0 flex-1 bg-transparent px-2 py-2 text-sm outline-none placeholder:text-[var(--vesh-muted)]"
+                className="vesh-session-input min-w-[180px] flex-1 bg-transparent px-2 py-3 text-sm outline-none placeholder:text-[var(--vesh-muted)]"
               />
               <button
-                className={`vesh-chip ${isListening ? "vesh-chip-active" : ""}`}
+                className={`vesh-chip min-h-10 px-3 ${isListening ? "vesh-chip-active" : ""}`}
                 title={isListening ? "Stop listening" : "Start voice input"}
                 type="button"
                 onClick={toggleListening}
               >
                 <Mic className="h-4 w-4" />
               </button>
-              <button onClick={sendMessage} className="vesh-button" disabled={isLoading || isSpeaking}>
+              <button onClick={sendMessage} className="vesh-button min-h-10 flex-1 sm:flex-none" disabled={isLoading || isSpeaking}>
                 <Send className="h-4 w-4" />
                 Send
               </button>
             </div>
           </div>
-          <aside className="border-t-[1.5px] border-[var(--vesh-black)] bg-[rgba(15,61,50,0.06)] p-6 md:border-l-[1.5px] md:border-t-0">
+          <aside className="border-t-[1.5px] border-[var(--vesh-black)] bg-[rgba(15,61,50,0.06)] p-4 sm:p-6 md:border-l-[1.5px] md:border-t-0">
             <div className="mb-4">
               <div className="vesh-kicker">Live supervisor</div>
               <p className="mt-2 text-sm leading-relaxed text-[var(--vesh-muted)]">
@@ -1214,10 +1240,10 @@ export default function BoldVeshApp() {
       )}
 
       {view === "summary" && selectedOrFirst && (
-        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 gap-5 p-6 lg:grid-cols-[1fr_320px]">
-          <main className="vesh-card vesh-paper min-h-[620px] p-6 lg:pl-24">
+        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 gap-5 p-4 sm:p-6 lg:grid-cols-[1fr_320px]">
+          <main className="vesh-card vesh-paper min-h-[520px] p-4 sm:p-6 lg:min-h-[620px] lg:pl-24">
             <div className="vesh-kicker text-[var(--vesh-muted)]">Case review</div>
-            <h1 className="vesh-heading mt-2 text-4xl">
+            <h1 className="vesh-heading mt-2">
               {selectedOrFirst.name} / {selectedOrFirst.condition}
             </h1>
             <p className="vesh-subheading mt-3">
@@ -1237,22 +1263,24 @@ export default function BoldVeshApp() {
                 />
               ))}
             </div>
-            <div className="vesh-table mt-5 grid-cols-[1.1fr_1fr_1fr_1.4fr]">
-              {["Domain", "Rating", "Score", "Faculty note"].map((head) => (
-                <div key={head} className="vesh-table-head">
-                  {head}
-                </div>
-              ))}
-              {sessionAnalysis.facultyRows.flatMap((row, rowIndex) =>
-                row.map((cell, cellIndex) => (
-                  <div
-                    key={`${rowIndex}-${cellIndex}`}
-                    className={cellIndex === 2 && rowIndex !== 1 ? "bg-[#c8f2d9]" : cellIndex === 2 ? "bg-[#fff0ad]" : ""}
-                  >
-                    {cell}
+            <div className="mt-5 overflow-x-auto">
+              <div className="vesh-table min-w-[680px] grid-cols-[1.1fr_1fr_1fr_1.4fr]">
+                {["Domain", "Rating", "Score", "Faculty note"].map((head) => (
+                  <div key={head} className="vesh-table-head">
+                    {head}
                   </div>
-                ))
-              )}
+                ))}
+                {sessionAnalysis.facultyRows.flatMap((row, rowIndex) =>
+                  row.map((cell, cellIndex) => (
+                    <div
+                      key={`${rowIndex}-${cellIndex}`}
+                      className={cellIndex === 2 && rowIndex !== 1 ? "bg-[#c8f2d9]" : cellIndex === 2 ? "bg-[#fff0ad]" : ""}
+                    >
+                      {cell}
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </main>
           <aside>

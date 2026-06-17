@@ -166,7 +166,7 @@ export default function NotebookHero({
 
   return (
     <div className="vesh-card w-full overflow-hidden">
-      <div className="flex items-center justify-between gap-4 border-b-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-hot)] px-5 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-hot)] px-4 py-3 sm:gap-4 sm:px-5 sm:py-4">
         <span className="vesh-kicker flex items-center gap-2.5 text-[var(--vesh-black)]">
           <span className="inline-block h-2.5 w-2.5 animate-pulse-slow rounded-full bg-[var(--vesh-coral)]" />
           Live rehearsal - try it
@@ -187,7 +187,7 @@ export default function NotebookHero({
 
       <div
         ref={scrollRef}
-        className="vesh-paper max-h-[440px] min-h-[380px] overflow-y-auto px-6 py-5 lg:px-7"
+        className="vesh-paper max-h-[380px] min-h-[300px] overflow-y-auto px-4 py-4 sm:max-h-[440px] sm:min-h-[380px] sm:px-6 sm:py-5 lg:px-7"
       >
         <div className="mb-3 inline-flex border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-yellow)] px-3 py-2 text-[11px] font-black uppercase tracking-[0.04em]">
           Sarah Chen - anxiety intake
@@ -197,7 +197,7 @@ export default function NotebookHero({
           const isYou = message.role === "trainee";
           const shown = message.id === typingId ? message.text.slice(0, reveal) : message.text;
           return (
-            <p key={message.id} className="animate-slide-up py-1 font-mono text-[15px] leading-8">
+            <p key={message.id} className="animate-slide-up py-1 font-mono text-[13px] leading-7 sm:text-[15px] sm:leading-8">
               <span
                 className={`font-black ${
                   isYou ? "text-[var(--vesh-green)]" : "text-[var(--vesh-coral-dark)]"
@@ -216,7 +216,7 @@ export default function NotebookHero({
         })}
 
         {busy && !typingId && (
-          <p className="py-1 font-mono text-[15px] leading-8 text-[var(--vesh-muted)]">
+          <p className="py-1 font-mono text-[13px] leading-7 text-[var(--vesh-muted)] sm:text-[15px] sm:leading-8">
             <span className="font-black text-[var(--vesh-coral-dark)]">
               {HERO_PERSONA_NAME}:
             </span>{" "}
@@ -226,7 +226,7 @@ export default function NotebookHero({
 
         {coachNote && (
           <div
-            className={`vesh-note animate-slide-up ml-auto mt-3 max-w-[78%] p-4 ${
+            className={`vesh-note animate-slide-up ml-auto mt-3 max-w-full p-3 sm:max-w-[78%] sm:p-4 ${
               coachNote.tone === "good"
                 ? "vesh-note-green"
                 : coachNote.tone === "watch"
@@ -245,7 +245,7 @@ export default function NotebookHero({
         )}
       </div>
 
-      <div className="border-t-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] p-4">
+      <div className="border-t-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] p-3 sm:p-4">
         <div className="mb-3 flex flex-wrap gap-2">
           {SUGGESTED_MOVES.map((move) => (
             <button
@@ -269,7 +269,7 @@ export default function NotebookHero({
             </button>
           )}
         </div>
-        <div className="vesh-card flex items-center gap-2 p-3">
+        <div className="vesh-card flex flex-wrap items-center gap-2 p-2 sm:flex-nowrap sm:p-3">
           <input
             value={input}
             onChange={(event) => setInput(event.target.value)}
@@ -279,9 +279,9 @@ export default function NotebookHero({
             maxLength={140}
             aria-label="Your response to the client"
             placeholder="Write your response to the client..."
-            className="vesh-session-input min-w-0 flex-1 bg-transparent px-2 py-3 text-base outline-none placeholder:text-[var(--vesh-muted)]"
+            className="vesh-session-input min-w-[180px] flex-1 bg-transparent px-2 py-3 text-sm outline-none placeholder:text-[var(--vesh-muted)] sm:text-base"
           />
-          <button onClick={() => submit(input)} disabled={busy} className="vesh-button">
+          <button onClick={() => submit(input)} disabled={busy} className="vesh-button flex-1 sm:flex-none">
             <Send className="h-4 w-4" />
             Send
           </button>

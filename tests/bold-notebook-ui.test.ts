@@ -164,6 +164,26 @@ describe("bold notebook UI system", () => {
     expect(hero).toContain("onStartRehearsal");
   });
 
+  test("core app surfaces include mobile responsive layout guards", () => {
+    const app = read("components/BoldVeshApp.tsx");
+    const hero = read("components/NotebookHero.tsx");
+    const css = read("app/globals.css");
+    const modal = read("components/PersonaUploadModal.tsx");
+
+    expect(app).toContain("vesh-mobile-nav");
+    expect(app).toContain("p-4 sm:p-6");
+    expect(app).toContain("overflow-x-auto");
+    expect(app).toContain("min-w-[620px]");
+    expect(app).toContain("sm:flex-nowrap");
+    expect(app).toContain("max-w-[92%]");
+    expect(hero).toContain("sm:min-h-[380px]");
+    expect(hero).toContain("max-w-full");
+    expect(css).toContain("@media (max-width: 640px)");
+    expect(css).toContain("--vesh-shadow: 4px 4px 0");
+    expect(modal).toContain("max-h-[92vh]");
+    expect(modal).toContain("grid gap-3 sm:flex");
+  });
+
   test("product copy does not expose mockup placeholders", () => {
     const app = read("components/BoldVeshApp.tsx");
 

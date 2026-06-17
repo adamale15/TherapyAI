@@ -98,6 +98,17 @@
     background: var(--vesh-paper-soft);
   }
 
+  .vesh-mobile-nav {
+    position: sticky;
+    top: 58px;
+    z-index: 20;
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 1.5px solid var(--vesh-black);
+    background: var(--vesh-paper-soft);
+    padding: 0.5rem;
+  }
+
   .vesh-brand {
     display: inline-flex;
     align-items: center;
@@ -278,7 +289,7 @@
     color: var(--vesh-black);
     font-size: clamp(2rem, 5vw, 4rem);
     font-weight: 900;
-    letter-spacing: -0.035em;
+    letter-spacing: 0;
     line-height: 0.9;
     text-transform: uppercase;
   }
@@ -287,6 +298,63 @@
     color: var(--vesh-muted);
     font-size: 0.9rem;
     line-height: 1.5;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --vesh-shadow: 4px 4px 0 rgba(17, 17, 15, 0.14);
+  }
+
+  .vesh-shell,
+  .vesh-paper {
+    background:
+      linear-gradient(90deg, rgba(255, 75, 53, 0.06) 44px, transparent 44px),
+      linear-gradient(var(--vesh-paper) 31px, rgba(214, 191, 152, 0.58) 32px),
+      var(--vesh-paper);
+    background-size: 100% 100%, 100% 32px, auto;
+  }
+
+  .vesh-topbar {
+    height: 56px;
+    grid-template-columns: auto auto;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0 0.75rem;
+  }
+
+  .vesh-brand {
+    font-size: 1.35rem;
+  }
+
+  .vesh-mark {
+    width: 1.55rem;
+    height: 1.55rem;
+    font-size: 0.78rem;
+  }
+
+  .vesh-mobile-nav {
+    top: 56px;
+  }
+
+  .vesh-heading {
+    font-size: clamp(2rem, 13vw, 3rem);
+    line-height: 0.95;
+  }
+
+  .vesh-button {
+    min-height: 2.75rem;
+    padding: 0.65rem 0.85rem;
+  }
+
+  .vesh-chip {
+    min-height: 2.25rem;
+    padding: 0 0.55rem;
+  }
+
+  .vesh-table > div {
+    min-height: 2.5rem;
+    padding: 0.55rem;
   }
 }
 
