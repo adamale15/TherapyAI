@@ -19,30 +19,71 @@ const SUGGESTED_MOVES = [
 
 const MAX_VISIBLE = 6;
 
+function pickDemoReply(options: string[], turnCount: number) {
+  return options[(turnCount - 1) % options.length];
+}
+
 function buildDemoClientReply(text: string, turnCount: number) {
   const lower = text.toLowerCase();
 
+  if (
+    /\bit will get better\b|\byou'?ll be okay\b|\beverything will be okay\b|\bdon'?t worry\b|\byou got this\b|\bthings will improve\b|\byou'?ll be fine\b|\bit gets better\b/.test(
+      lower
+    )
+  ) {
+    return pickDemoReply(
+      [
+        "I want to believe that, but when people say it too quickly I feel like they do not really see how bad it feels right now.",
+        "Maybe. I just cannot feel that from where I am sitting. It sounds nice, but also kind of far away.",
+        "Part of me hopes you are right. Another part of me feels like I have been waiting for it to get better for months.",
+      ],
+      turnCount
+    );
+  }
+
   if (/\bshould\b|\bneed to\b|\bhave to\b|\btry to\b|\badvice\b/.test(lower)) {
-    return "I know people mean well when they say that, but then I feel like I am failing at something obvious.";
+    return pickDemoReply(
+      [
+        "I know people mean well when they say that, but then I feel like I am failing at something obvious.",
+        "That makes me tense up a little. I already know the logical thing; I just cannot make myself do it.",
+      ],
+      turnCount
+    );
   }
 
   if (/\bsounds like\b|\bseems like\b|\byou feel\b|\bpressure\b|\boverwhelming\b/.test(lower)) {
-    return turnCount > 1
-      ? "Yeah. It is the pressure, and also this fear that if I slow down everything falls apart."
-      : "Yes, pressure is the word. I keep acting like I am fine because everyone expects me to handle it.";
+    return pickDemoReply(
+      [
+        "Yes, pressure is the word. I keep acting like I am fine because everyone expects me to handle it.",
+        "Yeah. It is the pressure, and also this fear that if I slow down everything falls apart.",
+        "That is close. I am not just stressed; I feel like I am constantly being measured.",
+      ],
+      turnCount
+    );
   }
 
   if (/\bwhat\b|\bhow\b|\btell me\b|\bsay more\b|\bhardest\b/.test(lower)) {
-    return "The hardest part is waking up already tense, like I am behind before the day even starts.";
+    return pickDemoReply(
+      [
+        "The hardest part is waking up already tense, like I am behind before the day even starts.",
+        "Probably nights. I replay everything I said that day and convince myself I messed it all up.",
+      ],
+      turnCount
+    );
   }
 
   if (/\bsafe\b|\bhurt yourself\b|\bsuicide\b|\bkill yourself\b/.test(lower)) {
     return "I have not made a plan to hurt myself. I do get scared by how intense the thoughts feel sometimes.";
   }
 
-  return turnCount > 1
-    ? "I am trying to answer honestly. Part of me wants help, and part of me is embarrassed I need it."
-    : "I guess I am here because pretending I am okay has stopped working.";
+  return pickDemoReply(
+    [
+      "I guess I am here because pretending I am okay has stopped working.",
+      "I am trying to answer honestly. Part of me wants help, and part of me is embarrassed I need it.",
+      "I do not know how to make this sound less dramatic. I am just tired of holding it together.",
+    ],
+    turnCount
+  );
 }
 
 export default function NotebookHero({

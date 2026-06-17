@@ -157,6 +157,9 @@ describe("bold notebook UI system", () => {
     expect(hero).not.toContain('"set_persona"');
     expect(hero).not.toContain('"text_input"');
     expect(hero).toContain("buildDemoClientReply");
+    expect(hero).toContain("it will get better");
+    expect(hero).toContain("I want to believe that");
+    expect(hero).toContain("pickDemoReply");
     expect(hero).toContain("analyzeClinicalSession");
     expect(hero).toContain("onStartRehearsal");
   });

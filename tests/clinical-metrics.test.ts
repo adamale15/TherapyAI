@@ -57,6 +57,23 @@ describe("clinical metrics", () => {
     expect(analysis.suggestions[2].body).toContain("advice");
   });
 
+  test("treats quick reassurance as premature fixing", () => {
+    const analysis = analyzeClinicalSession([
+      {
+        role: "client",
+        text: "I feel like I am barely keeping up.",
+      },
+      {
+        role: "trainee",
+        text: "It will get better.",
+      },
+    ]);
+
+    expect(analysis.behaviorCounts.adviceMoves).toBeGreaterThan(0);
+    expect(analysis.suggestions[1].title).toBe("Ask permission first");
+    expect(analysis.suggestions[2].title).toBe("Premature advice");
+  });
+
   test("turns client risk language into a safety-screening recommendation", () => {
     const analysis = analyzeClinicalSession([
       { role: "trainee", text: "Tell me what has been hardest this week." },

@@ -101,6 +101,14 @@ const advicePatterns = [
   /\btry to\b/i,
   /\bwhy don't you\b/i,
   /\bcalm down\b/i,
+  /\bit will get better\b/i,
+  /\byou'?ll be okay\b/i,
+  /\beverything will be okay\b/i,
+  /\bdon'?t worry\b/i,
+  /\byou got this\b/i,
+  /\bthings will improve\b/i,
+  /\byou'?ll be fine\b/i,
+  /\bit gets better\b/i,
 ];
 
 const collaborationPatterns = [
