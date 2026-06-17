@@ -142,7 +142,7 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("Cohort performance");
   });
 
-  test("landing hero is an interactive notebook wired to the chat API", () => {
+  test("landing hero is an interactive notebook that works without auth", () => {
     const app = read("components/BoldVeshApp.tsx");
     const hero = read("components/NotebookHero.tsx");
 
@@ -153,9 +153,10 @@ describe("bold notebook UI system", () => {
     expect(app).not.toContain("vesh-demo-card");
     expect(app).not.toContain("function DemoStat");
 
-    expect(hero).toContain("/api/chat");
-    expect(hero).toContain('"set_persona"');
-    expect(hero).toContain('"text_input"');
+    expect(hero).not.toContain("/api/chat");
+    expect(hero).not.toContain('"set_persona"');
+    expect(hero).not.toContain('"text_input"');
+    expect(hero).toContain("buildDemoClientReply");
     expect(hero).toContain("analyzeClinicalSession");
     expect(hero).toContain("onStartRehearsal");
   });

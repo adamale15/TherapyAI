@@ -725,7 +725,7 @@ export default function BoldVeshApp() {
       />
 
       {view === "home" && (
-        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 gap-8 p-6 lg:grid-cols-[1fr_540px] lg:items-center lg:p-10">
+        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 gap-8 p-6 lg:grid-cols-[minmax(320px,0.75fr)_minmax(560px,1.25fr)] lg:items-center lg:p-10">
           <div>
             <h1 className="vesh-heading max-w-3xl">
               Clinical practice that finally feels{" "}

@@ -6,7 +6,6 @@ import { analyzeClinicalSession, type ClinicalMessage } from "@/lib/clinical-met
 
 type HeroMessage = ClinicalMessage & { id: string };
 
-const HERO_PERSONA_ID = "sarah";
 const HERO_PERSONA_NAME = "Sarah";
 
 const SEED_CLIENT_LINE =
@@ -19,6 +18,32 @@ const SUGGESTED_MOVES = [
 ] as const;
 
 const MAX_VISIBLE = 6;
+
+function buildDemoClientReply(text: string, turnCount: number) {
+  const lower = text.toLowerCase();
+
+  if (/\bshould\b|\bneed to\b|\bhave to\b|\btry to\b|\badvice\b/.test(lower)) {
+    return "I know people mean well when they say that, but then I feel like I am failing at something obvious.";
+  }
+
+  if (/\bsounds like\b|\bseems like\b|\byou feel\b|\bpressure\b|\boverwhelming\b/.test(lower)) {
+    return turnCount > 1
+      ? "Yeah. It is the pressure, and also this fear that if I slow down everything falls apart."
+      : "Yes, pressure is the word. I keep acting like I am fine because everyone expects me to handle it.";
+  }
+
+  if (/\bwhat\b|\bhow\b|\btell me\b|\bsay more\b|\bhardest\b/.test(lower)) {
+    return "The hardest part is waking up already tense, like I am behind before the day even starts.";
+  }
+
+  if (/\bsafe\b|\bhurt yourself\b|\bsuicide\b|\bkill yourself\b/.test(lower)) {
+    return "I have not made a plan to hurt myself. I do get scared by how intense the thoughts feel sometimes.";
+  }
+
+  return turnCount > 1
+    ? "I am trying to answer honestly. Part of me wants help, and part of me is embarrassed I need it."
+    : "I guess I am here because pretending I am okay has stopped working.";
+}
 
 export default function NotebookHero({
   onStartRehearsal,
@@ -34,21 +59,8 @@ export default function NotebookHero({
   const [reveal, setReveal] = useState(0);
   const [showCta, setShowCta] = useState(false);
 
-  const sessionId = useRef(`hero-${Date.now()}`);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const traineeTurns = messages.filter((message) => message.role === "trainee").length;
-
-  // Prime the hero session with the default client persona once.
-  useEffect(() => {
-    fetch("/api/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Session-Id": sessionId.current,
-      },
-      body: JSON.stringify({ type: "set_persona", persona: HERO_PERSONA_ID }),
-    }).catch(() => undefined);
-  }, []);
 
   // Reveal the latest client reply one chunk at a time for a live feel.
   useEffect(() => {
@@ -84,10 +96,10 @@ export default function NotebookHero({
     return { tone: "next" as const, suggestion: analysis.suggestions[1] };
   }, [analysis, traineeTurns]);
 
-  const allianceDisplay = traineeTurns === 0 ? "—" : analysis.scores.alliance.toFixed(1);
+  const allianceDisplay = traineeTurns === 0 ? "-" : analysis.scores.alliance.toFixed(1);
   const alliancePct = traineeTurns === 0 ? 8 : Math.max(8, (analysis.scores.alliance / 5) * 100);
 
-  const submit = async (raw: string) => {
+  const submit = (raw: string) => {
     const text = raw.trim();
     if (!text || busy) return;
 
@@ -97,67 +109,58 @@ export default function NotebookHero({
     );
     setBusy(true);
 
-    let replyText: string;
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Session-Id": sessionId.current,
-        },
-        body: JSON.stringify({ type: "text_input", text }),
-      });
-      const data = await response.json();
-      replyText =
-        data?.reply?.text || "I guess... I'm not sure how to put it into words yet.";
-    } catch {
-      replyText = "Sorry, I... lost my train of thought for a second.";
-    }
-
+    const replyText = buildDemoClientReply(text, traineeTurns + 1);
     const replyId = `a-${Date.now()}`;
-    setMessages((prev) =>
-      [...prev, { id: replyId, role: "client", text: replyText } as HeroMessage].slice(-MAX_VISIBLE)
-    );
-    setReveal(0);
-    setTypingId(replyId);
-    setBusy(false);
-    if (traineeTurns + 1 >= 2) setShowCta(true);
+
+    window.setTimeout(() => {
+      setMessages((prev) =>
+        [...prev, { id: replyId, role: "client", text: replyText } as HeroMessage].slice(-MAX_VISIBLE)
+      );
+      setReveal(0);
+      setTypingId(replyId);
+      setBusy(false);
+      if (traineeTurns + 1 >= 2) setShowCta(true);
+    }, 260);
   };
 
   return (
     <div className="vesh-card w-full overflow-hidden">
-      <div className="flex items-center justify-between gap-3 border-b-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-hot)] px-4 py-3">
-        <span className="vesh-kicker flex items-center gap-2 text-[var(--vesh-black)]">
-          <span className="inline-block h-2 w-2 animate-pulse-slow rounded-full bg-[var(--vesh-coral)]" />
-          Live rehearsal · try it
+      <div className="flex items-center justify-between gap-4 border-b-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-hot)] px-5 py-4">
+        <span className="vesh-kicker flex items-center gap-2.5 text-[var(--vesh-black)]">
+          <span className="inline-block h-2.5 w-2.5 animate-pulse-slow rounded-full bg-[var(--vesh-coral)]" />
+          Live rehearsal - try it
         </span>
         <div className="flex items-center gap-2">
           <span className="vesh-kicker text-[var(--vesh-muted)]">Alliance</span>
-          <span className="h-2.5 w-20 overflow-hidden rounded-full border-[1.5px] border-[var(--vesh-black)] bg-[#f0e3c4]">
+          <span className="h-3 w-24 overflow-hidden rounded-full border-[1.5px] border-[var(--vesh-black)] bg-[#f0e3c4]">
             <span
               className="block h-full bg-[var(--vesh-green-bright)] transition-[width] duration-700"
               style={{ width: `${alliancePct}%` }}
             />
           </span>
-          <span className="w-8 text-right text-sm font-black tabular-nums">{allianceDisplay}</span>
+          <span className="w-10 text-right text-base font-black tabular-nums">
+            {allianceDisplay}
+          </span>
         </div>
       </div>
 
       <div
         ref={scrollRef}
-        className="vesh-paper max-h-[320px] min-h-[260px] overflow-y-auto px-5 py-4"
+        className="vesh-paper max-h-[440px] min-h-[380px] overflow-y-auto px-6 py-5 lg:px-7"
       >
-        <div className="mb-2 inline-flex border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-yellow)] px-2 py-1 text-[10px] font-black uppercase tracking-[0.04em]">
-          Sarah Chen · anxiety intake
+        <div className="mb-3 inline-flex border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-yellow)] px-3 py-2 text-[11px] font-black uppercase tracking-[0.04em]">
+          Sarah Chen - anxiety intake
         </div>
 
         {messages.map((message) => {
           const isYou = message.role === "trainee";
           const shown = message.id === typingId ? message.text.slice(0, reveal) : message.text;
           return (
-            <p key={message.id} className="animate-slide-up py-0.5 font-mono text-[14px] leading-7">
+            <p key={message.id} className="animate-slide-up py-1 font-mono text-[15px] leading-8">
               <span
-                className={`font-black ${isYou ? "text-[var(--vesh-green)]" : "text-[var(--vesh-coral-dark)]"}`}
+                className={`font-black ${
+                  isYou ? "text-[var(--vesh-green)]" : "text-[var(--vesh-coral-dark)]"
+                }`}
               >
                 {isYou ? "You:" : `${HERO_PERSONA_NAME}:`}
               </span>{" "}
@@ -172,15 +175,17 @@ export default function NotebookHero({
         })}
 
         {busy && !typingId && (
-          <p className="py-0.5 font-mono text-[14px] leading-7 text-[var(--vesh-muted)]">
-            <span className="font-black text-[var(--vesh-coral-dark)]">{HERO_PERSONA_NAME}:</span>{" "}
-            typing…
+          <p className="py-1 font-mono text-[15px] leading-8 text-[var(--vesh-muted)]">
+            <span className="font-black text-[var(--vesh-coral-dark)]">
+              {HERO_PERSONA_NAME}:
+            </span>{" "}
+            typing...
           </p>
         )}
 
         {coachNote && (
           <div
-            className={`vesh-note animate-slide-up ml-auto mt-2 max-w-[82%] ${
+            className={`vesh-note animate-slide-up ml-auto mt-3 max-w-[78%] p-4 ${
               coachNote.tone === "good"
                 ? "vesh-note-green"
                 : coachNote.tone === "watch"
@@ -189,23 +194,25 @@ export default function NotebookHero({
             }`}
           >
             <div className="vesh-kicker text-[var(--vesh-muted)]">Coach margin</div>
-            <strong className="mt-1 block text-sm leading-tight">{coachNote.suggestion.title}</strong>
-            <p className="mt-1 text-xs leading-snug text-[var(--vesh-ink)]">
+            <strong className="mt-1.5 block text-base leading-tight">
+              {coachNote.suggestion.title}
+            </strong>
+            <p className="mt-1.5 text-sm leading-snug text-[var(--vesh-ink)]">
               {coachNote.suggestion.body}
             </p>
           </div>
         )}
       </div>
 
-      <div className="border-t-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] p-3">
-        <div className="mb-2 flex flex-wrap gap-2">
+      <div className="border-t-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] p-4">
+        <div className="mb-3 flex flex-wrap gap-2">
           {SUGGESTED_MOVES.map((move) => (
             <button
               key={move.label}
               type="button"
               disabled={busy}
-              onClick={() => void submit(move.text)}
-              className="vesh-chip"
+              onClick={() => submit(move.text)}
+              className="vesh-chip min-h-9 px-3"
             >
               {move.label}
             </button>
@@ -214,30 +221,26 @@ export default function NotebookHero({
             <button
               type="button"
               onClick={onStartRehearsal}
-              className="vesh-chip bg-[var(--vesh-coral-dark)] text-[var(--vesh-paper-soft)]"
+              className="vesh-chip min-h-9 bg-[var(--vesh-coral-dark)] px-3 text-[var(--vesh-paper-soft)]"
             >
               Start full rehearsal
               <ArrowRight className="ml-1 h-3 w-3" />
             </button>
           )}
         </div>
-        <div className="vesh-card flex items-center gap-2 p-2">
+        <div className="vesh-card flex items-center gap-2 p-3">
           <input
             value={input}
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key === "Enter") void submit(input);
+              if (event.key === "Enter") submit(input);
             }}
             maxLength={140}
             aria-label="Your response to the client"
-            placeholder="Write your response to the client…"
-            className="vesh-session-input min-w-0 flex-1 bg-transparent px-2 py-2 text-sm outline-none placeholder:text-[var(--vesh-muted)]"
+            placeholder="Write your response to the client..."
+            className="vesh-session-input min-w-0 flex-1 bg-transparent px-2 py-3 text-base outline-none placeholder:text-[var(--vesh-muted)]"
           />
-          <button
-            onClick={() => void submit(input)}
-            disabled={busy}
-            className="vesh-button"
-          >
+          <button onClick={() => submit(input)} disabled={busy} className="vesh-button">
             <Send className="h-4 w-4" />
             Send
           </button>
