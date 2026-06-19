@@ -279,11 +279,12 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("handledInitialSignedInHome");
     expect(app).toContain('const isInitialSignedInHome = view === "home" && !handledInitialSignedInHome.current;');
     expect(app).toContain("!authRedirect && !userTypeSet && !isInitialSignedInHome");
-    expect(app).toMatch(/\{signedIn \? \(\s*<>\s*<button[\s\S]*Sign out[\s\S]*<button[\s\S]*Workspace/);
+    expect(app).toContain("AppShell");
+    expect(app).toContain("onSignOut={handleSignOut}");
     expect(app).toContain(") : isLoaded ? (");
     expect(app).toContain('aria-hidden="true"');
     expect(app).toMatch(/\) : isLoaded \? \(\s*<>\s*<a\s+href="\/sign-in"/);
-    expect(app).toContain("workspaceView");
+    expect(app).not.toContain("function Topbar");
     expect(app).not.toContain('onClick={() => onNavigate("home")}');
   });
 
@@ -326,7 +327,7 @@ describe("bold notebook UI system", () => {
 
   test("home masthead does not duplicate the Vesh wordmark above the product header", () => {
     const app = read("components/BoldVeshApp.tsx");
-    const homeMasthead = app.match(/function HomeMasthead\(\) \{[\s\S]*?function Topbar/);
+    const homeMasthead = app.match(/function HomeMasthead\(\) \{[\s\S]*?function PersonaCard/);
 
     expect(homeMasthead?.[0]).toBeDefined();
     expect(homeMasthead?.[0]).not.toContain("<Brand />");
@@ -371,6 +372,7 @@ describe("bold notebook UI system", () => {
     const app = read("components/BoldVeshApp.tsx");
 
     expect(app).toContain("function DashboardRailIcon");
+    expect(app).toContain("function AppShell");
     expect(app).toContain("type=\"button\"");
     expect(app).toContain("aria-label={label}");
     expect(app).toContain("title={label}");
@@ -386,5 +388,27 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("grid gap-3 sm:grid-cols-2");
     expect(app).not.toContain("grid grid-cols-4 gap-2 text-xs");
     expect(app).toContain("max-w-[1480px]");
+  });
+
+  test("signed-in workspace views share one app shell instead of mixing topbar navigation", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain('const appShellVisible = view !== "home";');
+    expect(app).toContain('data-testid="vesh-app-shell"');
+    expect(app).toContain("{appShellVisible && (");
+    expect(app).not.toContain("<Topbar");
+    expect(app).toContain('active={view === "summary"}');
+    expect(app).toContain('active={view === "briefing" || view === "session"}');
+  });
+
+  test("case cards use reusable male and female SVG portraits", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain("function FemalePortraitSvg");
+    expect(app).toContain("function MalePortraitSvg");
+    expect(app).toContain("function PersonaPortrait");
+    expect(app).toContain("personaPortraitVariant");
+    expect(app).toContain("<PersonaPortrait persona={persona}");
+    expect(app).not.toContain("function CasePortrait");
   });
 });

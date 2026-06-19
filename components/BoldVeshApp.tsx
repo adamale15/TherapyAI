@@ -23,7 +23,6 @@ import {
   Star,
   Target,
   Upload,
-  UserRound,
   Users,
 } from "lucide-react";
 import { PersonaUploadModal } from "./PersonaUploadModal";
@@ -85,19 +84,105 @@ function formatTimeRemaining(totalSeconds: number) {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-function initials(name: string) {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
-
 function difficultyClass(difficulty: PersonaData["difficulty"]) {
   if (difficulty === "Beginner") return "bg-[var(--vesh-green)]";
   if (difficulty === "Intermediate") return "bg-[var(--vesh-blue)]";
   return "bg-[var(--vesh-coral)]";
+}
+
+function personaPortraitVariant(persona: PersonaData): "female" | "male" {
+  const marker = `${persona.id} ${persona.name}`.toLowerCase();
+  return marker.includes("marcus") ? "male" : "female";
+}
+
+function FemalePortraitSvg({ className = "h-full w-full" }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 160 180"
+      className={className}
+      fill="none"
+    >
+      <rect width="160" height="180" fill="#ffe8bd" />
+      <rect y="66" width="160" height="114" fill="#fff8ea" />
+      <path
+        d="M42 150V94c0-36 18-63 44-63s44 27 44 63v56"
+        fill="#11110f"
+        stroke="#11110f"
+        strokeWidth="3"
+      />
+      <path
+        d="M48 94c7-36 30-50 58-38 14 6 24 23 24 46-23-8-40-23-52-45-6 19-16 31-30 37Z"
+        fill="#11110f"
+        stroke="#11110f"
+        strokeWidth="3"
+      />
+      <path
+        d="M51 92c0 31 12 53 34 53s34-22 34-53c0-7-1-13-4-19-20-3-34-11-43-25-7 12-14 23-21 29v15Z"
+        fill="#ffe0d1"
+        stroke="#11110f"
+        strokeWidth="3"
+      />
+      <path d="M72 92h1M101 92h1" stroke="#11110f" strokeWidth="6" strokeLinecap="round" />
+      <path d="M80 119c8 6 18 6 26 0" stroke="#11110f" strokeWidth="3" strokeLinecap="round" />
+      <path
+        d="M29 180c9-25 32-41 60-41h14c28 0 51 16 60 41"
+        fill="#fff8ea"
+        stroke="#11110f"
+        strokeWidth="3"
+      />
+      <path d="M54 147c13 11 44 11 57 0" stroke="#11110f" strokeWidth="3" />
+    </svg>
+  );
+}
+
+function MalePortraitSvg({ className = "h-full w-full" }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 160 180"
+      className={className}
+      fill="none"
+    >
+      <rect width="160" height="180" fill="#d7ecf2" />
+      <rect y="70" width="160" height="110" fill="#fff8ea" />
+      <path
+        d="M47 72c0-28 19-48 45-48 22 0 39 14 45 36 3 12 1 24-5 35-13-5-24-13-33-25-13 10-30 15-52 15V72Z"
+        fill="#11110f"
+        stroke="#11110f"
+        strokeWidth="3"
+      />
+      <path
+        d="M48 83c0 33 14 57 38 57s38-24 38-57c0-7-1-13-4-18-24 4-46 1-66-9-4 8-6 17-6 27Z"
+        fill="#f0c7a6"
+        stroke="#11110f"
+        strokeWidth="3"
+      />
+      <path d="M72 89h1M103 89h1" stroke="#11110f" strokeWidth="6" strokeLinecap="round" />
+      <path d="M78 116c9 7 21 7 30 0" stroke="#11110f" strokeWidth="3" strokeLinecap="round" />
+      <path
+        d="M31 180c9-28 34-46 63-46h12c29 0 54 18 63 46"
+        fill="#fff8ea"
+        stroke="#11110f"
+        strokeWidth="3"
+      />
+      <path d="M57 142c16 12 46 12 62 0" stroke="#11110f" strokeWidth="3" />
+    </svg>
+  );
+}
+
+function PersonaPortrait({
+  persona,
+  className,
+}: {
+  persona: PersonaData;
+  className?: string;
+}) {
+  return personaPortraitVariant(persona) === "male" ? (
+    <MalePortraitSvg className={className} />
+  ) : (
+    <FemalePortraitSvg className={className} />
+  );
 }
 
 function Brand() {
@@ -130,84 +215,6 @@ function HomeMasthead() {
   );
 }
 
-function Topbar({
-  view,
-  onNavigate,
-  onSignOut,
-  signedIn,
-  workspaceView,
-}: {
-  view: View;
-  onNavigate: (view: View) => void;
-  onSignOut: () => void;
-  signedIn: boolean;
-  workspaceView: View;
-}) {
-  return (
-    <>
-      <header className="vesh-topbar sticky top-0 z-30">
-        <button onClick={() => onNavigate(signedIn ? workspaceView : "home")} className="text-left">
-          <Brand />
-        </button>
-        <nav className="hidden items-center justify-center gap-2 md:flex">
-          <button
-            onClick={() => onNavigate("student")}
-            className={`vesh-chip ${view === "student" ? "vesh-chip-active" : ""}`}
-          >
-            Journal
-          </button>
-          <button
-            onClick={() => onNavigate("personas")}
-            className={`vesh-chip ${view === "personas" ? "vesh-chip-active" : ""}`}
-          >
-            Personas
-          </button>
-          <button
-            onClick={() => onNavigate("practitioner")}
-            className={`vesh-chip ${view === "practitioner" ? "vesh-chip-active" : ""}`}
-          >
-            Programs
-          </button>
-        </nav>
-        <div className="flex items-center gap-2">
-          {signedIn ? (
-            <button onClick={onSignOut} className="vesh-button vesh-button-green whitespace-nowrap px-3 text-xs sm:px-4 sm:text-sm">
-              <LogOut className="h-4 w-4" />
-              <span>Sign out</span>
-            </button>
-          ) : (
-            <button onClick={() => onNavigate("student")} className="vesh-button">
-              Start free
-            </button>
-          )}
-        </div>
-      </header>
-      {signedIn && (
-        <nav className="vesh-mobile-nav md:hidden">
-          <button
-            onClick={() => onNavigate("student")}
-            className={`vesh-chip flex-1 ${view === "student" ? "vesh-chip-active" : ""}`}
-          >
-            Journal
-          </button>
-          <button
-            onClick={() => onNavigate("personas")}
-            className={`vesh-chip flex-1 ${view === "personas" ? "vesh-chip-active" : ""}`}
-          >
-            Personas
-          </button>
-          <button
-            onClick={() => onNavigate("practitioner")}
-            className={`vesh-chip flex-1 ${view === "practitioner" ? "vesh-chip-active" : ""}`}
-          >
-            Programs
-          </button>
-        </nav>
-      )}
-    </>
-  );
-}
-
 function PersonaCard({
   persona,
   selected,
@@ -221,20 +228,24 @@ function PersonaCard({
     <article
       className={`vesh-card p-4 ${selected ? "bg-[var(--vesh-paper-hot)]" : ""}`}
     >
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div className={`vesh-avatar ${difficultyClass(persona.difficulty)}`}>
-          {initials(persona.name)}
+      <div className="mb-3 grid grid-cols-[82px_minmax(0,1fr)] gap-3">
+        <div className="h-24 overflow-hidden border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-hot)] shadow-[4px_4px_0_rgba(17,17,15,0.14)]">
+          <PersonaPortrait persona={persona} />
         </div>
-        <span className={`vesh-chip ${selected ? "vesh-chip-active" : ""}`}>
-          {persona.difficulty}
-        </span>
+        <div className="min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-lg font-black uppercase leading-none tracking-[-0.02em]">
+              {persona.name}
+            </h3>
+            <span className={`vesh-chip shrink-0 ${selected ? "vesh-chip-active" : ""}`}>
+              {persona.difficulty}
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-[var(--vesh-muted)]">
+            {persona.condition} / {persona.occupation}
+          </p>
+        </div>
       </div>
-      <h3 className="text-lg font-black uppercase leading-none tracking-[-0.02em]">
-        {persona.name}
-      </h3>
-      <p className="mt-1 text-sm text-[var(--vesh-muted)]">
-        {persona.condition} / {persona.occupation}
-      </p>
       <p className="mt-3 line-clamp-3 text-sm text-[var(--vesh-muted)]">
         {persona.description}
       </p>
@@ -375,37 +386,118 @@ function DashboardRailIcon({
   );
 }
 
-function CasePortrait() {
+function AppShell({
+  view,
+  children,
+  onNavigate,
+  onStartPractice,
+  onOpenReport,
+  onSignOut,
+}: {
+  view: View;
+  children: React.ReactNode;
+  onNavigate: (view: View) => void;
+  onStartPractice: () => void;
+  onOpenReport: () => void;
+  onSignOut: () => void;
+}) {
   return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 120 120"
-      className="h-full w-full"
-      fill="none"
+    <section
+      data-testid="vesh-app-shell"
+      className="grid min-h-screen grid-cols-1 md:grid-cols-[80px_minmax(0,1fr)]"
     >
-      <rect width="120" height="120" fill="#fff8ea" />
-      <path
-        d="M32 104V76c0-19 12-36 29-36s29 17 29 36v28"
-        fill="#fbf1dc"
-        stroke="#11110f"
-        strokeWidth="2"
-      />
-      <path
-        d="M36 46c8-19 29-26 45-12 8 7 11 18 9 31-14-5-28-15-38-29-4 12-10 20-16 25-3-6-3-10 0-15Z"
-        fill="#11110f"
-        stroke="#11110f"
-        strokeWidth="2"
-      />
-      <path
-        d="M43 62c0 18 8 32 22 32s22-14 22-32c0-6-2-12-5-16-14-2-24-8-31-17-4 10-8 17-8 33Z"
-        fill="#ffe3d4"
-        stroke="#11110f"
-        strokeWidth="2"
-      />
-      <path d="M56 60h1M75 60h1" stroke="#11110f" strokeWidth="4" strokeLinecap="round" />
-      <path d="M61 78c5 4 11 4 16 0" stroke="#11110f" strokeWidth="2" strokeLinecap="round" />
-      <path d="M24 104c6-13 19-21 36-21h10c17 0 30 8 36 21" fill="#fff8ea" stroke="#11110f" strokeWidth="2" />
-    </svg>
+      <aside className="hidden border-r-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] py-4 md:flex md:flex-col md:items-center md:gap-4">
+        <button
+          type="button"
+          aria-label="Journal"
+          title="Journal"
+          onClick={() => onNavigate("student")}
+          className="vesh-mark m-0"
+        >
+          V
+        </button>
+        <nav className="grid gap-3">
+          <DashboardRailIcon
+            icon={Home}
+            label="Journal"
+            active={view === "student"}
+            onClick={() => onNavigate("student")}
+          />
+          <DashboardRailIcon
+            icon={MessageSquare}
+            label="Start rehearsal"
+            active={view === "briefing" || view === "session"}
+            onClick={onStartPractice}
+          />
+          <DashboardRailIcon
+            icon={ClipboardList}
+            label="Browse cases"
+            active={view === "personas"}
+            onClick={() => onNavigate("personas")}
+          />
+          <DashboardRailIcon
+            icon={BarChart3}
+            label="Open report preview"
+            active={view === "summary"}
+            onClick={onOpenReport}
+          />
+          <DashboardRailIcon
+            icon={Users}
+            label="Programs"
+            active={view === "practitioner"}
+            onClick={() => onNavigate("practitioner")}
+          />
+        </nav>
+        <div className="mt-auto">
+          <DashboardRailIcon
+            icon={LogOut}
+            label="Sign out"
+            onClick={onSignOut}
+          />
+        </div>
+      </aside>
+
+      <div className="min-w-0">
+        <nav className="vesh-mobile-nav sticky top-0 z-30 grid grid-cols-5 gap-1 border-b-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] p-2 md:hidden">
+          <button
+            type="button"
+            onClick={() => onNavigate("student")}
+            className={`vesh-chip min-h-10 px-1 text-[10px] ${view === "student" ? "vesh-chip-active" : ""}`}
+          >
+            Journal
+          </button>
+          <button
+            type="button"
+            onClick={onStartPractice}
+            className={`vesh-chip min-h-10 px-1 text-[10px] ${view === "briefing" || view === "session" ? "vesh-chip-active" : ""}`}
+          >
+            Practice
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate("personas")}
+            className={`vesh-chip min-h-10 px-1 text-[10px] ${view === "personas" ? "vesh-chip-active" : ""}`}
+          >
+            Cases
+          </button>
+          <button
+            type="button"
+            onClick={onOpenReport}
+            className={`vesh-chip min-h-10 px-1 text-[10px] ${view === "summary" ? "vesh-chip-active" : ""}`}
+          >
+            Report
+          </button>
+          <button
+            type="button"
+            onClick={onSignOut}
+            className="vesh-chip min-h-10 px-1 text-[10px]"
+          >
+            Sign out
+          </button>
+        </nav>
+        {children}
+      </div>
+    </section>
   );
 }
 
@@ -465,43 +557,7 @@ function StudentDashboard({
   ];
 
   return (
-    <section className="grid min-h-screen grid-cols-1 md:grid-cols-[80px_minmax(0,1fr)]">
-      <aside className="hidden border-r-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] py-4 md:flex md:flex-col md:items-center md:gap-4">
-        <button
-          type="button"
-          aria-label="Dashboard"
-          title="Dashboard"
-          onClick={() => onNavigate("student")}
-          className="vesh-mark m-0"
-        >
-          V
-        </button>
-        <nav className="grid gap-3">
-          <DashboardRailIcon
-            icon={Home}
-            label="Dashboard"
-            active
-            onClick={() => onNavigate("student")}
-          />
-          <DashboardRailIcon
-            icon={MessageSquare}
-            label="Start rehearsal"
-            onClick={() => onStart(persona)}
-          />
-          <DashboardRailIcon
-            icon={ClipboardList}
-            label="Browse cases"
-            onClick={() => onNavigate("personas")}
-          />
-          <DashboardRailIcon
-            icon={BarChart3}
-            label="Open report preview"
-            onClick={() => onSampleReport(persona)}
-          />
-        </nav>
-      </aside>
-
-      <div className="w-full px-4 py-5 sm:px-6 lg:px-8">
+    <div className="w-full px-4 py-5 sm:px-6 lg:px-8">
         <div className="mx-auto grid w-full max-w-[1480px] gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
           <div className="min-w-0">
             <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
@@ -548,7 +604,7 @@ function StudentDashboard({
                 </div>
                 <div className="mt-4 grid gap-4 sm:grid-cols-[116px_minmax(0,1fr)]">
                   <div className="overflow-hidden border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-hot)] shadow-[4px_4px_0_rgba(17,17,15,0.14)]">
-                    <CasePortrait />
+                    <PersonaPortrait persona={persona} />
                   </div>
                   <div className="min-w-0">
                     <h2 className="text-xl font-black leading-none">{persona.name}</h2>
@@ -731,8 +787,7 @@ function StudentDashboard({
             </div>
           </aside>
         </div>
-      </div>
-    </section>
+    </div>
   );
 }
 
@@ -778,8 +833,6 @@ export default function BoldVeshApp() {
     "student";
 
   const signedIn = !!user && isLoaded;
-  const workspaceView: View =
-    currentUserType === "practitioner" ? "practitioner" : "student";
   const timeRemainingLabel =
     remainingSeconds > 0 ? formatTimeRemaining(remainingSeconds) : "Time up";
   const selectedOrFirst = selectedPersona ?? personas[0];
@@ -796,6 +849,7 @@ export default function BoldVeshApp() {
     [completedSessionList]
   );
   const studentDashboardVisible = view === "student";
+  const appShellVisible = view !== "home";
   const needsReviewCount = completedSessionList.filter(
     (session) => {
       const scores = session.scores ?? {};
@@ -1264,18 +1318,8 @@ export default function BoldVeshApp() {
 
   return (
     <main className="vesh-shell min-h-screen">
-      {view === "home" ? (
+      {view === "home" && (
         <HomeMasthead />
-      ) : studentDashboardVisible ? (
-        null
-      ) : (
-        <Topbar
-          view={view}
-          onNavigate={navigate}
-          onSignOut={handleSignOut}
-          signedIn={signedIn}
-          workspaceView={workspaceView}
-        />
       )}
 
       {view === "home" && (
@@ -1440,20 +1484,28 @@ export default function BoldVeshApp() {
         </section>
       )}
 
-      {studentDashboardVisible && (
-        <StudentDashboard
-          persona={recommendedFirstCase}
-          onStart={startSession}
-          onSampleReport={openSampleReport}
+      {appShellVisible && (
+        <AppShell
+          view={view}
           onNavigate={navigate}
-          clinicalDashboard={clinicalDashboard}
-          completedSessionsLoaded={completedSessionsLoaded}
-          completedSessionList={completedSessionList}
-        />
-      )}
+          onStartPractice={() => startSession(selectedOrFirst)}
+          onOpenReport={() => openSampleReport(selectedOrFirst)}
+          onSignOut={handleSignOut}
+        >
+          {studentDashboardVisible && (
+            <StudentDashboard
+              persona={recommendedFirstCase}
+              onStart={startSession}
+              onSampleReport={openSampleReport}
+              onNavigate={navigate}
+              clinicalDashboard={clinicalDashboard}
+              completedSessionsLoaded={completedSessionsLoaded}
+              completedSessionList={completedSessionList}
+            />
+          )}
 
       {view === "practitioner" && (
-        <section className="vesh-program-shell min-h-[calc(100vh-58px)] p-4 sm:p-6 lg:p-10">
+        <section className="vesh-program-shell min-h-screen p-4 sm:p-6 lg:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="vesh-kicker text-[var(--vesh-muted)]">
@@ -1555,7 +1607,7 @@ export default function BoldVeshApp() {
       )}
 
       {view === "personas" && (
-        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 gap-5 p-4 sm:p-6 lg:grid-cols-[1fr_330px]">
+        <section className="grid min-h-screen grid-cols-1 gap-5 p-4 sm:p-6 lg:grid-cols-[1fr_330px] lg:p-8">
           <div>
             <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -1598,7 +1650,7 @@ export default function BoldVeshApp() {
       )}
 
       {view === "briefing" && selectedOrFirst && (
-        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 gap-5 p-4 sm:p-6 lg:grid-cols-[1fr_360px]">
+        <section className="grid min-h-screen grid-cols-1 gap-5 p-4 sm:p-6 lg:grid-cols-[1fr_360px] lg:p-8">
           <main className="vesh-card vesh-paper p-4 sm:p-6 lg:p-8">
             <div className="vesh-kicker text-[var(--vesh-muted)]">Pre-session briefing</div>
             <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
@@ -1699,7 +1751,7 @@ export default function BoldVeshApp() {
       )}
 
       {view === "session" && selectedOrFirst && (
-        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 md:grid-cols-[150px_1fr_320px] xl:grid-cols-[170px_1fr_360px]">
+        <section className="grid min-h-screen grid-cols-1 md:grid-cols-[150px_1fr_320px] xl:grid-cols-[170px_1fr_360px]">
           <aside className="vesh-rail hidden p-4 md:grid md:content-start md:gap-3">
             <RailItem
               icon={FileText}
@@ -1710,7 +1762,7 @@ export default function BoldVeshApp() {
             <RailItem icon={Clock} label="Time left" value={timeRemainingLabel} />
             <RailItem icon={Mic} label="Voice" value={voiceStatus} />
           </aside>
-          <div className="grid min-h-[calc(100vh-58px)] grid-rows-[auto_minmax(280px,1fr)_auto] gap-4 p-4 sm:p-6 md:min-h-0">
+          <div className="grid min-h-screen grid-rows-[auto_minmax(280px,1fr)_auto] gap-4 p-4 sm:p-6 md:min-h-0">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="vesh-kicker">Live session notebook</div>
@@ -1834,8 +1886,8 @@ export default function BoldVeshApp() {
       )}
 
       {view === "summary" && selectedOrFirst && (
-        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 gap-5 p-4 sm:p-6 lg:grid-cols-[1fr_320px]">
-          <main className="vesh-card vesh-paper min-h-[520px] p-4 sm:p-6 lg:min-h-[620px] lg:pl-24">
+        <section className="grid min-h-screen grid-cols-1 gap-5 p-4 sm:p-6 lg:grid-cols-[1fr_320px] lg:p-8">
+          <main className="vesh-card vesh-paper min-h-[520px] p-4 sm:p-6 lg:min-h-[620px] lg:p-8">
             <div className="vesh-kicker text-[var(--vesh-muted)]">Case review</div>
             <h1 className="vesh-heading mt-2">
               {selectedOrFirst.name} / {selectedOrFirst.condition}
@@ -1906,6 +1958,8 @@ export default function BoldVeshApp() {
             </button>
           </aside>
         </section>
+      )}
+        </AppShell>
       )}
 
       <PersonaUploadModal
