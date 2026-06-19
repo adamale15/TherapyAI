@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const root = process.cwd();
@@ -431,5 +431,16 @@ describe("bold notebook UI system", () => {
     expect(app).not.toContain("function FemalePortraitSvg");
     expect(app).not.toContain("function MalePortraitSvg");
     expect(app).not.toContain("function CasePortrait");
+  });
+
+  test("persona SVG assets embed their artwork instead of referencing a nested image", () => {
+    const male = read("public/persona-art/male-silhouette.svg");
+    const female = read("public/persona-art/female-silhouette.svg");
+
+    expect(male).toContain("data:image/jpeg;base64,");
+    expect(female).toContain("data:image/jpeg;base64,");
+    expect(male).not.toContain("./source-silhouettes.jpg");
+    expect(female).not.toContain("./source-silhouettes.jpg");
+    expect(existsSync(join(root, "public/persona-art/source-silhouettes.jpg"))).toBe(false);
   });
 });
