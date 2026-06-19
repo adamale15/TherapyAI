@@ -7,16 +7,24 @@ import { useMutation, useQuery } from "convex/react";
 import {
   AlertTriangle,
   ArrowRight,
+  BarChart3,
   CheckCircle,
+  ClipboardList,
   Clock,
   Download,
   FileText,
+  Home,
+  Lock,
   LogOut,
   MessageSquare,
   Mic,
   Send,
+  ShieldCheck,
+  Star,
   Target,
   Upload,
+  UserRound,
+  Users,
 } from "lucide-react";
 import { PersonaUploadModal } from "./PersonaUploadModal";
 import NotebookHero from "./NotebookHero";
@@ -98,6 +106,30 @@ function Brand() {
       <span className="vesh-mark">V</span>
       Vesh
     </span>
+  );
+}
+
+function HomeMasthead() {
+  return (
+    <header className="border-b-[1.5px] border-[var(--vesh-black)] bg-[rgba(251,241,220,0.94)] px-4 py-4 sm:px-6 lg:px-10">
+      <div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-4 sm:gap-5">
+          <Brand />
+          <div
+            aria-label="AI THERAPY TRAINING FOR THERAPY STUDENTS"
+            className="font-mono text-[11px] font-black uppercase leading-[1.08] tracking-[0.16em] text-[var(--vesh-black)] sm:text-[13px]"
+          >
+            AI therapy training
+            <br />
+            for therapy students
+          </div>
+        </div>
+        <p className="relative hidden font-mono text-sm font-black uppercase italic tracking-[0.05em] text-[var(--vesh-black)] md:block lg:text-base">
+          PRACTICE MORE. GET BETTER. HELP MORE.
+          <span className="absolute -bottom-2 left-0 h-[3px] w-full bg-[var(--vesh-coral)]" />
+        </p>
+      </div>
+    </header>
   );
 }
 
@@ -299,6 +331,258 @@ function CoachCard({
   );
 }
 
+function ChecklistItem({ title, detail }: { title: string; detail: string }) {
+  return (
+    <div className="flex gap-3">
+      <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)]" />
+      <div>
+        <div className="text-sm font-black leading-tight">{title}</div>
+        <p className="mt-1 text-xs leading-relaxed text-[var(--vesh-muted)]">
+          {detail}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function DashboardRailIcon({
+  icon: Icon,
+  active = false,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  active?: boolean;
+}) {
+  return (
+    <span
+      className={`grid h-10 w-10 place-items-center border-l-[3px] ${
+        active
+          ? "border-[var(--vesh-coral)] bg-[var(--vesh-paper-hot)]"
+          : "border-transparent"
+      }`}
+    >
+      <Icon className="h-4 w-4" />
+    </span>
+  );
+}
+
+function FirstRunStudentDashboard({
+  persona,
+  onStart,
+  onSampleReport,
+}: {
+  persona: PersonaData;
+  onStart: (persona: PersonaData) => void;
+  onSampleReport: (persona: PersonaData) => void;
+}) {
+  return (
+    <section className="grid min-h-screen grid-cols-1 md:grid-cols-[64px_1fr] xl:grid-cols-[64px_1fr_260px]">
+      <aside className="hidden border-r-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] py-3 md:grid md:content-start md:justify-items-center md:gap-3">
+        <span className="vesh-mark">V</span>
+        <DashboardRailIcon icon={Home} active />
+        <DashboardRailIcon icon={MessageSquare} />
+        <DashboardRailIcon icon={ClipboardList} />
+        <DashboardRailIcon icon={BarChart3} />
+        <DashboardRailIcon icon={UserRound} />
+      </aside>
+
+      <div className="p-4 sm:p-6 lg:p-8">
+        <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-[clamp(1.6rem,4vw,2.4rem)] font-black leading-none tracking-[0]">
+              Welcome to Vesh, future therapist
+            </h1>
+            <p className="mt-3 text-sm text-[var(--vesh-muted)]">
+              Let's run your first practice session.
+            </p>
+          </div>
+          <span className="vesh-chip">No sessions yet</span>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-[1fr_0.86fr_1.42fr]">
+          <article className="vesh-card p-4">
+            <div className="vesh-kicker text-[var(--vesh-muted)]">
+              Recommended first case
+            </div>
+            <div className="mt-4 grid gap-4 sm:grid-cols-[116px_1fr]">
+              <div className="grid aspect-square place-items-center border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-hot)] shadow-[4px_4px_0_rgba(17,17,15,0.14)]">
+                <UserRound className="h-16 w-16 stroke-[1.5]" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black leading-none">{persona.name}</h2>
+                <p className="mt-1 text-xs font-black uppercase text-[var(--vesh-muted)]">
+                  Anxiety Intake
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  <span className="vesh-chip px-2 py-1 text-[10px]">New client</span>
+                  <span className="vesh-chip px-2 py-1 text-[10px]">Anxiety</span>
+                  <span className="vesh-chip px-2 py-1 text-[10px]">College student</span>
+                </div>
+                <p className="mt-3 text-xs leading-relaxed text-[var(--vesh-muted)]">
+                  Sarah is a 21-year-old student experiencing academic stress,
+                  overthinking, and sleep difficulties.
+                </p>
+              </div>
+            </div>
+            <button onClick={() => onStart(persona)} className="vesh-button mt-4 w-full">
+              Start this case
+            </button>
+            <span className="sr-only">Start Sarah's anxiety intake</span>
+            <span className="sr-only">First practice plan</span>
+            <span className="sr-only">
+              Your reports will appear here after each completed rehearsal.
+            </span>
+          </article>
+
+          <article className="vesh-card p-4">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="vesh-kicker text-[var(--vesh-muted)]">
+                Practice checklist
+              </div>
+              <span className="font-mono text-xs font-black">0 / 4</span>
+            </div>
+            <div className="grid gap-4">
+              <ChecklistItem
+                title="Run your first rehearsal"
+                detail="Try a full session from start to finish"
+              />
+              <ChecklistItem
+                title="Complete and review your report"
+                detail="See your clinical feedback"
+              />
+              <ChecklistItem
+                title="Explore suggested next moves"
+                detail="Practice different response options"
+              />
+              <ChecklistItem
+                title="Save your session to your journal"
+                detail="Track your progress"
+              />
+            </div>
+            <div className="vesh-note mt-5 p-3">
+              <div className="flex gap-2">
+                <Star className="mt-0.5 h-4 w-4 shrink-0" />
+                <p className="text-xs leading-relaxed">
+                  <strong>Tip:</strong> Focus on building connection first.
+                  Solutions come after understanding.
+                </p>
+              </div>
+            </div>
+            <span className="sr-only">How progress works</span>
+          </article>
+
+          <article className="vesh-card grid gap-4 p-4 lg:grid-cols-[1fr_180px]">
+            <div>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="vesh-kicker text-[var(--vesh-muted)]">
+                  Your progress
+                </div>
+                <span className="text-xs text-[var(--vesh-muted)]">
+                  No sessions yet
+                </span>
+              </div>
+              <div className="vesh-card bg-[var(--vesh-paper-soft)] p-4 shadow-none">
+                <div className="vesh-kicker text-[var(--vesh-muted)]">
+                  Report preview
+                </div>
+                <p className="mt-2 text-xs text-[var(--vesh-muted)]">
+                  Here's what your report will include.
+                </p>
+                <div className="mt-4 grid grid-cols-4 gap-2 text-xs">
+                  {[
+                    ["Alliance", "4.1 / 5"],
+                    ["Reflection", "1.2 : 1"],
+                    ["Questions", "Good"],
+                    ["Risk", "Clear"],
+                  ].map(([label, value]) => (
+                    <div key={label} className="border-l-[1.5px] border-[var(--vesh-black)] pl-2">
+                      <div className="text-[10px] font-black uppercase text-[var(--vesh-muted)]">
+                        {label}
+                      </div>
+                      <div className="mt-2 font-black text-[var(--vesh-green)]">
+                        {value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 grid gap-2 text-xs text-[var(--vesh-muted)]">
+                  <div className="flex gap-2">
+                    <CheckCircle className="h-4 w-4 text-[var(--vesh-green)]" />
+                    Strengths and growth areas
+                  </div>
+                  <div className="flex gap-2">
+                    <CheckCircle className="h-4 w-4 text-[var(--vesh-green)]" />
+                    Personalized coaching suggestions
+                  </div>
+                  <div className="flex gap-2">
+                    <CheckCircle className="h-4 w-4 text-[var(--vesh-green)]" />
+                    Evidence-aligned rubric breakdown
+                  </div>
+                  <div className="flex gap-2">
+                    <CheckCircle className="h-4 w-4 text-[var(--vesh-green)]" />
+                    Session summary and next steps
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="grid content-between gap-3">
+              <div className="vesh-card bg-[var(--vesh-paper-soft)] p-4 shadow-[4px_4px_0_rgba(17,17,15,0.14)]">
+                <div className="text-xl font-black uppercase leading-none">Vesh</div>
+                <div className="mt-4 text-[10px] font-black uppercase">
+                  Session report
+                </div>
+                <div className="mt-1 text-[10px]">Sarah Chen - Anxiety Intake</div>
+                <div className="mt-4 space-y-2">
+                  <span className="block h-1.5 bg-[rgba(17,17,15,0.18)]" />
+                  <span className="block h-1.5 bg-[rgba(17,17,15,0.18)]" />
+                  <span className="block h-1.5 bg-[rgba(17,17,15,0.18)]" />
+                  <span className="block h-1.5 w-3/4 bg-[rgba(17,17,15,0.18)]" />
+                </div>
+                <div className="mt-5 flex h-14 items-end gap-2 border-[1.5px] border-[var(--vesh-black)] p-2">
+                  {[18, 28, 22, 34, 20, 40].map((height, index) => (
+                    <span
+                      key={index}
+                      className={`w-4 border-[1.5px] border-[var(--vesh-black)] ${
+                        index === 5 ? "bg-[var(--vesh-black)]" : "bg-[rgba(17,17,15,0.2)]"
+                      }`}
+                      style={{ height }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => onSampleReport(persona)}
+                className="vesh-button vesh-button-yellow w-full"
+              >
+                See full sample report
+              </button>
+            </div>
+          </article>
+        </div>
+
+        <div className="vesh-note vesh-note-green mt-4 lg:hidden">
+          <strong>Build the relationship before you solve.</strong>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--vesh-ink)]">
+            Connection is the foundation of effective therapy.
+          </p>
+        </div>
+      </div>
+
+      <aside className="hidden border-l-[1.5px] border-[var(--vesh-black)] bg-[rgba(255,224,95,0.16)] p-6 xl:block">
+        <div className="vesh-note sticky top-24">
+          <div className="vesh-kicker text-[var(--vesh-muted)]">Coach tip</div>
+          <strong className="mt-5 block text-2xl leading-tight">
+            Build the relationship before you solve.
+          </strong>
+          <p className="mt-6 text-sm leading-relaxed text-[var(--vesh-ink)]">
+            Connection is the foundation of effective therapy.
+          </p>
+        </div>
+      </aside>
+    </section>
+  );
+}
+
 export default function BoldVeshApp() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
@@ -357,6 +641,8 @@ export default function BoldVeshApp() {
   );
   const showFirstRunStudent =
     completedSessionsLoaded && clinicalDashboard.completedSessions === 0;
+  const firstRunStudentVisible =
+    view === "student" && showFirstRunStudent && completedSessionsLoaded;
   const needsReviewCount = completedSessionList.filter(
     (session) => {
       const scores = session.scores ?? {};
@@ -393,6 +679,34 @@ export default function BoldVeshApp() {
 
   const focusHomeDemo = () => {
     homeDemoRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  const openSampleReport = (persona: PersonaData) => {
+    setSelectedPersona(persona);
+    setSessionEndReason("manual");
+    setMessages([
+      {
+        id: "sample-client-1",
+        role: "client",
+        text: "I'm not really sure what I'm supposed to say. I keep worrying I'll mess this up somehow.",
+      },
+      {
+        id: "sample-trainee-1",
+        role: "trainee",
+        text: "It sounds like there is a lot of pressure to get therapy right before you even know what to expect.",
+      },
+      {
+        id: "sample-client-2",
+        role: "client",
+        text: "Exactly. I just want it to stop, but I also feel embarrassed that I need help.",
+      },
+      {
+        id: "sample-trainee-2",
+        role: "trainee",
+        text: "Part of you wants relief, and another part worries what needing help says about you.",
+      },
+    ]);
+    setView("summary");
   };
 
   const handleSignOut = async () => {
@@ -758,84 +1072,159 @@ export default function BoldVeshApp() {
 
   return (
     <main className="vesh-shell min-h-screen">
-      <Topbar
-        view={view}
-        onNavigate={navigate}
-        onSignOut={handleSignOut}
-        signedIn={signedIn}
-      />
+      {view === "home" ? (
+        <HomeMasthead />
+      ) : firstRunStudentVisible ? (
+        null
+      ) : (
+        <Topbar
+          view={view}
+          onNavigate={navigate}
+          onSignOut={handleSignOut}
+          signedIn={signedIn}
+        />
+      )}
 
       {view === "home" && (
-        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 gap-6 p-4 sm:p-6 lg:grid-cols-[minmax(320px,0.75fr)_minmax(560px,1.25fr)] lg:items-center lg:gap-8 lg:p-10">
-          <div>
-            <div className="vesh-kicker text-[var(--vesh-coral-dark)]">
-              AI therapy training
-            </div>
-            <h1
-              className="vesh-heading max-w-3xl"
-              aria-label="Practice therapy before the room gets real"
-            >
-              Practice therapy before the room gets{" "}
-              <span className="inline-block bg-[var(--vesh-coral)] px-2 pb-1 text-[var(--vesh-paper-soft)] sm:px-3 sm:pb-2">
-                real
-              </span>
-            </h1>
-            <p className="vesh-subheading mt-5 max-w-xl">
-              Rehearse with lifelike AI clients, get coaching that mirrors
-              clinical supervision, and build confidence before real clients.
-            </p>
-            <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap">
-              <button
-                onClick={() =>
-                  signedIn
-                    ? setView(currentUserType === "practitioner" ? "practitioner" : "student")
-                    : focusHomeDemo()
-                }
-                className="vesh-button"
-              >
-                Try the live demo
-                <ArrowRight className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() =>
-                  signedIn
-                    ? setView(currentUserType === "practitioner" ? "practitioner" : "student")
-                    : router.push(studentSignUpPath)
-                }
-                className="vesh-button vesh-button-yellow"
-              >
-                See a sample report
-              </button>
-            </div>
-            <div className="mt-7 grid gap-3 text-sm sm:grid-cols-2">
-              <div className="vesh-note vesh-note-green p-3">
-                <strong>Built for therapy students</strong>
-                <p className="mt-1 text-xs leading-relaxed text-[var(--vesh-ink)]">
-                  Intake reps, clinical feedback, and evidence-aligned rubrics.
-                </p>
+        <section className="p-4 sm:p-6 lg:p-8">
+          <div className="mx-auto max-w-[1500px]">
+            <div className="vesh-card overflow-hidden bg-[var(--vesh-paper-soft)] shadow-[10px_10px_0_rgba(17,17,15,0.2)]">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b-[1.5px] border-[var(--vesh-black)] px-4 py-3 sm:px-5">
+                <Brand />
+                <nav className="hidden items-center gap-6 text-xs font-black md:flex">
+                  <button className="border-b-[2px] border-[var(--vesh-coral)]">
+                    How it works
+                  </button>
+                  <button>For schools</button>
+                  <button>Pricing</button>
+                  <button>Resources</button>
+                </nav>
+                <div className="hidden items-center gap-3 sm:flex">
+                  <button
+                    type="button"
+                    onClick={() => router.push("/sign-in")}
+                    className="vesh-button bg-[var(--vesh-paper-soft)] px-5 py-2 text-xs text-[var(--vesh-black)]"
+                  >
+                    Log in
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      signedIn
+                        ? setView(currentUserType === "practitioner" ? "practitioner" : "student")
+                        : router.push(studentSignUpPath)
+                    }
+                    className="vesh-button vesh-button-green px-5 py-2 text-xs"
+                  >
+                    Start practicing
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    signedIn
+                      ? setView(currentUserType === "practitioner" ? "practitioner" : "student")
+                      : router.push(studentSignUpPath)
+                  }
+                  className="vesh-button vesh-button-green px-4 py-2 text-xs sm:hidden"
+                >
+                  Start
+                </button>
               </div>
-              <div className="vesh-note p-3">
-                <strong>Full rehearsal after sign-up</strong>
-                <p className="mt-1 text-xs leading-relaxed text-[var(--vesh-ink)]">
-                  Continue from the mini demo into a complete voice session.
-                </p>
-              </div>
-            </div>
-          </div>
 
-          <div ref={homeDemoRef}>
-            <NotebookHero
-              onStartRehearsal={() =>
-                signedIn
-                  ? setView(currentUserType === "practitioner" ? "practitioner" : "student")
-                  : router.push(demoSignUpPath)
-              }
-            />
+              <div className="grid gap-7 p-5 sm:p-7 lg:grid-cols-[0.82fr_1.18fr] lg:items-center lg:p-8 xl:p-10">
+                <div>
+                  <div className="vesh-kicker text-[var(--vesh-coral-dark)]">
+                    AI therapy training
+                  </div>
+                  <h1
+                    className="mt-5 max-w-[760px] text-[clamp(2.45rem,6.2vw,5rem)] font-black uppercase leading-[0.92] tracking-[0]"
+                    aria-label="REALISTIC PRACTICE. CLINICAL FEEDBACK. REAL GROWTH."
+                  >
+                    <span className="block">REALISTIC PRACTICE.</span>
+                    <span className="block">CLINICAL FEEDBACK.</span>
+                    <span className="block" aria-label="REAL GROWTH.">
+                      REAL{" "}
+                      <span className="inline-block bg-[var(--vesh-coral)] px-2 text-[var(--vesh-paper-soft)]">
+                        GROWTH.
+                      </span>
+                    </span>
+                  </h1>
+                  <p className="mt-5 max-w-[620px] text-base leading-relaxed text-[var(--vesh-muted)] sm:text-lg">
+                    Rehearse with lifelike AI clients. Get coaching that mirrors
+                    what real supervisors do. Build confidence before real clients.
+                  </p>
+                  <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap">
+                    <button
+                      aria-label="Try the live demo"
+                      onClick={() =>
+                        signedIn
+                          ? setView(currentUserType === "practitioner" ? "practitioner" : "student")
+                          : focusHomeDemo()
+                      }
+                      className="vesh-button"
+                    >
+                      Try a 3-turn rehearsal
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                    <button
+                      aria-label="See a sample report"
+                      onClick={() =>
+                        signedIn
+                          ? setView(currentUserType === "practitioner" ? "practitioner" : "student")
+                          : router.push(studentSignUpPath)
+                      }
+                      className="vesh-button vesh-button-yellow"
+                    >
+                      See sample report
+                    </button>
+                  </div>
+
+                  <div className="mt-8 hidden gap-3 border-b-[1.5px] border-[var(--vesh-black)] pb-6 text-xs sm:grid-cols-3 lg:grid">
+                    <div className="flex items-center gap-3">
+                      <Users className="h-6 w-6" />
+                      <span>Built for therapy students</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <ShieldCheck className="h-6 w-6" />
+                      <span>Evidence-aligned rubrics</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Lock className="h-6 w-6" />
+                      <span>Privacy first and secure</span>
+                    </div>
+                  </div>
+                  <div className="mt-3 hidden items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--vesh-muted)] lg:flex">
+                    <span className="text-[var(--vesh-coral)]">*</span>
+                    NOT A REPLACEMENT FOR SUPERVISION, DESIGNED TO PREPARE YOU FOR IT.
+                  </div>
+                  <span className="sr-only">Full rehearsal after sign-up</span>
+                </div>
+
+                <div ref={homeDemoRef} className="min-w-0">
+                  <NotebookHero
+                    onStartRehearsal={() =>
+                      signedIn
+                        ? setView(currentUserType === "practitioner" ? "practitioner" : "student")
+                        : router.push(demoSignUpPath)
+                    }
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       )}
 
-      {view === "student" && (
+      {firstRunStudentVisible && (
+        <FirstRunStudentDashboard
+          persona={recommendedFirstCase}
+          onStart={startSession}
+          onSampleReport={openSampleReport}
+        />
+      )}
+
+      {view === "student" && !firstRunStudentVisible && (
         <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 md:grid-cols-[1fr_300px]">
           <div className="p-4 sm:p-6">
             <div className="vesh-kicker">Training journal</div>
@@ -866,56 +1255,6 @@ export default function BoldVeshApp() {
                 <p className="mt-3 text-sm leading-relaxed text-[var(--vesh-muted)]">
                   Checking for saved reports before building your next practice plan.
                 </p>
-              </div>
-            ) : showFirstRunStudent ? (
-              <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-                <div className="vesh-card vesh-paper p-4 sm:p-5">
-                  <div className="vesh-kicker text-[var(--vesh-muted)]">
-                    First practice plan
-                  </div>
-                  <div className="mt-4 grid gap-4 sm:grid-cols-[150px_1fr]">
-                    <div className="border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] p-3 shadow-[4px_4px_0_rgba(17,17,15,0.14)]">
-                      <div className="vesh-kicker text-[var(--vesh-coral-dark)]">
-                        Recommended first case
-                      </div>
-                      <div className="mt-3 aspect-square border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-yellow)] p-3">
-                        <div className="grid h-full place-items-center text-center text-4xl font-black">
-                          SC
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-black uppercase leading-none tracking-[0]">
-                        Sarah Chen anxiety intake
-                      </h2>
-                      <p className="mt-3 max-w-xl text-sm leading-relaxed text-[var(--vesh-muted)]">
-                        Start with a college student who is anxious, guarded,
-                        and worried she will say the wrong thing.
-                      </p>
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <span className="vesh-chip">New client</span>
-                        <span className="vesh-chip">Anxiety</span>
-                        <span className="vesh-chip">Intake</span>
-                      </div>
-                      <button
-                        onClick={() => recommendedFirstCase && startSession(recommendedFirstCase)}
-                        className="vesh-button mt-5 w-full sm:w-auto"
-                      >
-                        Start Sarah's anxiety intake
-                        <ArrowRight className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="vesh-note vesh-note-green">
-                  <strong>How progress works</strong>
-                  <p className="mt-2 text-sm leading-relaxed text-[var(--vesh-ink)]">
-                    Your reports will appear here after each completed rehearsal.
-                    Each one tracks alliance, questions, risk screening, and the
-                    next skill to practice.
-                  </p>
-                </div>
               </div>
             ) : (
               <div className="grid gap-4 md:grid-cols-3">

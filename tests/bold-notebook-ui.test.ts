@@ -201,7 +201,9 @@ describe("bold notebook UI system", () => {
   test("landing page is a student-first conversion surface", () => {
     const app = read("components/BoldVeshApp.tsx");
 
-    expect(app).toContain("Practice therapy before the room gets real");
+    expect(app).toContain("REALISTIC PRACTICE.");
+    expect(app).toContain("CLINICAL FEEDBACK.");
+    expect(app).toContain("REAL GROWTH.");
     expect(app).toContain("Try the live demo");
     expect(app).toContain("See a sample report");
     expect(app).toContain("Built for therapy students");
@@ -266,5 +268,55 @@ describe("bold notebook UI system", () => {
     expect(hero).toContain("disabled={busy || demoComplete}");
     expect(hero).not.toContain("Start full rehearsal");
     expect(hero).not.toContain("/api/chat");
+  });
+
+  test("home page matches the reference masthead and desktop hero shell", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain("AI THERAPY TRAINING FOR THERAPY STUDENTS");
+    expect(app).toContain("PRACTICE MORE. GET BETTER. HELP MORE.");
+    expect(app).toContain("How it works");
+    expect(app).toContain("For schools");
+    expect(app).toContain("Pricing");
+    expect(app).toContain("Resources");
+    expect(app).toContain("Log in");
+    expect(app).toContain("Start practicing");
+    expect(app).toContain("REALISTIC PRACTICE.");
+    expect(app).toContain("CLINICAL FEEDBACK.");
+    expect(app).toContain("REAL GROWTH.");
+    expect(app).toContain("NOT A REPLACEMENT FOR SUPERVISION");
+  });
+
+  test("notebook hero includes the reference live rubric sidebar", () => {
+    const hero = read("components/NotebookHero.tsx");
+
+    expect(hero).toContain("Live rehearsal");
+    expect(hero).toContain("Anxiety Intake - Sarah Chen");
+    expect(hero).toContain("Time left");
+    expect(hero).toContain("Coaching margin");
+    expect(hero).toContain("Alliance score");
+    expect(hero).toContain("Reflection ratio");
+    expect(hero).toContain("Question quality");
+    expect(hero).toContain("Risk screen");
+    expect(hero).toContain("View full rubric");
+    expect(hero).toContain("Reflect");
+    expect(hero).toContain("Explore");
+    expect(hero).toContain("Open question");
+  });
+
+  test("first-run dashboard matches the reference guided dashboard", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain("Welcome to Vesh, future therapist");
+    expect(app).toContain("Practice checklist");
+    expect(app).toContain("0 / 4");
+    expect(app).toContain("Run your first rehearsal");
+    expect(app).toContain("Complete and review your report");
+    expect(app).toContain("Explore suggested next moves");
+    expect(app).toContain("Save your session to your journal");
+    expect(app).toContain("Your progress");
+    expect(app).toContain("Report preview");
+    expect(app).toContain("Build the relationship before you solve.");
+    expect(app).toContain("See full sample report");
   });
 });
