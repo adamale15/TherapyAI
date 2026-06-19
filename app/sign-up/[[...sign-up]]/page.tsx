@@ -41,6 +41,8 @@ const clerkNotebookAppearance = {
 export default function SignUpPage() {
   const searchParams = useSearchParams();
   const userType = searchParams.get("userType");
+  const intent = searchParams.get("intent");
+  const isDemoIntent = intent === "demo";
 
   return (
     <main className="vesh-shell min-h-screen">
@@ -55,17 +57,21 @@ export default function SignUpPage() {
 
       <section className="grid min-h-[calc(100vh-58px)] place-items-center p-6">
         <div className="w-full max-w-[430px]">
-          <div className="mb-4 grid grid-cols-2 gap-3">
+          <div className="mb-4 grid gap-3 sm:grid-cols-2">
             <div className="vesh-note vesh-note-green">
-              <strong>Student</strong>
+              <strong>{isDemoIntent ? "Continue from your demo" : "Student"}</strong>
               <p className="mt-1 text-xs text-[#11110f]">
-                Practice journal and live coaching.
+                {isDemoIntent
+                  ? "Unlock the full rehearsal with Sarah and save your first report."
+                  : "Practice journal and live coaching."}
               </p>
             </div>
             <div className="vesh-note">
-              <strong>Practitioner</strong>
+              <strong>{isDemoIntent ? "Start with the student practice workspace" : "Practitioner"}</strong>
               <p className="mt-1 text-xs text-[#11110f]">
-                Cohort review and rubric tools.
+                {isDemoIntent
+                  ? "Voice clients, longer sessions, and clinical rubrics open after sign-up."
+                  : "Cohort review and rubric tools."}
               </p>
             </div>
           </div>

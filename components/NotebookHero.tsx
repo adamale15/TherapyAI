@@ -14,10 +14,14 @@ const SEED_CLIENT_LINE =
 const SUGGESTED_MOVES = [
   { label: "Reflect the pressure", text: "It sounds like that pressure barely lets up." },
   { label: "Ask what's hardest", text: "What has been the hardest part lately?" },
-  { label: "Offer advice", text: "Have you tried making a study schedule?" },
+  {
+    label: "Reflection before assessment",
+    text: "Before we assess anything, I want to understand what this pressure feels like for you.",
+  },
 ] as const;
 
-const MAX_VISIBLE = 6;
+const DEMO_TURN_LIMIT = 3;
+const MAX_VISIBLE = DEMO_TURN_LIMIT * 2;
 
 function pickDemoReply(options: string[], turnCount: number) {
   return options[(turnCount - 1) % options.length];
@@ -139,10 +143,12 @@ export default function NotebookHero({
 
   const allianceDisplay = traineeTurns === 0 ? "-" : analysis.scores.alliance.toFixed(1);
   const alliancePct = traineeTurns === 0 ? 8 : Math.max(8, (analysis.scores.alliance / 5) * 100);
+  const demoComplete = traineeTurns >= DEMO_TURN_LIMIT;
 
   const submit = (raw: string) => {
     const text = raw.trim();
-    if (!text || busy) return;
+    if (!text || busy || demoComplete) return;
+    const nextTurn = traineeTurns + 1;
 
     setInput("");
     setMessages((prev) =>
@@ -150,7 +156,7 @@ export default function NotebookHero({
     );
     setBusy(true);
 
-    const replyText = buildDemoClientReply(text, traineeTurns + 1);
+    const replyText = buildDemoClientReply(text, nextTurn);
     const replyId = `a-${Date.now()}`;
 
     window.setTimeout(() => {
@@ -160,7 +166,7 @@ export default function NotebookHero({
       setReveal(0);
       setTypingId(replyId);
       setBusy(false);
-      if (traineeTurns + 1 >= 2) setShowCta(true);
+      if (nextTurn >= DEMO_TURN_LIMIT) setShowCta(true);
     }, 260);
   };
 
@@ -169,9 +175,12 @@ export default function NotebookHero({
       <div className="flex flex-wrap items-center justify-between gap-3 border-b-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-hot)] px-4 py-3 sm:gap-4 sm:px-5 sm:py-4">
         <span className="vesh-kicker flex items-center gap-2.5 text-[var(--vesh-black)]">
           <span className="inline-block h-2.5 w-2.5 animate-pulse-slow rounded-full bg-[var(--vesh-coral)]" />
-          Live rehearsal - try it
+          Try a 3-turn rehearsal
         </span>
         <div className="flex items-center gap-2">
+          <span className="vesh-kicker text-[var(--vesh-muted)]">
+            {Math.min(traineeTurns, DEMO_TURN_LIMIT)}/{DEMO_TURN_LIMIT}
+          </span>
           <span className="vesh-kicker text-[var(--vesh-muted)]">Alliance</span>
           <span className="h-3 w-24 overflow-hidden rounded-full border-[1.5px] border-[var(--vesh-black)] bg-[#f0e3c4]">
             <span
@@ -243,6 +252,32 @@ export default function NotebookHero({
             </p>
           </div>
         )}
+
+        {showCta && (
+          <div
+            aria-live="polite"
+            className="vesh-note vesh-note-green animate-slide-up mt-4 max-w-full p-4 sm:max-w-[88%]"
+          >
+            <div className="vesh-kicker text-[var(--vesh-muted)]">
+              Mini report unlocked
+            </div>
+            <strong className="mt-1.5 block text-xl leading-none">
+              Create account for full session
+            </strong>
+            <p className="mt-2 text-sm leading-relaxed text-[var(--vesh-ink)]">
+              Full sessions use AI voice clients, longer transcripts, and a
+              complete rubric after the rehearsal.
+            </p>
+            <button
+              type="button"
+              onClick={onStartRehearsal}
+              className="vesh-button mt-4 w-full sm:w-auto"
+            >
+              Create account for full session
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="border-t-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] p-3 sm:p-4">
@@ -251,23 +286,13 @@ export default function NotebookHero({
             <button
               key={move.label}
               type="button"
-              disabled={busy}
+              disabled={busy || demoComplete}
               onClick={() => submit(move.text)}
               className="vesh-chip min-h-9 px-3"
             >
               {move.label}
             </button>
           ))}
-          {showCta && (
-            <button
-              type="button"
-              onClick={onStartRehearsal}
-              className="vesh-chip min-h-9 bg-[var(--vesh-coral-dark)] px-3 text-[var(--vesh-paper-soft)]"
-            >
-              Start full rehearsal
-              <ArrowRight className="ml-1 h-3 w-3" />
-            </button>
-          )}
         </div>
         <div className="vesh-card flex flex-wrap items-center gap-2 p-2 sm:flex-nowrap sm:p-3">
           <input
@@ -276,12 +301,13 @@ export default function NotebookHero({
             onKeyDown={(event) => {
               if (event.key === "Enter") submit(input);
             }}
+            disabled={demoComplete}
             maxLength={140}
             aria-label="Your response to the client"
-            placeholder="Write your response to the client..."
+            placeholder={demoComplete ? "Mini report unlocked" : "Write your response to the client..."}
             className="vesh-session-input min-w-[180px] flex-1 bg-transparent px-2 py-3 text-sm outline-none placeholder:text-[var(--vesh-muted)] sm:text-base"
           />
-          <button onClick={() => submit(input)} disabled={busy} className="vesh-button flex-1 sm:flex-none">
+          <button onClick={() => submit(input)} disabled={busy || demoComplete} className="vesh-button flex-1 sm:flex-none">
             <Send className="h-4 w-4" />
             Send
           </button>

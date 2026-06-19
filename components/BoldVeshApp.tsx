@@ -67,6 +67,9 @@ const sessionDurations = [10, 25, 45] as const;
 type SessionDuration = (typeof sessionDurations)[number];
 type SessionEndReason = "manual" | "time";
 
+const studentSignUpPath = "/sign-up?userType=student";
+const demoSignUpPath = "/sign-up?userType=student&intent=demo";
+
 function formatTimeRemaining(totalSeconds: number) {
   const clamped = Math.max(0, totalSeconds);
   const minutes = Math.floor(clamped / 60);
@@ -316,6 +319,7 @@ export default function BoldVeshApp() {
   const sessionId = useRef(`session-${Date.now()}`);
   const savedSessionKeys = useRef<Set<string>>(new Set());
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const homeDemoRef = useRef<HTMLDivElement | null>(null);
 
   const convexPersonas = useQuery(convexFunctions.personas.listForUser, {
     ownerClerkId: user?.id,
@@ -339,12 +343,21 @@ export default function BoldVeshApp() {
   const timeRemainingLabel =
     remainingSeconds > 0 ? formatTimeRemaining(remainingSeconds) : "Time up";
   const selectedOrFirst = selectedPersona ?? personas[0];
-  const sessionAnalysis = useMemo(() => analyzeClinicalSession(messages), [messages]);
-  const clinicalDashboard = useMemo(
-    () => summarizeClinicalHistory((completedSessions ?? []) as CompletedClinicalSession[]),
+  const recommendedFirstCase =
+    personas.find((persona) => persona.name === "Sarah Chen") ?? selectedOrFirst;
+  const completedSessionList = useMemo(
+    () => ((completedSessions ?? []) as CompletedClinicalSession[]),
     [completedSessions]
   );
-  const needsReviewCount = ((completedSessions ?? []) as CompletedClinicalSession[]).filter(
+  const completedSessionsLoaded = !user?.id || completedSessions !== undefined;
+  const sessionAnalysis = useMemo(() => analyzeClinicalSession(messages), [messages]);
+  const clinicalDashboard = useMemo(
+    () => summarizeClinicalHistory(completedSessionList),
+    [completedSessionList]
+  );
+  const showFirstRunStudent =
+    completedSessionsLoaded && clinicalDashboard.completedSessions === 0;
+  const needsReviewCount = completedSessionList.filter(
     (session) => {
       const scores = session.scores ?? {};
       return (
@@ -372,10 +385,14 @@ export default function BoldVeshApp() {
 
   const navigate = (target: View) => {
     if (!signedIn && target !== "home") {
-      router.push("/sign-up?userType=student");
+      router.push(studentSignUpPath);
       return;
     }
     setView(target);
+  };
+
+  const focusHomeDemo = () => {
+    homeDemoRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   const handleSignOut = async () => {
@@ -535,7 +552,7 @@ export default function BoldVeshApp() {
 
   const startSession = (persona: PersonaData) => {
     if (!signedIn) {
-      router.push("/sign-up?userType=student");
+      router.push(studentSignUpPath);
       return;
     }
 
@@ -751,44 +768,70 @@ export default function BoldVeshApp() {
       {view === "home" && (
         <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 gap-6 p-4 sm:p-6 lg:grid-cols-[minmax(320px,0.75fr)_minmax(560px,1.25fr)] lg:items-center lg:gap-8 lg:p-10">
           <div>
-            <h1 className="vesh-heading max-w-3xl">
-              Clinical practice that finally feels{" "}
-              <span className="inline-block bg-[var(--vesh-black)] px-2 pb-1 text-[var(--vesh-paper-soft)] sm:px-3 sm:pb-2">
-                alive.
+            <div className="vesh-kicker text-[var(--vesh-coral-dark)]">
+              AI therapy training
+            </div>
+            <h1
+              className="vesh-heading max-w-3xl"
+              aria-label="Practice therapy before the room gets real"
+            >
+              Practice therapy before the room gets{" "}
+              <span className="inline-block bg-[var(--vesh-coral)] px-2 pb-1 text-[var(--vesh-paper-soft)] sm:px-3 sm:pb-2">
+                real
               </span>
             </h1>
             <p className="vesh-subheading mt-5 max-w-xl">
-              AI clients, live supervision cues, and review-ready session notes
-              for therapy students who need reps before real stakes.
+              Rehearse with lifelike AI clients, get coaching that mirrors
+              clinical supervision, and build confidence before real clients.
             </p>
             <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap">
               <button
                 onClick={() =>
                   signedIn
                     ? setView(currentUserType === "practitioner" ? "practitioner" : "student")
-                    : router.push("/sign-up?userType=student")
+                    : focusHomeDemo()
                 }
                 className="vesh-button"
               >
-                Start rehearsal
+                Try the live demo
                 <ArrowRight className="h-4 w-4" />
               </button>
               <button
-                onClick={() => selectedOrFirst && startSession(selectedOrFirst)}
+                onClick={() =>
+                  signedIn
+                    ? setView(currentUserType === "practitioner" ? "practitioner" : "student")
+                    : router.push(studentSignUpPath)
+                }
                 className="vesh-button vesh-button-yellow"
               >
-                Preview case
+                See a sample report
               </button>
+            </div>
+            <div className="mt-7 grid gap-3 text-sm sm:grid-cols-2">
+              <div className="vesh-note vesh-note-green p-3">
+                <strong>Built for therapy students</strong>
+                <p className="mt-1 text-xs leading-relaxed text-[var(--vesh-ink)]">
+                  Intake reps, clinical feedback, and evidence-aligned rubrics.
+                </p>
+              </div>
+              <div className="vesh-note p-3">
+                <strong>Full rehearsal after sign-up</strong>
+                <p className="mt-1 text-xs leading-relaxed text-[var(--vesh-ink)]">
+                  Continue from the mini demo into a complete voice session.
+                </p>
+              </div>
             </div>
           </div>
 
-          <NotebookHero
-            onStartRehearsal={() =>
-              signedIn
-                ? setView(currentUserType === "practitioner" ? "practitioner" : "student")
-                : router.push("/sign-up?userType=student")
-            }
-          />
+          <div ref={homeDemoRef}>
+            <NotebookHero
+              onStartRehearsal={() =>
+                signedIn
+                  ? setView(currentUserType === "practitioner" ? "practitioner" : "student")
+                  : router.push(demoSignUpPath)
+              }
+            />
+          </div>
         </section>
       )}
 
@@ -815,16 +858,77 @@ export default function BoldVeshApp() {
               />
             </div>
             <div className="my-5 h-[1.5px] bg-[var(--vesh-black)]" />
-            <div className="grid gap-4 md:grid-cols-3">
-              {personas.slice(0, 3).map((persona, index) => (
-                <PersonaCard
-                  key={persona.id}
-                  persona={persona}
-                  selected={index === 0}
-                  onStart={startSession}
-                />
-              ))}
-            </div>
+            {!completedSessionsLoaded ? (
+              <div className="vesh-card p-5">
+                <div className="vesh-kicker text-[var(--vesh-muted)]">
+                  Loading practice history
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-[var(--vesh-muted)]">
+                  Checking for saved reports before building your next practice plan.
+                </p>
+              </div>
+            ) : showFirstRunStudent ? (
+              <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+                <div className="vesh-card vesh-paper p-4 sm:p-5">
+                  <div className="vesh-kicker text-[var(--vesh-muted)]">
+                    First practice plan
+                  </div>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-[150px_1fr]">
+                    <div className="border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] p-3 shadow-[4px_4px_0_rgba(17,17,15,0.14)]">
+                      <div className="vesh-kicker text-[var(--vesh-coral-dark)]">
+                        Recommended first case
+                      </div>
+                      <div className="mt-3 aspect-square border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-yellow)] p-3">
+                        <div className="grid h-full place-items-center text-center text-4xl font-black">
+                          SC
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-black uppercase leading-none tracking-[0]">
+                        Sarah Chen anxiety intake
+                      </h2>
+                      <p className="mt-3 max-w-xl text-sm leading-relaxed text-[var(--vesh-muted)]">
+                        Start with a college student who is anxious, guarded,
+                        and worried she will say the wrong thing.
+                      </p>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <span className="vesh-chip">New client</span>
+                        <span className="vesh-chip">Anxiety</span>
+                        <span className="vesh-chip">Intake</span>
+                      </div>
+                      <button
+                        onClick={() => recommendedFirstCase && startSession(recommendedFirstCase)}
+                        className="vesh-button mt-5 w-full sm:w-auto"
+                      >
+                        Start Sarah's anxiety intake
+                        <ArrowRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="vesh-note vesh-note-green">
+                  <strong>How progress works</strong>
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--vesh-ink)]">
+                    Your reports will appear here after each completed rehearsal.
+                    Each one tracks alliance, questions, risk screening, and the
+                    next skill to practice.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-3">
+                {personas.slice(0, 3).map((persona, index) => (
+                  <PersonaCard
+                    key={persona.id}
+                    persona={persona}
+                    selected={index === 0}
+                    onStart={startSession}
+                  />
+                ))}
+              </div>
+            )}
           </div>
           <aside className="border-t-[1.5px] border-[var(--vesh-black)] bg-[rgba(15,61,50,0.06)] p-4 sm:p-6 md:border-l-[1.5px] md:border-t-0">
             <div className="vesh-note">
@@ -851,7 +955,7 @@ export default function BoldVeshApp() {
               </div>
             ) : (
               <div className="vesh-card mt-5 p-4 text-sm text-[var(--vesh-muted)]">
-                No completed reports yet.
+                Your reports will appear here after each completed rehearsal.
               </div>
             )}
           </aside>

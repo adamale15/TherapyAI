@@ -197,4 +197,74 @@ describe("bold notebook UI system", () => {
     expect(app).not.toContain("Cohort 04");
     expect(app).not.toContain("Rushed closing");
   });
+
+  test("landing page is a student-first conversion surface", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain("Practice therapy before the room gets real");
+    expect(app).toContain("Try the live demo");
+    expect(app).toContain("See a sample report");
+    expect(app).toContain("Built for therapy students");
+    expect(app).toContain("Full rehearsal after sign-up");
+    expect(app).toContain("router.push(demoSignUpPath)");
+  });
+
+  test("logged-out notebook demo has a stronger guided conversion funnel", () => {
+    const hero = read("components/NotebookHero.tsx");
+
+    expect(hero).toContain("DEMO_TURN_LIMIT");
+    expect(hero).toContain("Mini report unlocked");
+    expect(hero).toContain("Create account for full session");
+    expect(hero).toContain("Try a 3-turn rehearsal");
+    expect(hero).toContain("Reflection before assessment");
+    expect(hero).toContain("Full sessions use AI voice clients");
+    expect(hero).not.toContain("Offer advice");
+  });
+
+  test("sign-up page adapts when visitor arrives from the demo", () => {
+    const signUp = read("app/sign-up/[[...sign-up]]/page.tsx");
+
+    expect(signUp).toContain('searchParams.get("intent")');
+    expect(signUp).toContain("Continue from your demo");
+    expect(signUp).toContain("Unlock the full rehearsal");
+    expect(signUp).toContain("Start with the student practice workspace");
+  });
+
+  test("first-run student dashboard guides the next action instead of showing only empty data", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain("First practice plan");
+    expect(app).toContain("Start Sarah's anxiety intake");
+    expect(app).toContain("How progress works");
+    expect(app).toContain("Your reports will appear here after each completed rehearsal.");
+    expect(app).toContain("Recommended first case");
+  });
+
+  test("demo intent is reserved for the completed demo signup path", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain('const studentSignUpPath = "/sign-up?userType=student";');
+    expect(app).toContain('const demoSignUpPath = "/sign-up?userType=student&intent=demo";');
+    expect(app).toContain("router.push(studentSignUpPath)");
+    expect((app.match(/router\.push\(demoSignUpPath\)/g) ?? []).length).toBe(1);
+  });
+
+  test("first-run dashboard waits for saved history before showing empty-state guidance", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain("completedSessionsLoaded");
+    expect(app).toContain("showFirstRunStudent");
+    expect(app).toContain("completedSessionsLoaded && clinicalDashboard.completedSessions === 0");
+    expect(app).toContain("Loading practice history");
+  });
+
+  test("notebook demo completion has one clear accessible conversion action", () => {
+    const hero = read("components/NotebookHero.tsx");
+
+    expect(hero).toContain('aria-live="polite"');
+    expect(hero).toContain("demoComplete");
+    expect(hero).toContain("disabled={busy || demoComplete}");
+    expect(hero).not.toContain("Start full rehearsal");
+    expect(hero).not.toContain("/api/chat");
+  });
 });
