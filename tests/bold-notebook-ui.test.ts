@@ -378,10 +378,12 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("aria-label={label}");
     expect(app).toContain("title={label}");
     expect(app).toContain("onNavigate");
-    expect(app).toContain('label="Start rehearsal"');
     expect(app).toContain('label="Browse cases"');
     expect(app).toContain('label="Programs"');
     expect(app).toContain("grid-cols-4");
+    expect(app).not.toContain('label="Start rehearsal"');
+    expect(app).not.toContain("onStartPractice");
+    expect(app).not.toContain(">Practice</button>");
     expect(app).not.toContain('label="Open report preview"');
     expect(app).not.toContain("onOpenReport");
   });
@@ -403,7 +405,7 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("{appShellVisible && (");
     expect(app).not.toContain("<Topbar");
     expect(app).not.toContain('label="Open report preview"');
-    expect(app).toContain('active={view === "briefing" || view === "session"}');
+    expect(app).not.toContain('active={view === "briefing" || view === "session"}');
   });
 
   test("program session history can download saved reports directly", () => {
@@ -421,11 +423,13 @@ describe("bold notebook UI system", () => {
   test("case cards use reusable male and female SVG portraits", () => {
     const app = read("components/BoldVeshApp.tsx");
 
-    expect(app).toContain("function FemalePortraitSvg");
-    expect(app).toContain("function MalePortraitSvg");
     expect(app).toContain("function PersonaPortrait");
     expect(app).toContain("personaPortraitVariant");
+    expect(app).toContain("/persona-art/female-silhouette.svg");
+    expect(app).toContain("/persona-art/male-silhouette.svg");
     expect(app).toContain("<PersonaPortrait persona={persona}");
+    expect(app).not.toContain("function FemalePortraitSvg");
+    expect(app).not.toContain("function MalePortraitSvg");
     expect(app).not.toContain("function CasePortrait");
   });
 });

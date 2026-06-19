@@ -94,86 +94,6 @@ function personaPortraitVariant(persona: PersonaData): "female" | "male" {
   return marker.includes("marcus") ? "male" : "female";
 }
 
-function FemalePortraitSvg({ className = "h-full w-full" }: { className?: string }) {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 160 180"
-      className={className}
-      fill="none"
-    >
-      <rect width="160" height="180" fill="#fff4d8" />
-      <rect x="21" y="18" width="118" height="144" fill="#fff8ea" stroke="#11110f" strokeWidth="2" />
-      <rect x="21" y="18" width="118" height="34" fill="#ffe4b8" stroke="#11110f" strokeWidth="2" />
-      <path
-        d="M48 136C54 115 65 104 80 104C95 104 106 115 112 136"
-        fill="#fff8ea"
-        stroke="#11110f"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-      <path
-        d="M61 76C61 55 75 43 92 47C106 50 115 64 115 82C109 74 101 68 91 65C83 78 73 86 61 89V76Z"
-        fill="#11110f"
-        stroke="#11110f"
-        strokeWidth="3"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M56 92C60 75 70 64 88 61C99 63 108 72 111 86C111 111 100 124 84 124C68 124 57 112 56 92Z"
-        fill="#ffd7c6"
-        stroke="#11110f"
-        strokeWidth="3"
-      />
-      <path d="M63 90C76 87 86 80 94 69C99 78 105 84 113 88" stroke="#11110f" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M71 99H72M96 99H97" stroke="#11110f" strokeWidth="5" strokeLinecap="round" />
-      <path d="M78 113C84 117 91 117 97 113" stroke="#11110f" strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M65 122L80 143L96 122" stroke="#11110f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M39 52H52M108 52H121M39 145H121" stroke="#11110f" strokeWidth="2" strokeLinecap="round" opacity="0.35" />
-    </svg>
-  );
-}
-
-function MalePortraitSvg({ className = "h-full w-full" }: { className?: string }) {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 160 180"
-      className={className}
-      fill="none"
-    >
-      <rect width="160" height="180" fill="#fff4d8" />
-      <rect x="21" y="18" width="118" height="144" fill="#fff8ea" stroke="#11110f" strokeWidth="2" />
-      <rect x="21" y="18" width="118" height="34" fill="#d9eef2" stroke="#11110f" strokeWidth="2" />
-      <path
-        d="M47 136C54 116 66 104 82 104C99 104 111 116 116 136"
-        fill="#fff8ea"
-        stroke="#11110f"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-      <path
-        d="M52 78C53 58 68 46 86 46C104 46 117 58 121 76C111 73 102 67 95 58C85 68 70 74 52 78Z"
-        fill="#11110f"
-        stroke="#11110f"
-        strokeWidth="3"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M54 84C57 69 67 58 83 57C101 57 114 70 115 87C115 111 103 124 84 124C67 124 55 110 54 84Z"
-        fill="#d7aa82"
-        stroke="#11110f"
-        strokeWidth="3"
-      />
-      <path d="M54 81C73 80 87 73 97 61C102 71 109 78 117 82" stroke="#11110f" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M72 99H73M98 99H99" stroke="#11110f" strokeWidth="5" strokeLinecap="round" />
-      <path d="M76 113C83 117 92 117 99 113" stroke="#11110f" strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M66 122L82 143L99 122" stroke="#11110f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M39 52H52M108 52H121M39 145H121" stroke="#11110f" strokeWidth="2" strokeLinecap="round" opacity="0.35" />
-    </svg>
-  );
-}
-
 function PersonaPortrait({
   persona,
   className,
@@ -181,10 +101,19 @@ function PersonaPortrait({
   persona: PersonaData;
   className?: string;
 }) {
-  return personaPortraitVariant(persona) === "male" ? (
-    <MalePortraitSvg className={className} />
-  ) : (
-    <FemalePortraitSvg className={className} />
+  const portraitAsset =
+    personaPortraitVariant(persona) === "male"
+      ? "/persona-art/male-silhouette.svg"
+      : "/persona-art/female-silhouette.svg";
+
+  return (
+    <img
+      src={portraitAsset}
+      alt=""
+      aria-hidden="true"
+      draggable={false}
+      className={className ?? "aspect-[4/5] h-full w-full object-cover"}
+    />
   );
 }
 
@@ -393,13 +322,11 @@ function AppShell({
   view,
   children,
   onNavigate,
-  onStartPractice,
   onSignOut,
 }: {
   view: View;
   children: React.ReactNode;
   onNavigate: (view: View) => void;
-  onStartPractice: () => void;
   onSignOut: () => void;
 }) {
   return (
@@ -423,12 +350,6 @@ function AppShell({
             label="Journal"
             active={view === "student"}
             onClick={() => onNavigate("student")}
-          />
-          <DashboardRailIcon
-            icon={MessageSquare}
-            label="Start rehearsal"
-            active={view === "briefing" || view === "session"}
-            onClick={onStartPractice}
           />
           <DashboardRailIcon
             icon={ClipboardList}
@@ -463,17 +384,17 @@ function AppShell({
           </button>
           <button
             type="button"
-            onClick={onStartPractice}
-            className={`vesh-chip min-h-10 px-1 text-[10px] ${view === "briefing" || view === "session" ? "vesh-chip-active" : ""}`}
-          >
-            Practice
-          </button>
-          <button
-            type="button"
             onClick={() => onNavigate("personas")}
             className={`vesh-chip min-h-10 px-1 text-[10px] ${view === "personas" ? "vesh-chip-active" : ""}`}
           >
             Cases
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigate("practitioner")}
+            className={`vesh-chip min-h-10 px-1 text-[10px] ${view === "practitioner" ? "vesh-chip-active" : ""}`}
+          >
+            Programs
           </button>
           <button
             type="button"
@@ -1500,7 +1421,6 @@ export default function BoldVeshApp() {
         <AppShell
           view={view}
           onNavigate={navigate}
-          onStartPractice={() => startSession(selectedOrFirst)}
           onSignOut={handleSignOut}
         >
           {studentDashboardVisible && (
