@@ -235,11 +235,15 @@ describe("bold notebook UI system", () => {
   test("first-run student dashboard guides the next action instead of showing only empty data", () => {
     const app = read("components/BoldVeshApp.tsx");
 
+    expect(app).toContain("StudentDashboard");
     expect(app).toContain("First practice plan");
     expect(app).toContain("Start Sarah's anxiety intake");
     expect(app).toContain("How progress works");
     expect(app).toContain("Your reports will appear here after each completed rehearsal.");
     expect(app).toContain("Recommended first case");
+    expect(app).not.toContain("Training journal");
+    expect(app).not.toContain("Practice journal");
+    expect(app).not.toContain("firstRunStudentVisible");
   });
 
   test("demo intent is reserved for the completed demo signup path", () => {
@@ -287,9 +291,10 @@ describe("bold notebook UI system", () => {
     const app = read("components/BoldVeshApp.tsx");
 
     expect(app).toContain("completedSessionsLoaded");
-    expect(app).toContain("showFirstRunStudent");
-    expect(app).toContain("completedSessionsLoaded && clinicalDashboard.completedSessions === 0");
+    expect(app).toContain("studentDashboardVisible");
+    expect(app).toContain('const studentDashboardVisible = view === "student";');
     expect(app).toContain("Loading practice history");
+    expect(app).not.toContain("showFirstRunStudent");
   });
 
   test("notebook demo completion has one clear accessible conversion action", () => {
@@ -351,7 +356,7 @@ describe("bold notebook UI system", () => {
 
     expect(app).toContain("Welcome to Vesh, future therapist");
     expect(app).toContain("Practice checklist");
-    expect(app).toContain("0 / 4");
+    expect(app).toContain("{checklistCount} / 4");
     expect(app).toContain("Run your first rehearsal");
     expect(app).toContain("Complete and review your report");
     expect(app).toContain("Explore suggested next moves");

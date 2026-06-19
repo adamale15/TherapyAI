@@ -364,15 +364,87 @@ function DashboardRailIcon({
   );
 }
 
-function FirstRunStudentDashboard({
+function CasePortrait() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 120 120"
+      className="h-full w-full"
+      fill="none"
+    >
+      <rect width="120" height="120" fill="#fff8ea" />
+      <path
+        d="M32 104V76c0-19 12-36 29-36s29 17 29 36v28"
+        fill="#fbf1dc"
+        stroke="#11110f"
+        strokeWidth="2"
+      />
+      <path
+        d="M36 46c8-19 29-26 45-12 8 7 11 18 9 31-14-5-28-15-38-29-4 12-10 20-16 25-3-6-3-10 0-15Z"
+        fill="#11110f"
+        stroke="#11110f"
+        strokeWidth="2"
+      />
+      <path
+        d="M43 62c0 18 8 32 22 32s22-14 22-32c0-6-2-12-5-16-14-2-24-8-31-17-4 10-8 17-8 33Z"
+        fill="#ffe3d4"
+        stroke="#11110f"
+        strokeWidth="2"
+      />
+      <path d="M56 60h1M75 60h1" stroke="#11110f" strokeWidth="4" strokeLinecap="round" />
+      <path d="M61 78c5 4 11 4 16 0" stroke="#11110f" strokeWidth="2" strokeLinecap="round" />
+      <path d="M24 104c6-13 19-21 36-21h10c17 0 30 8 36 21" fill="#fff8ea" stroke="#11110f" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function StudentDashboard({
   persona,
   onStart,
   onSampleReport,
+  clinicalDashboard,
+  completedSessionsLoaded,
+  completedSessionList,
 }: {
   persona: PersonaData;
   onStart: (persona: PersonaData) => void;
   onSampleReport: (persona: PersonaData) => void;
+  clinicalDashboard: ReturnType<typeof summarizeClinicalHistory>;
+  completedSessionsLoaded: boolean;
+  completedSessionList: CompletedClinicalSession[];
 }) {
+  const completedCount = clinicalDashboard.completedSessions;
+  const hasReports = completedCount > 0;
+  const latestSession = [...completedSessionList].sort(
+    (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)
+  )[0];
+  const latestScores = (latestSession?.scores ?? {}) as Record<string, unknown>;
+  const latestScore = (key: string) => {
+    const value = latestScores[key];
+    return typeof value === "number" ? value : 0;
+  };
+  const questionQuality = hasReports
+    ? latestScore("questionQuality") >= 3.4
+      ? "Good"
+      : "Practice"
+    : "Good";
+  const riskStatus = hasReports
+    ? latestScore("riskScreen") >= 5
+      ? "Clear"
+      : "Review"
+    : "Clear";
+  const reflectionRatio = hasReports && latestScore("reflectionRatio") > 0
+    ? `${latestScore("reflectionRatio").toFixed(1)} : 1`
+    : "1.2 : 1";
+  const checklistCount = completedSessionsLoaded ? (hasReports ? 4 : 0) : 0;
+  const barHeights = hasReports
+    ? completedSessionList.slice(0, 6).map((session) => {
+        const scores = (session.scores ?? {}) as Record<string, unknown>;
+        const value = scores.alliance;
+        return Math.max(16, (typeof value === "number" ? value : 2) * 11);
+      })
+    : [18, 28, 22, 34, 20, 40];
+
   return (
     <section className="grid min-h-screen grid-cols-1 md:grid-cols-[64px_1fr] xl:grid-cols-[64px_1fr_260px]">
       <aside className="hidden border-r-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] py-3 md:grid md:content-start md:justify-items-center md:gap-3">
@@ -394,17 +466,23 @@ function FirstRunStudentDashboard({
               Let's run your first practice session.
             </p>
           </div>
-          <span className="vesh-chip">No sessions yet</span>
+          <span className="vesh-chip">
+            {completedSessionsLoaded
+              ? hasReports
+                ? `${completedCount} saved reports`
+                : "No sessions yet"
+              : "Loading history"}
+          </span>
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[1fr_0.86fr_1.42fr]">
           <article className="vesh-card p-4">
             <div className="vesh-kicker text-[var(--vesh-muted)]">
-              Recommended first case
+              {hasReports ? "Recommended next case" : "Recommended first case"}
             </div>
             <div className="mt-4 grid gap-4 sm:grid-cols-[116px_1fr]">
-              <div className="grid aspect-square place-items-center border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-hot)] shadow-[4px_4px_0_rgba(17,17,15,0.14)]">
-                <UserRound className="h-16 w-16 stroke-[1.5]" />
+              <div className="overflow-hidden border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-hot)] shadow-[4px_4px_0_rgba(17,17,15,0.14)]">
+                <CasePortrait />
               </div>
               <div>
                 <h2 className="text-xl font-black leading-none">{persona.name}</h2>
@@ -423,7 +501,7 @@ function FirstRunStudentDashboard({
               </div>
             </div>
             <button onClick={() => onStart(persona)} className="vesh-button mt-4 w-full">
-              Start this case
+              {hasReports ? "Practice this case" : "Start this case"}
             </button>
             <span className="sr-only">Start Sarah's anxiety intake</span>
             <span className="sr-only">First practice plan</span>
@@ -437,11 +515,11 @@ function FirstRunStudentDashboard({
               <div className="vesh-kicker text-[var(--vesh-muted)]">
                 Practice checklist
               </div>
-              <span className="font-mono text-xs font-black">0 / 4</span>
+              <span className="font-mono text-xs font-black">{checklistCount} / 4</span>
             </div>
             <div className="grid gap-4">
               <ChecklistItem
-                title="Run your first rehearsal"
+                title={hasReports ? "Run the next rehearsal" : "Run your first rehearsal"}
                 detail="Try a full session from start to finish"
               />
               <ChecklistItem
@@ -476,7 +554,11 @@ function FirstRunStudentDashboard({
                   Your progress
                 </div>
                 <span className="text-xs text-[var(--vesh-muted)]">
-                  No sessions yet
+                  {completedSessionsLoaded
+                    ? hasReports
+                      ? `${completedCount} sessions saved`
+                      : "No sessions yet"
+                    : "Loading practice history"}
                 </span>
               </div>
               <div className="vesh-card bg-[var(--vesh-paper-soft)] p-4 shadow-none">
@@ -484,14 +566,16 @@ function FirstRunStudentDashboard({
                   Report preview
                 </div>
                 <p className="mt-2 text-xs text-[var(--vesh-muted)]">
-                  Here's what your report will include.
+                  {hasReports
+                    ? "Your latest clinical skill pattern."
+                    : "Here's what your report will include."}
                 </p>
                 <div className="mt-4 grid grid-cols-4 gap-2 text-xs">
                   {[
-                    ["Alliance", "4.1 / 5"],
-                    ["Reflection", "1.2 : 1"],
-                    ["Questions", "Good"],
-                    ["Risk", "Clear"],
+                    ["Alliance", hasReports ? clinicalDashboard.allianceMeanDisplay : "4.1 / 5"],
+                    ["Reflection", reflectionRatio],
+                    ["Questions", questionQuality],
+                    ["Risk", riskStatus],
                   ].map(([label, value]) => (
                     <div key={label} className="border-l-[1.5px] border-[var(--vesh-black)] pl-2">
                       <div className="text-[10px] font-black uppercase text-[var(--vesh-muted)]">
@@ -529,7 +613,9 @@ function FirstRunStudentDashboard({
                 <div className="mt-4 text-[10px] font-black uppercase">
                   Session report
                 </div>
-                <div className="mt-1 text-[10px]">Sarah Chen - Anxiety Intake</div>
+                <div className="mt-1 text-[10px]">
+                  {(latestSession?.personaName ?? persona.name)} - Anxiety Intake
+                </div>
                 <div className="mt-4 space-y-2">
                   <span className="block h-1.5 bg-[rgba(17,17,15,0.18)]" />
                   <span className="block h-1.5 bg-[rgba(17,17,15,0.18)]" />
@@ -537,7 +623,7 @@ function FirstRunStudentDashboard({
                   <span className="block h-1.5 w-3/4 bg-[rgba(17,17,15,0.18)]" />
                 </div>
                 <div className="mt-5 flex h-14 items-end gap-2 border-[1.5px] border-[var(--vesh-black)] p-2">
-                  {[18, 28, 22, 34, 20, 40].map((height, index) => (
+                  {barHeights.map((height, index) => (
                     <span
                       key={index}
                       className={`w-4 border-[1.5px] border-[var(--vesh-black)] ${
@@ -571,10 +657,12 @@ function FirstRunStudentDashboard({
         <div className="vesh-note sticky top-24">
           <div className="vesh-kicker text-[var(--vesh-muted)]">Coach tip</div>
           <strong className="mt-5 block text-2xl leading-tight">
-            Build the relationship before you solve.
+            {hasReports ? clinicalDashboard.practiceFocus : "Build the relationship before you solve."}
           </strong>
           <p className="mt-6 text-sm leading-relaxed text-[var(--vesh-ink)]">
-            Connection is the foundation of effective therapy.
+            {hasReports
+              ? "Use the next case to strengthen the lowest skill pattern from your saved reports."
+              : "Connection is the foundation of effective therapy."}
           </p>
         </div>
       </aside>
@@ -641,10 +729,7 @@ export default function BoldVeshApp() {
     () => summarizeClinicalHistory(completedSessionList),
     [completedSessionList]
   );
-  const showFirstRunStudent =
-    completedSessionsLoaded && clinicalDashboard.completedSessions === 0;
-  const firstRunStudentVisible =
-    view === "student" && showFirstRunStudent && completedSessionsLoaded;
+  const studentDashboardVisible = view === "student";
   const needsReviewCount = completedSessionList.filter(
     (session) => {
       const scores = session.scores ?? {};
@@ -1115,7 +1200,7 @@ export default function BoldVeshApp() {
     <main className="vesh-shell min-h-screen">
       {view === "home" ? (
         <HomeMasthead />
-      ) : firstRunStudentVisible ? (
+      ) : studentDashboardVisible ? (
         null
       ) : (
         <Topbar
@@ -1289,89 +1374,15 @@ export default function BoldVeshApp() {
         </section>
       )}
 
-      {firstRunStudentVisible && (
-        <FirstRunStudentDashboard
+      {studentDashboardVisible && (
+        <StudentDashboard
           persona={recommendedFirstCase}
           onStart={startSession}
           onSampleReport={openSampleReport}
+          clinicalDashboard={clinicalDashboard}
+          completedSessionsLoaded={completedSessionsLoaded}
+          completedSessionList={completedSessionList}
         />
-      )}
-
-      {view === "student" && !firstRunStudentVisible && (
-        <section className="grid min-h-[calc(100vh-58px)] grid-cols-1 md:grid-cols-[1fr_300px]">
-          <div className="p-4 sm:p-6">
-            <div className="vesh-kicker">Training journal</div>
-            <h1 className="vesh-heading mt-2">Practice journal</h1>
-            <div className="mt-5 grid gap-3 md:grid-cols-3">
-              <Metric
-                label="Completed cases"
-                value={String(clinicalDashboard.completedSessions)}
-                detail="saved reports"
-              />
-              <Metric
-                label="Alliance mean"
-                value={clinicalDashboard.allianceMeanDisplay}
-                detail="working alliance"
-              />
-              <Metric
-                label="Practice focus"
-                value={clinicalDashboard.practiceFocus}
-                detail="lowest scored skill"
-              />
-            </div>
-            <div className="my-5 h-[1.5px] bg-[var(--vesh-black)]" />
-            {!completedSessionsLoaded ? (
-              <div className="vesh-card p-5">
-                <div className="vesh-kicker text-[var(--vesh-muted)]">
-                  Loading practice history
-                </div>
-                <p className="mt-3 text-sm leading-relaxed text-[var(--vesh-muted)]">
-                  Checking for saved reports before building your next practice plan.
-                </p>
-              </div>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-3">
-                {personas.slice(0, 3).map((persona, index) => (
-                  <PersonaCard
-                    key={persona.id}
-                    persona={persona}
-                    selected={index === 0}
-                    onStart={startSession}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-          <aside className="border-t-[1.5px] border-[var(--vesh-black)] bg-[rgba(15,61,50,0.06)] p-4 sm:p-6 md:border-l-[1.5px] md:border-t-0">
-            <div className="vesh-note">
-              <strong>{clinicalDashboard.practiceFocus}</strong>
-              <p className="mt-1 text-sm text-[var(--vesh-ink)]">
-                {clinicalDashboard.completedSessions > 0
-                  ? "Your next practice target is based on your lowest average clinical skill score."
-                  : "Complete a session to unlock trend-based coaching."}
-              </p>
-            </div>
-            {clinicalDashboard.latestRows.length > 0 ? (
-              <div className="mt-5 h-20 grid-cols-[repeat(12,1fr)] items-end gap-1 grid">
-                {((completedSessions ?? []) as CompletedClinicalSession[]).slice(0, 12).map((session) => {
-                  const alliance =
-                    typeof session.scores?.alliance === "number" ? session.scores.alliance : 1;
-                  return (
-                    <span
-                      key={`${session.createdAt}-${session.personaName}`}
-                      className="block min-h-2 border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-green-bright)]"
-                      style={{ height: Math.max(12, alliance * 14) }}
-                    />
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="vesh-card mt-5 p-4 text-sm text-[var(--vesh-muted)]">
-                Your reports will appear here after each completed rehearsal.
-              </div>
-            )}
-          </aside>
-        </section>
       )}
 
       {view === "practitioner" && (
