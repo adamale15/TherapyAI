@@ -1160,7 +1160,7 @@ export default function BoldVeshApp() {
                         Workspace
                       </button>
                     </>
-                  ) : (
+                  ) : isLoaded ? (
                     <>
                       <a
                         href="/sign-in"
@@ -1175,6 +1175,11 @@ export default function BoldVeshApp() {
                         Start practicing
                       </a>
                     </>
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className="h-10 w-[252px]"
+                    />
                   )}
                 </div>
                 {signedIn ? (
@@ -1185,13 +1190,18 @@ export default function BoldVeshApp() {
                   >
                     Start
                   </button>
-                ) : (
+                ) : isLoaded ? (
                   <a
                     href={studentSignUpPath}
                     className="vesh-button vesh-button-green px-4 py-2 text-xs sm:hidden"
                   >
                     Start
                   </a>
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    className="h-10 w-[76px] sm:hidden"
+                  />
                 )}
               </div>
 

@@ -276,7 +276,9 @@ describe("bold notebook UI system", () => {
     expect(app).toContain('const isInitialSignedInHome = view === "home" && !handledInitialSignedInHome.current;');
     expect(app).toContain("!authRedirect && !userTypeSet && !isInitialSignedInHome");
     expect(app).toMatch(/\{signedIn \? \(\s*<>\s*<button[\s\S]*Sign out[\s\S]*<button[\s\S]*Workspace/);
-    expect(app).toMatch(/\) : \(\s*<>\s*<a\s+href="\/sign-in"/);
+    expect(app).toContain(") : isLoaded ? (");
+    expect(app).toContain('aria-hidden="true"');
+    expect(app).toMatch(/\) : isLoaded \? \(\s*<>\s*<a\s+href="\/sign-in"/);
     expect(app).toContain("workspaceView");
     expect(app).not.toContain('onClick={() => onNavigate("home")}');
   });
