@@ -103,35 +103,22 @@ function FemalePortraitSvg({ className = "h-full w-full" }: { className?: string
       className={className}
       fill="none"
     >
-      <rect width="160" height="180" fill="#ffe8bd" />
-      <rect y="66" width="160" height="114" fill="#fff8ea" />
-      <path
-        d="M42 150V94c0-36 18-63 44-63s44 27 44 63v56"
-        fill="#11110f"
-        stroke="#11110f"
-        strokeWidth="3"
-      />
-      <path
-        d="M48 94c7-36 30-50 58-38 14 6 24 23 24 46-23-8-40-23-52-45-6 19-16 31-30 37Z"
-        fill="#11110f"
-        stroke="#11110f"
-        strokeWidth="3"
-      />
-      <path
-        d="M51 92c0 31 12 53 34 53s34-22 34-53c0-7-1-13-4-19-20-3-34-11-43-25-7 12-14 23-21 29v15Z"
-        fill="#ffe0d1"
-        stroke="#11110f"
-        strokeWidth="3"
-      />
-      <path d="M72 92h1M101 92h1" stroke="#11110f" strokeWidth="6" strokeLinecap="round" />
-      <path d="M80 119c8 6 18 6 26 0" stroke="#11110f" strokeWidth="3" strokeLinecap="round" />
-      <path
-        d="M29 180c9-25 32-41 60-41h14c28 0 51 16 60 41"
-        fill="#fff8ea"
-        stroke="#11110f"
-        strokeWidth="3"
-      />
-      <path d="M54 147c13 11 44 11 57 0" stroke="#11110f" strokeWidth="3" />
+      <rect width="160" height="180" fill="#fff4d8" />
+      <rect y="0" width="160" height="44" fill="#ffe4b8" />
+      <rect y="134" width="160" height="46" fill="#ffe4b8" />
+      <path d="M20 37H140V155H20Z" fill="#fff8ea" stroke="#11110f" strokeWidth="2" />
+      <path d="M28 155C35 136 53 123 80 123C107 123 125 136 132 155" fill="#fff8ea" stroke="#11110f" strokeWidth="2.5" />
+      <path d="M63 117V132C68 139 92 139 97 132V117" fill="#ffd7c6" stroke="#11110f" strokeWidth="2.5" strokeLinejoin="round" />
+      <path d="M43 110C40 86 41 64 54 50C66 36 89 32 105 41C126 52 128 82 122 111C114 103 106 91 101 75C91 82 75 86 58 83C54 94 49 103 43 110Z" fill="#11110f" stroke="#11110f" strokeWidth="2.5" strokeLinejoin="round" />
+      <path d="M54 79C56 62 67 52 83 52C101 52 113 65 114 83C116 112 103 128 83 128C64 128 51 110 54 79Z" fill="#ffd7c6" stroke="#11110f" strokeWidth="2.5" />
+      <path d="M54 82C67 81 79 74 89 61C94 73 103 81 115 86" stroke="#11110f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M66 90C70 88 74 88 78 91M93 91C98 88 102 88 106 91" stroke="#11110f" strokeWidth="2" strokeLinecap="round" />
+      <path d="M72 99H72.5M100 99H100.5" stroke="#11110f" strokeWidth="5" strokeLinecap="round" />
+      <path d="M86 98C84 105 84 109 88 112" stroke="#11110f" strokeWidth="2" strokeLinecap="round" />
+      <path d="M77 118C85 123 94 123 101 118" stroke="#11110f" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M35 155C39 143 50 135 63 132L80 155L97 132C111 135 122 143 126 155" fill="#fff8ea" stroke="#11110f" strokeWidth="2.5" strokeLinejoin="round" />
+      <path d="M58 136L80 155L102 136" stroke="#11110f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M34 52C40 42 50 35 63 32M119 54C113 44 104 37 91 34" stroke="#11110f" strokeWidth="2" strokeLinecap="round" opacity="0.45" />
     </svg>
   );
 }
@@ -144,29 +131,23 @@ function MalePortraitSvg({ className = "h-full w-full" }: { className?: string }
       className={className}
       fill="none"
     >
-      <rect width="160" height="180" fill="#d7ecf2" />
-      <rect y="70" width="160" height="110" fill="#fff8ea" />
-      <path
-        d="M47 72c0-28 19-48 45-48 22 0 39 14 45 36 3 12 1 24-5 35-13-5-24-13-33-25-13 10-30 15-52 15V72Z"
-        fill="#11110f"
-        stroke="#11110f"
-        strokeWidth="3"
-      />
-      <path
-        d="M48 83c0 33 14 57 38 57s38-24 38-57c0-7-1-13-4-18-24 4-46 1-66-9-4 8-6 17-6 27Z"
-        fill="#f0c7a6"
-        stroke="#11110f"
-        strokeWidth="3"
-      />
-      <path d="M72 89h1M103 89h1" stroke="#11110f" strokeWidth="6" strokeLinecap="round" />
-      <path d="M78 116c9 7 21 7 30 0" stroke="#11110f" strokeWidth="3" strokeLinecap="round" />
-      <path
-        d="M31 180c9-28 34-46 63-46h12c29 0 54 18 63 46"
-        fill="#fff8ea"
-        stroke="#11110f"
-        strokeWidth="3"
-      />
-      <path d="M57 142c16 12 46 12 62 0" stroke="#11110f" strokeWidth="3" />
+      <rect width="160" height="180" fill="#fff4d8" />
+      <rect y="0" width="160" height="44" fill="#d9eef2" />
+      <rect y="134" width="160" height="46" fill="#ffe4b8" />
+      <path d="M20 37H140V155H20Z" fill="#fff8ea" stroke="#11110f" strokeWidth="2" />
+      <path d="M29 155C37 135 57 123 82 123C108 123 126 136 132 155" fill="#fff8ea" stroke="#11110f" strokeWidth="2.5" />
+      <path d="M64 116V132C71 139 92 139 99 132V116" fill="#d7aa82" stroke="#11110f" strokeWidth="2.5" strokeLinejoin="round" />
+      <path d="M48 76C48 52 63 37 85 35C107 33 123 48 126 68C128 78 125 87 120 96C112 88 104 78 99 65C86 72 70 76 48 76Z" fill="#11110f" stroke="#11110f" strokeWidth="2.5" strokeLinejoin="round" />
+      <path d="M51 76C52 59 63 49 80 48C101 46 115 59 116 80C118 109 104 127 83 127C64 127 49 107 51 76Z" fill="#d7aa82" stroke="#11110f" strokeWidth="2.5" />
+      <path d="M50 78C69 77 85 71 99 60C103 69 109 76 117 81" stroke="#11110f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M64 90C69 87 74 87 79 91M94 91C100 87 105 88 109 92" stroke="#11110f" strokeWidth="2" strokeLinecap="round" />
+      <path d="M72 100H72.5M102 100H102.5" stroke="#11110f" strokeWidth="5" strokeLinecap="round" />
+      <path d="M87 97C85 105 86 109 90 112" stroke="#11110f" strokeWidth="2" strokeLinecap="round" />
+      <path d="M70 112C75 124 94 128 105 114" stroke="#11110f" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M62 114C70 132 101 133 111 115" stroke="#11110f" strokeWidth="2" strokeLinecap="round" opacity="0.45" />
+      <path d="M37 155C43 141 54 134 65 132L82 153L99 132C111 134 122 142 127 155" fill="#fff8ea" stroke="#11110f" strokeWidth="2.5" strokeLinejoin="round" />
+      <path d="M63 135L82 153L101 135" stroke="#11110f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M47 54C54 43 66 37 80 36M111 50C104 40 94 36 82 36" stroke="#11110f" strokeWidth="2" strokeLinecap="round" opacity="0.45" />
     </svg>
   );
 }
