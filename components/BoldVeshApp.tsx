@@ -151,6 +151,57 @@ function DashboardCaseIllustration() {
   );
 }
 
+function personaCaseLabel(persona: PersonaData) {
+  return `${persona.condition} intake`;
+}
+
+function stripFieldLabel(value: string) {
+  return value.replace(/^[^:]+:\s*/, "").trim();
+}
+
+function personaTags(persona: PersonaData) {
+  const status = persona.background.demographics
+    .find((item) => item.toLowerCase().startsWith("status:"));
+  const tags = [
+    persona.isDefault ? "Built-in case" : "Custom case",
+    persona.condition,
+    status ? stripFieldLabel(status).split(",")[0] : persona.occupation,
+    persona.difficulty,
+  ];
+
+  return Array.from(new Set(tags.filter(Boolean))).slice(0, 4);
+}
+
+function findPersonaForSession(
+  personas: PersonaData[],
+  session: CompletedClinicalSession | undefined,
+  fallback: PersonaData
+) {
+  if (!session) return fallback;
+  return personas.find((persona) => persona.name === session.personaName) ?? fallback;
+}
+
+function chooseRecommendedPersona(
+  personas: PersonaData[],
+  completedSessionList: CompletedClinicalSession[],
+  fallback: PersonaData
+) {
+  if (personas.length === 0) return fallback;
+  if (completedSessionList.length === 0) return fallback ?? personas[0];
+
+  const completedByName = completedSessionList.reduce((counts, session) => {
+    counts.set(session.personaName, (counts.get(session.personaName) ?? 0) + 1);
+    return counts;
+  }, new Map<string, number>());
+
+  return [...personas].sort((left, right) => {
+    const leftCount = completedByName.get(left.name) ?? 0;
+    const rightCount = completedByName.get(right.name) ?? 0;
+    if (leftCount !== rightCount) return leftCount - rightCount;
+    return personas.indexOf(left) - personas.indexOf(right);
+  })[0];
+}
+
 function Brand() {
   return (
     <span className="vesh-brand">
@@ -446,6 +497,7 @@ function AppShell({
 
 function StudentDashboard({
   persona,
+  personas,
   onStart,
   onSampleReport,
   onNavigate,
@@ -454,8 +506,9 @@ function StudentDashboard({
   completedSessionList,
 }: {
   persona: PersonaData;
+  personas: PersonaData[];
   onStart: (persona: PersonaData) => void;
-  onSampleReport: (persona: PersonaData) => void;
+  onSampleReport: (persona: PersonaData, session?: CompletedClinicalSession) => void;
   onNavigate: (view: View) => void;
   clinicalDashboard: ReturnType<typeof summarizeClinicalHistory>;
   completedSessionsLoaded: boolean;
@@ -466,6 +519,8 @@ function StudentDashboard({
   const latestSession = [...completedSessionList].sort(
     (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)
   )[0];
+  const latestReportPersona = findPersonaForSession(personas, latestSession, persona);
+  const latestReportCaseLabel = personaCaseLabel(latestReportPersona);
   const latestScores = (latestSession?.scores ?? {}) as Record<string, unknown>;
   const latestScore = (key: string) => {
     const value = latestScores[key];
@@ -475,15 +530,15 @@ function StudentDashboard({
     ? latestScore("questionQuality") >= 3.4
       ? "Good"
       : "Practice"
-    : "Good";
+    : "No data";
   const riskStatus = hasReports
     ? latestScore("riskScreen") >= 5
       ? "Clear"
       : "Review"
-    : "Clear";
+    : "No data";
   const reflectionRatio = hasReports && latestScore("reflectionRatio") > 0
     ? `${latestScore("reflectionRatio").toFixed(1)} : 1`
-    : "1.2 : 1";
+    : "No data";
   const checklistCount = completedSessionsLoaded ? (hasReports ? 4 : 0) : 0;
   const barHeights = hasReports
     ? completedSessionList.slice(0, 6).map((session) => {
@@ -491,9 +546,9 @@ function StudentDashboard({
         const value = scores.alliance;
         return Math.max(16, (typeof value === "number" ? value : 2) * 11);
       })
-    : [18, 28, 22, 34, 20, 40];
+    : [];
   const dashboardMetrics = [
-    ["Alliance", hasReports ? clinicalDashboard.allianceMeanDisplay : "4.1 / 5"],
+    ["Alliance", hasReports ? clinicalDashboard.allianceMeanDisplay : "No data"],
     ["Reflection", reflectionRatio],
     ["Questions", questionQuality],
     ["Risk", riskStatus],
@@ -533,7 +588,7 @@ function StudentDashboard({
               </button>
               <button
                 type="button"
-                onClick={() => onSampleReport(persona)}
+                onClick={() => onSampleReport(latestReportPersona, latestSession)}
                 className="vesh-chip min-h-11"
               >
                 Report
@@ -552,23 +607,24 @@ function StudentDashboard({
                   <div className="min-w-0">
                     <h2 className="text-xl font-black leading-none">{persona.name}</h2>
                     <p className="mt-1 text-xs font-black uppercase text-[var(--vesh-muted)]">
-                      Anxiety Intake
+                      {personaCaseLabel(persona)}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <span className="vesh-chip px-2 py-1 text-[10px]">New client</span>
-                      <span className="vesh-chip px-2 py-1 text-[10px]">Anxiety</span>
-                      <span className="vesh-chip px-2 py-1 text-[10px]">College student</span>
+                      {personaTags(persona).map((tag) => (
+                        <span key={tag} className="vesh-chip px-2 py-1 text-[10px]">
+                          {tag}
+                        </span>
+                      ))}
                     </div>
                     <p className="mt-4 text-sm leading-relaxed text-[var(--vesh-muted)]">
-                      Sarah is a 21-year-old student experiencing academic stress,
-                      overthinking, and sleep difficulties.
+                      {persona.description}
                     </p>
                   </div>
                 </div>
                 <button onClick={() => onStart(persona)} className="vesh-button mt-5 w-full">
                   {hasReports ? "Practice this case" : "Start this case"}
                 </button>
-                <span className="sr-only">Start Sarah's anxiety intake</span>
+                <span className="sr-only">Start {persona.name} case</span>
                 <span className="sr-only">First practice plan</span>
                 <span className="sr-only">
                   Your reports will appear here after each completed rehearsal.
@@ -604,8 +660,9 @@ function StudentDashboard({
                   <div className="flex gap-2">
                     <Star className="mt-0.5 h-4 w-4 shrink-0" />
                     <p className="text-sm leading-relaxed">
-                      <strong>Tip:</strong> Focus on building connection first.
-                      Solutions come after understanding.
+                      <strong>Tip:</strong>{" "}
+                      {persona.background.sessionGoals[0] ??
+                        "Build enough alliance before moving into solutions."}
                     </p>
                   </div>
                 </div>
@@ -677,7 +734,7 @@ function StudentDashboard({
                       Session report
                     </div>
                     <div className="mt-1 text-[10px]">
-                      {(latestSession?.personaName ?? persona.name)} - Anxiety Intake
+                      {latestReportPersona.name} - {latestReportCaseLabel}
                     </div>
                     <div className="mt-4 space-y-2">
                       <span className="block h-1.5 bg-[rgba(17,17,15,0.18)]" />
@@ -686,23 +743,29 @@ function StudentDashboard({
                       <span className="block h-1.5 w-3/4 bg-[rgba(17,17,15,0.18)]" />
                     </div>
                     <div className="mt-5 flex h-16 items-end gap-2 border-[1.5px] border-[var(--vesh-black)] p-2">
-                      {barHeights.map((height, index) => (
-                        <span
-                          key={index}
-                          className={`w-4 border-[1.5px] border-[var(--vesh-black)] ${
-                            index === 5 ? "bg-[var(--vesh-black)]" : "bg-[rgba(17,17,15,0.2)]"
-                          }`}
-                          style={{ height }}
-                        />
-                      ))}
+                      {barHeights.length > 0 ? (
+                        barHeights.map((height, index) => (
+                          <span
+                            key={index}
+                            className={`w-4 border-[1.5px] border-[var(--vesh-black)] ${
+                              index === barHeights.length - 1 ? "bg-[var(--vesh-black)]" : "bg-[rgba(17,17,15,0.2)]"
+                            }`}
+                            style={{ height }}
+                          />
+                        ))
+                      ) : (
+                        <span className="text-[10px] font-black uppercase text-[var(--vesh-muted)]">
+                          First report graph appears after your session
+                        </span>
+                      )}
                     </div>
                   </div>
                   <button
                     type="button"
-                    onClick={() => onSampleReport(persona)}
+                    onClick={() => onSampleReport(latestReportPersona, latestSession)}
                     className="vesh-button vesh-button-yellow w-full"
                   >
-                    See full sample report
+                    {hasReports ? "Open latest report" : "See sample report"}
                   </button>
                 </div>
               </article>
@@ -750,6 +813,8 @@ export default function BoldVeshApp() {
   const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState(sessionDuration * 60);
   const [sessionEndReason, setSessionEndReason] = useState<SessionEndReason | null>(null);
+  const [activeSummarySession, setActiveSummarySession] =
+    useState<CompletedClinicalSession | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const sessionId = useRef(`session-${Date.now()}`);
   const savedSessionKeys = useRef<Set<string>>(new Set());
@@ -779,14 +844,23 @@ export default function BoldVeshApp() {
   const timeRemainingLabel =
     remainingSeconds > 0 ? formatTimeRemaining(remainingSeconds) : "Time up";
   const selectedOrFirst = selectedPersona ?? personas[0];
-  const recommendedFirstCase =
-    personas.find((persona) => persona.name === "Sarah Chen") ?? selectedOrFirst;
   const completedSessionList = useMemo(
     () => ((completedSessions ?? []) as CompletedClinicalSession[]),
     [completedSessions]
   );
+  const recommendedCase = useMemo(
+    () => chooseRecommendedPersona(personas, completedSessionList, selectedOrFirst),
+    [completedSessionList, personas, selectedOrFirst]
+  );
   const completedSessionsLoaded = !user?.id || completedSessions !== undefined;
   const sessionAnalysis = useMemo(() => analyzeClinicalSession(messages), [messages]);
+  const summaryAnalysis = useMemo(
+    () =>
+      activeSummarySession
+        ? analyzeClinicalSession(activeSummarySession.messages ?? [])
+        : sessionAnalysis,
+    [activeSummarySession, sessionAnalysis]
+  );
   const clinicalDashboard = useMemo(
     () => summarizeClinicalHistory(completedSessionList),
     [completedSessionList]
@@ -819,6 +893,11 @@ export default function BoldVeshApp() {
   ).length;
   const completionLabel =
     sessionEndReason === "time" ? "Time limit reached" : "Ended by learner";
+  const summaryDuration = activeSummarySession?.duration ?? sessionDuration;
+  const summaryTurnCount = activeSummarySession?.totalMessages ?? messages.length;
+  const summaryCompletionLabel = activeSummarySession
+    ? "Saved session report"
+    : completionLabel;
 
   const openWorkspaceAfterAuth = useCallback(
     (redirectedUserType?: string | null) => {
@@ -884,9 +963,31 @@ export default function BoldVeshApp() {
     homeDemoRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
-  const openSampleReport = (persona: PersonaData) => {
-    setSelectedPersona(persona);
+  const openSampleReport = (
+    persona: PersonaData,
+    session?: CompletedClinicalSession
+  ) => {
+    const reportPersona = findPersonaForSession(personas, session, persona);
+    setSelectedPersona(reportPersona);
     setSessionEndReason("manual");
+    setActiveSummarySession(session ?? null);
+
+    if (session) {
+      if (sessionDurations.includes(session.duration as SessionDuration)) {
+        setSessionDuration(session.duration as SessionDuration);
+      }
+      setMessages(
+        (session.messages ?? []).map((message, index) => ({
+          id: `saved-${Date.parse(session.createdAt)}-${index}`,
+          role: message.role,
+          text: message.text,
+        }))
+      );
+      setView("summary");
+      return;
+    }
+
+    setSessionDuration(25);
     setMessages([
       {
         id: "sample-client-1",
@@ -919,6 +1020,7 @@ export default function BoldVeshApp() {
     setView("home");
     setSelectedPersona(null);
     setMessages([]);
+    setActiveSummarySession(null);
   };
 
   const speakText = async (text: string, persona: PersonaData | null) => {
@@ -1081,6 +1183,7 @@ export default function BoldVeshApp() {
     setSessionStartedAt(null);
     setRemainingSeconds(sessionDuration * 60);
     setSessionEndReason(null);
+    setActiveSummarySession(null);
     setVoiceStatus("Voice ready");
     setView("briefing");
   };
@@ -1095,6 +1198,7 @@ export default function BoldVeshApp() {
     setSessionStartedAt(startedAt);
     setRemainingSeconds(sessionDuration * 60);
     setSessionEndReason(null);
+    setActiveSummarySession(null);
     setMessages([]);
     setInput("");
     setVoiceStatus("Voice ready");
@@ -1459,7 +1563,8 @@ export default function BoldVeshApp() {
         >
           {studentDashboardVisible && (
             <StudentDashboard
-              persona={recommendedFirstCase}
+              persona={recommendedCase}
+              personas={personas}
               onStart={startSession}
               onSampleReport={openSampleReport}
               onNavigate={navigate}
@@ -1884,14 +1989,14 @@ export default function BoldVeshApp() {
               {selectedOrFirst.name} / {selectedOrFirst.condition}
             </h1>
             <p className="vesh-subheading mt-3">
-              {sessionDuration} minute rehearsal completed with {messages.length} learner and
+              {summaryDuration} minute rehearsal completed with {summaryTurnCount} learner and
               client turns.
             </p>
             <div className="mt-4 inline-flex border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-yellow)] px-3 py-2 text-xs font-black uppercase">
-              {completionLabel}
+              {summaryCompletionLabel}
             </div>
             <div className="mt-5 grid gap-3 md:grid-cols-3">
-              {sessionAnalysis.metrics.map((item) => (
+              {summaryAnalysis.metrics.map((item) => (
                 <Metric
                   key={item.key}
                   label={item.label}
@@ -1907,7 +2012,7 @@ export default function BoldVeshApp() {
                     {head}
                   </div>
                 ))}
-                {sessionAnalysis.facultyRows.flatMap((row, rowIndex) =>
+                {summaryAnalysis.facultyRows.flatMap((row, rowIndex) =>
                   row.map((cell, cellIndex) => (
                     <div
                       key={`${rowIndex}-${cellIndex}`}
@@ -1922,19 +2027,19 @@ export default function BoldVeshApp() {
           </main>
           <aside>
             <div className="vesh-note vesh-note-green">
-              <strong>{sessionAnalysis.suggestions[1].title}</strong>
+              <strong>{summaryAnalysis.suggestions[1].title}</strong>
               <p className="mt-1 text-sm text-[var(--vesh-ink)]">
-                {sessionAnalysis.suggestions[1].body}
+                {summaryAnalysis.suggestions[1].body}
               </p>
             </div>
             <div className="vesh-note mt-3">
-              <strong>{sessionAnalysis.suggestions[2].title}</strong>
+              <strong>{summaryAnalysis.suggestions[2].title}</strong>
               <p className="mt-1 text-sm text-[var(--vesh-ink)]">
-                {sessionAnalysis.suggestions[2].body}
+                {summaryAnalysis.suggestions[2].body}
               </p>
             </div>
             <button
-              onClick={() => void downloadReportPdf()}
+              onClick={() => void downloadReportPdf(activeSummarySession ?? undefined)}
               className="vesh-button mt-5 w-full"
             >
               <Download className="h-4 w-4" />

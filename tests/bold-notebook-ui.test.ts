@@ -69,7 +69,7 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("Begin session");
     expect(app).toContain("sessionDurations");
     expect(app).toContain("setSessionDuration");
-    expect(app).toContain("sessionDuration} minute rehearsal");
+    expect(app).toContain("summaryDuration} minute rehearsal");
   });
 
   test("session shows a live countdown instead of only the configured length", () => {
@@ -105,7 +105,7 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("analyzeClinicalSession");
     expect(app).toContain("summarizeClinicalHistory");
     expect(app).toContain("completedSessions");
-    expect(app).toContain("sessionAnalysis.metrics");
+    expect(app).toContain("summaryAnalysis.metrics");
     expect(app).toContain("programHistorySessions");
     expect(app).toContain("savedScoreDisplay");
     expect(metrics).toContain("Working alliance");
@@ -238,7 +238,7 @@ describe("bold notebook UI system", () => {
 
     expect(app).toContain("StudentDashboard");
     expect(app).toContain("First practice plan");
-    expect(app).toContain("Start Sarah's anxiety intake");
+    expect(app).toContain("Start {persona.name} case");
     expect(app).toContain("How progress works");
     expect(app).toContain("Your reports will appear here after each completed rehearsal.");
     expect(app).toContain("Recommended first case");
@@ -366,7 +366,25 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("Your progress");
     expect(app).toContain("Report preview");
     expect(app).toContain("Build the relationship before you solve.");
-    expect(app).toContain("See full sample report");
+    expect(app).toContain("See sample report");
+  });
+
+  test("signed-in dashboard derives case and report details from live data", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain("function chooseRecommendedPersona");
+    expect(app).toContain("function personaCaseLabel");
+    expect(app).toContain("function personaTags");
+    expect(app).toContain("latestReportPersona");
+    expect(app).toContain("latestReportCaseLabel");
+    expect(app).toContain("{persona.condition}");
+    expect(app).toContain("{tag}");
+    expect(app).toContain('{hasReports ? "Open latest report" : "See sample report"}');
+    expect(app).not.toContain("Sarah is a 21-year-old student experiencing academic stress");
+    expect(app).not.toContain('<span className="vesh-chip px-2 py-1 text-[10px]">Anxiety</span>');
+    expect(app).not.toContain('<span className="vesh-chip px-2 py-1 text-[10px]">College student</span>');
+    expect(app).not.toContain('["Alliance", hasReports ? clinicalDashboard.allianceMeanDisplay : "4.1 / 5"]');
+    expect(app).not.toContain(': "1.2 : 1"');
   });
 
   test("dashboard recommended case uses a compact case-file illustration", () => {
