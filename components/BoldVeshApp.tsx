@@ -135,16 +135,18 @@ function Topbar({
   onNavigate,
   onSignOut,
   signedIn,
+  workspaceView,
 }: {
   view: View;
   onNavigate: (view: View) => void;
   onSignOut: () => void;
   signedIn: boolean;
+  workspaceView: View;
 }) {
   return (
     <>
       <header className="vesh-topbar sticky top-0 z-30">
-        <button onClick={() => onNavigate("home")} className="text-left">
+        <button onClick={() => onNavigate(signedIn ? workspaceView : "home")} className="text-left">
           <Brand />
         </button>
         <nav className="hidden items-center justify-center gap-2 md:flex">
@@ -601,6 +603,7 @@ export default function BoldVeshApp() {
   const savedSessionKeys = useRef<Set<string>>(new Set());
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const homeDemoRef = useRef<HTMLDivElement | null>(null);
+  const handledInitialSignedInHome = useRef(false);
 
   const convexPersonas = useQuery(convexFunctions.personas.listForUser, {
     ownerClerkId: user?.id,
@@ -621,6 +624,8 @@ export default function BoldVeshApp() {
     "student";
 
   const signedIn = !!user && isLoaded;
+  const workspaceView: View =
+    currentUserType === "practitioner" ? "practitioner" : "student";
   const timeRemainingLabel =
     remainingSeconds > 0 ? formatTimeRemaining(remainingSeconds) : "Time up";
   const selectedOrFirst = selectedPersona ?? personas[0];
@@ -671,13 +676,17 @@ export default function BoldVeshApp() {
     const urlParams = new URLSearchParams(window.location.search);
     const authRedirect = urlParams.get("auth") === "1";
     const userTypeSet = urlParams.get("userTypeSet") === "true";
+    const isInitialSignedInHome = view === "home" && !handledInitialSignedInHome.current;
 
-    if (!authRedirect && !userTypeSet) return;
+    if (!authRedirect && !userTypeSet && !isInitialSignedInHome) return;
 
+    handledInitialSignedInHome.current = true;
     const redirectedUserType = urlParams.get("userType");
     const openAndCleanUrl = () => {
       openWorkspaceAfterAuth(redirectedUserType);
-      window.history.replaceState({}, "", window.location.pathname);
+      if (authRedirect || userTypeSet) {
+        window.history.replaceState({}, "", window.location.pathname);
+      }
     };
 
     if (userTypeSet) {
@@ -1114,6 +1123,7 @@ export default function BoldVeshApp() {
           onNavigate={navigate}
           onSignOut={handleSignOut}
           signedIn={signedIn}
+          workspaceView={workspaceView}
         />
       )}
 
@@ -1132,27 +1142,39 @@ export default function BoldVeshApp() {
                   <button>Resources</button>
                 </nav>
                 <div className="hidden items-center gap-3 sm:flex">
-                  <a
-                    href="/sign-in"
-                    className="vesh-button bg-[var(--vesh-paper-soft)] px-5 py-2 text-xs text-[var(--vesh-black)]"
-                  >
-                    Log in
-                  </a>
                   {signedIn ? (
-                    <button
-                      type="button"
-                      onClick={() => openWorkspaceAfterAuth()}
-                      className="vesh-button vesh-button-green px-5 py-2 text-xs"
-                    >
-                      Start practicing
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleSignOut}
+                        className="vesh-button bg-[var(--vesh-paper-soft)] px-5 py-2 text-xs text-[var(--vesh-black)]"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Sign out
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openWorkspaceAfterAuth()}
+                        className="vesh-button vesh-button-green px-5 py-2 text-xs"
+                      >
+                        Workspace
+                      </button>
+                    </>
                   ) : (
-                    <a
-                      href={studentSignUpPath}
-                      className="vesh-button vesh-button-green px-5 py-2 text-xs"
-                    >
-                      Start practicing
-                    </a>
+                    <>
+                      <a
+                        href="/sign-in"
+                        className="vesh-button bg-[var(--vesh-paper-soft)] px-5 py-2 text-xs text-[var(--vesh-black)]"
+                      >
+                        Log in
+                      </a>
+                      <a
+                        href={studentSignUpPath}
+                        className="vesh-button vesh-button-green px-5 py-2 text-xs"
+                      >
+                        Start practicing
+                      </a>
+                    </>
                   )}
                 </div>
                 {signedIn ? (

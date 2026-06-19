@@ -269,6 +269,18 @@ describe("bold notebook UI system", () => {
     expect(app).not.toContain('onClick={() => router.push("/sign-in")}');
   });
 
+  test("signed-in users do not see logged-out homepage actions", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain("handledInitialSignedInHome");
+    expect(app).toContain('const isInitialSignedInHome = view === "home" && !handledInitialSignedInHome.current;');
+    expect(app).toContain("!authRedirect && !userTypeSet && !isInitialSignedInHome");
+    expect(app).toMatch(/\{signedIn \? \(\s*<>\s*<button[\s\S]*Sign out[\s\S]*<button[\s\S]*Workspace/);
+    expect(app).toMatch(/\) : \(\s*<>\s*<a\s+href="\/sign-in"/);
+    expect(app).toContain("workspaceView");
+    expect(app).not.toContain('onClick={() => onNavigate("home")}');
+  });
+
   test("first-run dashboard waits for saved history before showing empty-state guidance", () => {
     const app = read("components/BoldVeshApp.tsx");
 
