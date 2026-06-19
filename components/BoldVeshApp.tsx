@@ -78,7 +78,7 @@ const personaVoiceIds: Record<string, string> = {
 };
 
 const sessionDurations = [10, 25, 45] as const;
-type SessionDuration = (typeof sessionDurations)[number];
+type SessionDuration = number;
 type SessionEndReason = "manual" | "time";
 
 const studentSignUpPath = "/sign-up?userType=student";
@@ -818,6 +818,7 @@ export default function BoldVeshApp() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceStatus, setVoiceStatus] = useState("Voice ready");
   const [sessionDuration, setSessionDuration] = useState<SessionDuration>(25);
+  const [customSessionMinutes, setCustomSessionMinutes] = useState("25");
   const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState(sessionDuration * 60);
   const [sessionEndReason, setSessionEndReason] = useState<SessionEndReason | null>(null);
@@ -947,6 +948,17 @@ export default function BoldVeshApp() {
     [clearMatchedCoachMoveTimer]
   );
 
+  const applyCustomSessionDuration = () => {
+    const parsedMinutes = Number(customSessionMinutes);
+    const safeMinutes =
+      Number.isFinite(parsedMinutes) && parsedMinutes > 0 ? parsedMinutes : 25;
+    const nextDuration = Math.min(90, Math.max(5, Math.round(safeMinutes)));
+
+    setCustomSessionMinutes(String(nextDuration));
+    setSessionDuration(nextDuration);
+    setRemainingSeconds(nextDuration * 60);
+  };
+
   const openWorkspaceAfterAuth = useCallback(
     (redirectedUserType?: string | null) => {
       const targetUserType =
@@ -1025,9 +1037,8 @@ export default function BoldVeshApp() {
     setActiveSummarySession(session ?? null);
 
     if (session) {
-      if (sessionDurations.includes(session.duration as SessionDuration)) {
-        setSessionDuration(session.duration as SessionDuration);
-      }
+      setSessionDuration(session.duration);
+      setCustomSessionMinutes(String(session.duration));
       setMessages(
         (session.messages ?? []).map((message, index) => ({
           id: `saved-${Date.parse(session.createdAt)}-${index}`,
@@ -1040,6 +1051,7 @@ export default function BoldVeshApp() {
     }
 
     setSessionDuration(25);
+    setCustomSessionMinutes("25");
     setMessages([
       {
         id: "sample-client-1",
@@ -1921,7 +1933,11 @@ export default function BoldVeshApp() {
                   <button
                     key={duration}
                     type="button"
-                    onClick={() => setSessionDuration(duration)}
+                    onClick={() => {
+                      setSessionDuration(duration);
+                      setCustomSessionMinutes(String(duration));
+                      setRemainingSeconds(duration * 60);
+                    }}
                     className={`vesh-chip min-h-12 ${
                       sessionDuration === duration ? "vesh-chip-active" : ""
                     }`}
@@ -1929,6 +1945,34 @@ export default function BoldVeshApp() {
                     {duration} min
                   </button>
                 ))}
+              </div>
+              <div className="mt-4 grid gap-2">
+                <label
+                  htmlFor="custom-session-minutes"
+                  className="vesh-kicker text-[var(--vesh-muted)]"
+                >
+                  Custom duration
+                </label>
+                <div className="grid grid-cols-[1fr_auto] gap-2">
+                  <input
+                    id="custom-session-minutes"
+                    type="number"
+                    min="5"
+                    max="90"
+                    value={customSessionMinutes}
+                    onChange={(event) => setCustomSessionMinutes(event.target.value)}
+                    onBlur={applyCustomSessionDuration}
+                    className="vesh-session-input min-h-12 border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] px-3 text-sm font-black outline-none"
+                    aria-label="Custom session duration in minutes"
+                  />
+                  <button
+                    type="button"
+                    onClick={applyCustomSessionDuration}
+                    className="vesh-chip min-h-12 px-3"
+                  >
+                    Use
+                  </button>
+                </div>
               </div>
             </div>
             <div className="vesh-note vesh-note-red">
@@ -2007,7 +2051,7 @@ export default function BoldVeshApp() {
                         : "text-[var(--vesh-muted)]"
                     }`}
                   >
-                    {message.role === "trainee" ? "You" : "Client response"}
+                    {message.role === "trainee" ? "You" : selectedOrFirst.name}
                   </div>
                   <div>{message.text}</div>
                 </div>
@@ -2015,7 +2059,7 @@ export default function BoldVeshApp() {
               {isLoading && (
                 <div className="vesh-card max-w-[78%] p-3 text-sm">
                   <div className="vesh-kicker mb-2 text-[var(--vesh-muted)]">
-                    Client response
+                    {selectedOrFirst.name}
                   </div>
                   Thinking through the case...
                 </div>
@@ -2023,7 +2067,11 @@ export default function BoldVeshApp() {
             </div>
 
             <div className="grid gap-2">
-              <div className="vesh-card bg-[var(--vesh-paper-hot)] p-3">
+              <div
+                className={`vesh-card bg-[var(--vesh-paper-hot)] p-3 ${
+                  matchedCoachMove ? "vesh-suggestion-matched" : ""
+                }`}
+              >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <div className="vesh-kicker text-[var(--vesh-muted)]">
@@ -2081,7 +2129,7 @@ export default function BoldVeshApp() {
             <div className="mb-4">
               <div className="vesh-kicker">Live supervisor</div>
               <p className="mt-2 text-sm leading-relaxed text-[var(--vesh-muted)]">
-                Feedback on your latest trainee response.
+                Feedback updates from the latest client response and your last trainee move.
               </p>
             </div>
             {matchedCoachMove && (

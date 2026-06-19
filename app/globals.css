@@ -221,6 +221,14 @@
     animation: vesh-coach-sheen 1400ms 120ms ease-out both;
   }
 
+  .vesh-suggestion-matched {
+    border-color: var(--vesh-green);
+    animation: vesh-coach-match 2400ms cubic-bezier(0.19, 1, 0.22, 1) both;
+    box-shadow:
+      0 0 0 5px rgba(0, 168, 120, 0.13),
+      5px 5px 0 rgba(17, 17, 15, 0.16);
+  }
+
   @keyframes vesh-coach-match {
     0% {
       transform: translateY(5px) scale(0.985);
@@ -253,7 +261,8 @@
 
   @media (prefers-reduced-motion: reduce) {
     .vesh-note-matched,
-    .vesh-note-matched::after {
+    .vesh-note-matched::after,
+    .vesh-suggestion-matched {
       animation: none;
     }
   }

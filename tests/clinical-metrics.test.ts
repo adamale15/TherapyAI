@@ -105,6 +105,44 @@ describe("clinical metrics", () => {
     expect(match.skill).toBe("riskScreen");
   });
 
+  test("uses the latest client response to shape the next live suggestion", () => {
+    const analysis = analyzeClinicalSession([
+      {
+        role: "client",
+        text: "I'm nervous and not really used to talking about myself.",
+      },
+      {
+        role: "trainee",
+        text: "That sounds exhausting, like you have been carrying it alone for a while.",
+      },
+      {
+        role: "client",
+        text: "Everyone expects so much. I don't want to disappoint them, and I feel like I'm constantly falling behind.",
+      },
+    ]);
+
+    expect(analysis.suggestions[1].title).toBe("Reflect the pressure");
+    expect(analysis.suggestions[1].body).toContain("latest client response");
+    expect(getCoachSuggestionStarters(analysis.suggestions[1])[0]).toContain("pressure");
+  });
+
+  test("recognizes natural affect reflections when matching a suggestion", () => {
+    const analysis = analyzeClinicalSession([
+      {
+        role: "client",
+        text: "Everyone expects so much. I feel like I'm constantly falling behind.",
+      },
+    ]);
+
+    const match = evaluateCoachSuggestionMatch(
+      analysis.suggestions[1],
+      "That sounds exhausting, like you have been carrying it alone for a while."
+    );
+
+    expect(match.matched).toBe(true);
+    expect(match.skill).toBe("affectReflection");
+  });
+
   test("does not reward generic reassurance when the suggested move asks for permission", () => {
     const analysis = analyzeClinicalSession([
       { role: "client", text: "I feel like I am barely keeping up." },

@@ -32,7 +32,7 @@ describe("bold notebook UI system", () => {
     const app = read("components/BoldVeshApp.tsx");
 
     expect(app).toContain("Live supervisor");
-    expect(app).toContain("Client response");
+    expect(app).toContain('{message.role === "trainee" ? "You" : selectedOrFirst.name}');
     expect(app).toContain("What worked");
     expect(app).toContain("Next move");
     expect(app).toContain("Clinical watch");
@@ -52,9 +52,11 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("matchedCoachMove");
     expect(app).toContain("Good adjustment");
     expect(app).toContain("vesh-note-matched");
+    expect(app).toContain("vesh-suggestion-matched");
     expect(app).toContain('aria-live="polite"');
     expect(app).toContain("window.setTimeout");
     expect(css).toContain(".vesh-note-matched");
+    expect(css).toContain(".vesh-suggestion-matched");
     expect(css).toContain("@keyframes vesh-coach-match");
   });
 
@@ -88,6 +90,11 @@ describe("bold notebook UI system", () => {
     expect(app).toContain('"briefing"');
     expect(app).toContain("Pre-session briefing");
     expect(app).toContain("Session length");
+    expect(app).toContain("Custom duration");
+    expect(app).toContain("customSessionMinutes");
+    expect(app).toContain("applyCustomSessionDuration");
+    expect(app).toContain('min="5"');
+    expect(app).toContain('max="90"');
     expect(app).toContain("Training objective");
     expect(app).toContain("Presenting concerns");
     expect(app).toContain("Clinical notes");

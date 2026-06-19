@@ -8,6 +8,7 @@ export type CoachSuggestion = {
   eyebrow: string;
   title: string;
   body: string;
+  responseStarters?: string[];
 };
 
 export type CoachSuggestionMatch = {
@@ -77,6 +78,7 @@ export type CompletedClinicalSession = {
 
 const reflectionPatterns = [
   /\bsounds like\b/i,
+  /\bthat sounds\b/i,
   /\bit sounds\b/i,
   /\bseems like\b/i,
   /\byou'?re feeling\b/i,
@@ -84,6 +86,7 @@ const reflectionPatterns = [
   /\bwhat i hear\b/i,
   /\bpart of you\b/i,
   /\bthat feels\b/i,
+  /\bcarrying it\b/i,
 ];
 
 const validationPatterns = [
@@ -236,6 +239,14 @@ export function evaluateCoachSuggestionMatch(
     );
   }
 
+  if (normalizedTitle.includes("reflect the pressure")) {
+    return matchResult(
+      hasReflection || hasValidation || /\bpressure\b/i.test(traineeText),
+      "affectReflection",
+      "Reflection matched"
+    );
+  }
+
   if (normalizedTitle.includes("open the next question")) {
     return matchResult(
       hasOpenQuestion && questions <= 1,
@@ -260,6 +271,10 @@ export function evaluateCoachSuggestionMatch(
 }
 
 export function getCoachSuggestionStarters(suggestion: CoachSuggestion): string[] {
+  if (suggestion.responseStarters?.length) {
+    return suggestion.responseStarters;
+  }
+
   const normalizedTitle = suggestion.title.toLowerCase();
 
   if (normalizedTitle.includes("screen for safety")) {
@@ -294,6 +309,14 @@ export function getCoachSuggestionStarters(suggestion: CoachSuggestion): string[
     ];
   }
 
+  if (normalizedTitle.includes("reflect the pressure")) {
+    return [
+      "It sounds like there is a lot of pressure sitting underneath this.",
+      "That sounds exhausting, like you have been carrying it alone for a while.",
+      "Part of you wants to keep up, and part of you is scared of disappointing people.",
+    ];
+  }
+
   if (normalizedTitle.includes("open the next question")) {
     return [
       "What feels most important for me to understand about that?",
@@ -321,6 +344,8 @@ export function analyzeClinicalSession(messages: ClinicalMessage[]): ClinicalAna
   const traineeMessages = messages.filter((message) => message.role === "trainee");
   const clientMessages = messages.filter((message) => message.role === "client");
   const latestTrainee = traineeMessages.at(-1)?.text ?? "";
+  const latestClient = clientMessages.at(-1)?.text ?? "";
+  const latestRole = messages.at(-1)?.role;
   const allTraineeText = traineeMessages.map((message) => message.text).join("\n");
   const allClientText = clientMessages.map((message) => message.text).join("\n");
 
@@ -355,18 +380,19 @@ export function analyzeClinicalSession(messages: ClinicalMessage[]): ClinicalAna
   const closedQuestions = Math.max(0, questionMarks - openQuestions);
   const reflectionRatioValue = questionMarks === 0 ? reflections : reflections / questionMarks;
 
-  const noData = traineeMessages.length === 0;
-  const alliance = noData
+  const noData = messages.length === 0;
+  const noTraineeTurns = traineeMessages.length === 0;
+  const alliance = noTraineeTurns
     ? 0
     : clampScore(2.6 + validations * 0.35 + collaborationMoves * 0.45 + openQuestions * 0.15 - adviceMoves * 0.35);
-  const empathicAccuracy = noData
+  const empathicAccuracy = noTraineeTurns
     ? 0
     : clampScore(2.4 + reflections * 0.45 + validations * 0.3 - adviceMoves * 0.35 - stackedQuestions * 0.25);
-  const questionQuality = noData
+  const questionQuality = noTraineeTurns
     ? 0
     : clampScore(3.1 + openQuestions * 0.3 - closedQuestions * 0.2 - stackedQuestions * 0.65);
-  const reflectionRatio = noData ? 0 : clampScore(2.5 + Math.min(2, reflectionRatioValue) * 0.9 - Math.max(0, closedQuestions - reflections) * 0.2);
-  const collaboration = noData
+  const reflectionRatio = noTraineeTurns ? 0 : clampScore(2.5 + Math.min(2, reflectionRatioValue) * 0.9 - Math.max(0, closedQuestions - reflections) * 0.2);
+  const collaboration = noTraineeTurns
     ? 0
     : clampScore(2.6 + collaborationMoves * 0.55 + validations * 0.15 - adviceMoves * 0.35);
   const riskScreen =
@@ -385,17 +411,17 @@ export function analyzeClinicalSession(messages: ClinicalMessage[]): ClinicalAna
   return {
     scores,
     metrics: [
-      metric("alliance", "Working alliance", alliance, noData ? "start a session to calculate" : "bond, task, and goal alignment"),
-      metric("empathicAccuracy", "Empathic accuracy", empathicAccuracy, noData ? "waiting for trainee turn" : "reflection plus validation"),
-      metric("questionQuality", "Question quality", questionQuality, noData ? "waiting for trainee turn" : "open, single-focus questions"),
+      metric("alliance", "Working alliance", alliance, noTraineeTurns ? "waiting for trainee turn" : "bond, task, and goal alignment"),
+      metric("empathicAccuracy", "Empathic accuracy", empathicAccuracy, noTraineeTurns ? "waiting for trainee turn" : "reflection plus validation"),
+      metric("questionQuality", "Question quality", questionQuality, noTraineeTurns ? "waiting for trainee turn" : "open, single-focus questions"),
       metric(
         "reflectionRatio",
         "Reflection ratio",
         reflectionRatio,
-        noData ? "waiting for trainee turn" : `${reflections} reflections / ${questionMarks} questions`,
-        noData ? "0:0" : `${reflectionRatioValue.toFixed(1)}:1`
+        noTraineeTurns ? "waiting for trainee turn" : `${reflections} reflections / ${questionMarks} questions`,
+        noTraineeTurns ? "0:0" : `${reflectionRatioValue.toFixed(1)}:1`
       ),
-      metric("collaboration", "Collaboration", collaboration, noData ? "waiting for trainee turn" : "permission, agenda, shared pacing"),
+      metric("collaboration", "Collaboration", collaboration, noTraineeTurns ? "waiting for trainee turn" : "permission, agenda, shared pacing"),
       metric(
         "riskScreen",
         "Risk screen",
@@ -419,6 +445,8 @@ export function analyzeClinicalSession(messages: ClinicalMessage[]): ClinicalAna
     },
     suggestions: buildSuggestions({
       noData,
+      latestClient,
+      latestRole,
       latestTrainee,
       reflections,
       validations,
@@ -442,6 +470,8 @@ export function analyzeClinicalSession(messages: ClinicalMessage[]): ClinicalAna
 
 function buildSuggestions(input: {
   noData: boolean;
+  latestClient: string;
+  latestRole?: ClinicalMessage["role"];
   latestTrainee: string;
   reflections: number;
   validations: number;
@@ -477,6 +507,13 @@ function buildSuggestions(input: {
     ];
   }
 
+  const latestClientHasPressure = /\b(pressure|expects?|expectations?|disappoint|falling behind|behind|school|mcat|overwhelm|too much)\b/i.test(
+    input.latestClient
+  );
+  const latestClientHasFear = /\b(scared|afraid|worried|nervous|anxious|panic)\b/i.test(
+    input.latestClient
+  );
+
   const goodBody =
     input.reflections > 0 || input.validations > 0
       ? "You used reflection or validation, which supports alliance before assessment."
@@ -490,6 +527,12 @@ function buildSuggestions(input: {
   if (input.riskCues > 0 && input.riskScreens === 0) {
     nextTitle = "Screen for safety";
     nextBody = "The client used safety-relevant language. Ask directly about thoughts of self-harm or not wanting to live.";
+  } else if (input.latestRole === "client" && latestClientHasPressure) {
+    nextTitle = "Reflect the pressure";
+    nextBody = "Use the latest client response to name the pressure before shifting into questions or tools.";
+  } else if (input.latestRole === "client" && latestClientHasFear) {
+    nextTitle = "Add an affect reflection";
+    nextBody = "Use the latest client response to name the fear or uncertainty, then check whether you are getting it right.";
   } else if (input.stackedQuestions > 0) {
     nextTitle = "Use one clean question";
     nextBody = "The last exchange packed in too much. Ask one question, then leave room for the client to answer.";
@@ -533,6 +576,14 @@ function buildSuggestions(input: {
       eyebrow: "Next move",
       title: nextTitle,
       body: nextBody,
+      responseStarters:
+        nextTitle === "Reflect the pressure"
+          ? [
+              "It sounds like there is a lot of pressure sitting underneath this.",
+              "That sounds exhausting, like you have been carrying it alone for a while.",
+              "Part of you wants to keep up, and part of you is scared of disappointing people.",
+            ]
+          : undefined,
     },
     {
       tone: "watch",
