@@ -346,21 +346,32 @@ function ChecklistItem({ title, detail }: { title: string; detail: string }) {
 
 function DashboardRailIcon({
   icon: Icon,
+  label,
   active = false,
+  onClick,
 }: {
   icon: React.ComponentType<{ className?: string }>;
+  label: string;
   active?: boolean;
+  onClick: () => void;
 }) {
   return (
-    <span
-      className={`grid h-10 w-10 place-items-center border-l-[3px] ${
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      className={`group relative grid h-11 w-11 place-items-center border-l-[3px] transition-colors ${
         active
           ? "border-[var(--vesh-coral)] bg-[var(--vesh-paper-hot)]"
-          : "border-transparent"
+          : "border-transparent hover:bg-[var(--vesh-paper-hot)]"
       }`}
     >
       <Icon className="h-4 w-4" />
-    </span>
+      <span className="pointer-events-none absolute left-full z-30 ml-2 hidden whitespace-nowrap border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] px-2 py-1 text-[10px] font-black uppercase shadow-[3px_3px_0_rgba(17,17,15,0.16)] group-hover:block group-focus-visible:block">
+        {label}
+      </span>
+    </button>
   );
 }
 
@@ -402,6 +413,7 @@ function StudentDashboard({
   persona,
   onStart,
   onSampleReport,
+  onNavigate,
   clinicalDashboard,
   completedSessionsLoaded,
   completedSessionList,
@@ -409,6 +421,7 @@ function StudentDashboard({
   persona: PersonaData;
   onStart: (persona: PersonaData) => void;
   onSampleReport: (persona: PersonaData) => void;
+  onNavigate: (view: View) => void;
   clinicalDashboard: ReturnType<typeof summarizeClinicalHistory>;
   completedSessionsLoaded: boolean;
   completedSessionList: CompletedClinicalSession[];
@@ -444,228 +457,281 @@ function StudentDashboard({
         return Math.max(16, (typeof value === "number" ? value : 2) * 11);
       })
     : [18, 28, 22, 34, 20, 40];
+  const dashboardMetrics = [
+    ["Alliance", hasReports ? clinicalDashboard.allianceMeanDisplay : "4.1 / 5"],
+    ["Reflection", reflectionRatio],
+    ["Questions", questionQuality],
+    ["Risk", riskStatus],
+  ];
 
   return (
-    <section className="grid min-h-screen grid-cols-1 md:grid-cols-[64px_1fr] xl:grid-cols-[64px_1fr_260px]">
-      <aside className="hidden border-r-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] py-3 md:grid md:content-start md:justify-items-center md:gap-3">
-        <span className="vesh-mark">V</span>
-        <DashboardRailIcon icon={Home} active />
-        <DashboardRailIcon icon={MessageSquare} />
-        <DashboardRailIcon icon={ClipboardList} />
-        <DashboardRailIcon icon={BarChart3} />
-        <DashboardRailIcon icon={UserRound} />
+    <section className="grid min-h-screen grid-cols-1 md:grid-cols-[80px_minmax(0,1fr)]">
+      <aside className="hidden border-r-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] py-4 md:flex md:flex-col md:items-center md:gap-4">
+        <button
+          type="button"
+          aria-label="Dashboard"
+          title="Dashboard"
+          onClick={() => onNavigate("student")}
+          className="vesh-mark m-0"
+        >
+          V
+        </button>
+        <nav className="grid gap-3">
+          <DashboardRailIcon
+            icon={Home}
+            label="Dashboard"
+            active
+            onClick={() => onNavigate("student")}
+          />
+          <DashboardRailIcon
+            icon={MessageSquare}
+            label="Start rehearsal"
+            onClick={() => onStart(persona)}
+          />
+          <DashboardRailIcon
+            icon={ClipboardList}
+            label="Browse cases"
+            onClick={() => onNavigate("personas")}
+          />
+          <DashboardRailIcon
+            icon={BarChart3}
+            label="Open report preview"
+            onClick={() => onSampleReport(persona)}
+          />
+        </nav>
       </aside>
 
-      <div className="p-4 sm:p-6 lg:p-8">
-        <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-[clamp(1.6rem,4vw,2.4rem)] font-black leading-none tracking-[0]">
-              Welcome to Vesh, future therapist
-            </h1>
-            <p className="mt-3 text-sm text-[var(--vesh-muted)]">
-              Let's run your first practice session.
-            </p>
-          </div>
-          <span className="vesh-chip">
-            {completedSessionsLoaded
-              ? hasReports
-                ? `${completedCount} saved reports`
-                : "No sessions yet"
-              : "Loading history"}
-          </span>
-        </div>
-
-        <div className="grid gap-4 xl:grid-cols-[1fr_0.86fr_1.42fr]">
-          <article className="vesh-card p-4">
-            <div className="vesh-kicker text-[var(--vesh-muted)]">
-              {hasReports ? "Recommended next case" : "Recommended first case"}
-            </div>
-            <div className="mt-4 grid gap-4 sm:grid-cols-[116px_1fr]">
-              <div className="overflow-hidden border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-hot)] shadow-[4px_4px_0_rgba(17,17,15,0.14)]">
-                <CasePortrait />
-              </div>
-              <div>
-                <h2 className="text-xl font-black leading-none">{persona.name}</h2>
-                <p className="mt-1 text-xs font-black uppercase text-[var(--vesh-muted)]">
-                  Anxiety Intake
-                </p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  <span className="vesh-chip px-2 py-1 text-[10px]">New client</span>
-                  <span className="vesh-chip px-2 py-1 text-[10px]">Anxiety</span>
-                  <span className="vesh-chip px-2 py-1 text-[10px]">College student</span>
-                </div>
-                <p className="mt-3 text-xs leading-relaxed text-[var(--vesh-muted)]">
-                  Sarah is a 21-year-old student experiencing academic stress,
-                  overthinking, and sleep difficulties.
-                </p>
-              </div>
-            </div>
-            <button onClick={() => onStart(persona)} className="vesh-button mt-4 w-full">
-              {hasReports ? "Practice this case" : "Start this case"}
-            </button>
-            <span className="sr-only">Start Sarah's anxiety intake</span>
-            <span className="sr-only">First practice plan</span>
-            <span className="sr-only">
-              Your reports will appear here after each completed rehearsal.
-            </span>
-          </article>
-
-          <article className="vesh-card p-4">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div className="vesh-kicker text-[var(--vesh-muted)]">
-                Practice checklist
-              </div>
-              <span className="font-mono text-xs font-black">{checklistCount} / 4</span>
-            </div>
-            <div className="grid gap-4">
-              <ChecklistItem
-                title={hasReports ? "Run the next rehearsal" : "Run your first rehearsal"}
-                detail="Try a full session from start to finish"
-              />
-              <ChecklistItem
-                title="Complete and review your report"
-                detail="See your clinical feedback"
-              />
-              <ChecklistItem
-                title="Explore suggested next moves"
-                detail="Practice different response options"
-              />
-              <ChecklistItem
-                title="Save your session to your journal"
-                detail="Track your progress"
-              />
-            </div>
-            <div className="vesh-note mt-5 p-3">
-              <div className="flex gap-2">
-                <Star className="mt-0.5 h-4 w-4 shrink-0" />
-                <p className="text-xs leading-relaxed">
-                  <strong>Tip:</strong> Focus on building connection first.
-                  Solutions come after understanding.
-                </p>
-              </div>
-            </div>
-            <span className="sr-only">How progress works</span>
-          </article>
-
-          <article className="vesh-card grid gap-4 p-4 lg:grid-cols-[1fr_180px]">
-            <div>
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div className="vesh-kicker text-[var(--vesh-muted)]">
-                  Your progress
-                </div>
-                <span className="text-xs text-[var(--vesh-muted)]">
-                  {completedSessionsLoaded
-                    ? hasReports
-                      ? `${completedCount} sessions saved`
-                      : "No sessions yet"
-                    : "Loading practice history"}
-                </span>
-              </div>
-              <div className="vesh-card bg-[var(--vesh-paper-soft)] p-4 shadow-none">
-                <div className="vesh-kicker text-[var(--vesh-muted)]">
-                  Report preview
-                </div>
-                <p className="mt-2 text-xs text-[var(--vesh-muted)]">
+      <div className="w-full px-4 py-5 sm:px-6 lg:px-8">
+        <div className="mx-auto grid w-full max-w-[1480px] gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
+          <div className="min-w-0">
+            <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+              <div className="max-w-[820px]">
+                <h1 className="text-[clamp(1.9rem,3.2vw,3.2rem)] font-black leading-none tracking-[0]">
+                  Welcome to Vesh, future therapist
+                </h1>
+                <p className="mt-3 text-sm text-[var(--vesh-muted)] sm:text-base">
                   {hasReports
-                    ? "Your latest clinical skill pattern."
-                    : "Here's what your report will include."}
+                    ? "Your latest reports are shaping the next practice plan."
+                    : "Let's run your first practice session."}
                 </p>
-                <div className="mt-4 grid grid-cols-4 gap-2 text-xs">
-                  {[
-                    ["Alliance", hasReports ? clinicalDashboard.allianceMeanDisplay : "4.1 / 5"],
-                    ["Reflection", reflectionRatio],
-                    ["Questions", questionQuality],
-                    ["Risk", riskStatus],
-                  ].map(([label, value]) => (
-                    <div key={label} className="border-l-[1.5px] border-[var(--vesh-black)] pl-2">
-                      <div className="text-[10px] font-black uppercase text-[var(--vesh-muted)]">
-                        {label}
-                      </div>
-                      <div className="mt-2 font-black text-[var(--vesh-green)]">
-                        {value}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 grid gap-2 text-xs text-[var(--vesh-muted)]">
-                  <div className="flex gap-2">
-                    <CheckCircle className="h-4 w-4 text-[var(--vesh-green)]" />
-                    Strengths and growth areas
-                  </div>
-                  <div className="flex gap-2">
-                    <CheckCircle className="h-4 w-4 text-[var(--vesh-green)]" />
-                    Personalized coaching suggestions
-                  </div>
-                  <div className="flex gap-2">
-                    <CheckCircle className="h-4 w-4 text-[var(--vesh-green)]" />
-                    Evidence-aligned rubric breakdown
-                  </div>
-                  <div className="flex gap-2">
-                    <CheckCircle className="h-4 w-4 text-[var(--vesh-green)]" />
-                    Session summary and next steps
-                  </div>
-                </div>
               </div>
+              <span className="vesh-chip shrink-0">
+                {completedSessionsLoaded
+                  ? hasReports
+                    ? `${completedCount} saved reports`
+                    : "No sessions yet"
+                  : "Loading history"}
+              </span>
             </div>
-            <div className="grid content-between gap-3">
-              <div className="vesh-card bg-[var(--vesh-paper-soft)] p-4 shadow-[4px_4px_0_rgba(17,17,15,0.14)]">
-                <div className="text-xl font-black uppercase leading-none">Vesh</div>
-                <div className="mt-4 text-[10px] font-black uppercase">
-                  Session report
-                </div>
-                <div className="mt-1 text-[10px]">
-                  {(latestSession?.personaName ?? persona.name)} - Anxiety Intake
-                </div>
-                <div className="mt-4 space-y-2">
-                  <span className="block h-1.5 bg-[rgba(17,17,15,0.18)]" />
-                  <span className="block h-1.5 bg-[rgba(17,17,15,0.18)]" />
-                  <span className="block h-1.5 bg-[rgba(17,17,15,0.18)]" />
-                  <span className="block h-1.5 w-3/4 bg-[rgba(17,17,15,0.18)]" />
-                </div>
-                <div className="mt-5 flex h-14 items-end gap-2 border-[1.5px] border-[var(--vesh-black)] p-2">
-                  {barHeights.map((height, index) => (
-                    <span
-                      key={index}
-                      className={`w-4 border-[1.5px] border-[var(--vesh-black)] ${
-                        index === 5 ? "bg-[var(--vesh-black)]" : "bg-[rgba(17,17,15,0.2)]"
-                      }`}
-                      style={{ height }}
-                    />
-                  ))}
-                </div>
-              </div>
+
+            <div className="mb-4 grid grid-cols-2 gap-2 md:hidden">
+              <button
+                type="button"
+                onClick={() => onNavigate("personas")}
+                className="vesh-chip min-h-11"
+              >
+                Cases
+              </button>
               <button
                 type="button"
                 onClick={() => onSampleReport(persona)}
-                className="vesh-button vesh-button-yellow w-full"
+                className="vesh-chip min-h-11"
               >
-                See full sample report
+                Report
               </button>
             </div>
-          </article>
-        </div>
 
-        <div className="vesh-note vesh-note-green mt-4 lg:hidden">
-          <strong>Build the relationship before you solve.</strong>
-          <p className="mt-2 text-sm leading-relaxed text-[var(--vesh-ink)]">
-            Connection is the foundation of effective therapy.
-          </p>
+            <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-[minmax(290px,0.9fr)_minmax(300px,0.9fr)_minmax(520px,1.35fr)]">
+              <article className="vesh-card min-w-0 p-5">
+                <div className="vesh-kicker text-[var(--vesh-muted)]">
+                  {hasReports ? "Recommended next case" : "Recommended first case"}
+                </div>
+                <div className="mt-4 grid gap-4 sm:grid-cols-[116px_minmax(0,1fr)]">
+                  <div className="overflow-hidden border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-hot)] shadow-[4px_4px_0_rgba(17,17,15,0.14)]">
+                    <CasePortrait />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-xl font-black leading-none">{persona.name}</h2>
+                    <p className="mt-1 text-xs font-black uppercase text-[var(--vesh-muted)]">
+                      Anxiety Intake
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className="vesh-chip px-2 py-1 text-[10px]">New client</span>
+                      <span className="vesh-chip px-2 py-1 text-[10px]">Anxiety</span>
+                      <span className="vesh-chip px-2 py-1 text-[10px]">College student</span>
+                    </div>
+                    <p className="mt-4 text-sm leading-relaxed text-[var(--vesh-muted)]">
+                      Sarah is a 21-year-old student experiencing academic stress,
+                      overthinking, and sleep difficulties.
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => onStart(persona)} className="vesh-button mt-5 w-full">
+                  {hasReports ? "Practice this case" : "Start this case"}
+                </button>
+                <span className="sr-only">Start Sarah's anxiety intake</span>
+                <span className="sr-only">First practice plan</span>
+                <span className="sr-only">
+                  Your reports will appear here after each completed rehearsal.
+                </span>
+              </article>
+
+              <article className="vesh-card min-w-0 p-5">
+                <div className="mb-5 flex items-center justify-between gap-3">
+                  <div className="vesh-kicker text-[var(--vesh-muted)]">
+                    Practice checklist
+                  </div>
+                  <span className="font-mono text-xs font-black">{checklistCount} / 4</span>
+                </div>
+                <div className="grid gap-5">
+                  <ChecklistItem
+                    title={hasReports ? "Run the next rehearsal" : "Run your first rehearsal"}
+                    detail="Try a full session from start to finish"
+                  />
+                  <ChecklistItem
+                    title="Complete and review your report"
+                    detail="See your clinical feedback"
+                  />
+                  <ChecklistItem
+                    title="Explore suggested next moves"
+                    detail="Practice different response options"
+                  />
+                  <ChecklistItem
+                    title="Save your session to your journal"
+                    detail="Track your progress"
+                  />
+                </div>
+                <div className="vesh-note mt-6 p-4">
+                  <div className="flex gap-2">
+                    <Star className="mt-0.5 h-4 w-4 shrink-0" />
+                    <p className="text-sm leading-relaxed">
+                      <strong>Tip:</strong> Focus on building connection first.
+                      Solutions come after understanding.
+                    </p>
+                  </div>
+                </div>
+                <span className="sr-only">How progress works</span>
+              </article>
+
+              <article className="vesh-card grid min-w-0 gap-5 p-5 lg:col-span-2 2xl:col-span-1 2xl:grid-cols-[minmax(0,1fr)_220px]">
+                <div className="min-w-0">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="vesh-kicker text-[var(--vesh-muted)]">
+                      Your progress
+                    </div>
+                    <span className="text-xs text-[var(--vesh-muted)]">
+                      {completedSessionsLoaded
+                        ? hasReports
+                          ? `${completedCount} sessions saved`
+                          : "No sessions yet"
+                        : "Loading practice history"}
+                    </span>
+                  </div>
+                  <div className="vesh-card bg-[var(--vesh-paper-soft)] p-4 shadow-none">
+                    <div className="vesh-kicker text-[var(--vesh-muted)]">
+                      Report preview
+                    </div>
+                    <p className="mt-2 text-sm text-[var(--vesh-muted)]">
+                      {hasReports
+                        ? "Your latest clinical skill pattern."
+                        : "Here's what your report will include."}
+                    </p>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      {dashboardMetrics.map(([label, value]) => (
+                        <div
+                          key={label}
+                          className="min-w-0 border-l-[1.5px] border-[var(--vesh-black)] bg-[rgba(255,255,255,0.28)] py-2 pl-3 pr-2"
+                        >
+                          <div className="text-[10px] font-black uppercase tracking-[0.08em] text-[var(--vesh-muted)]">
+                            {label}
+                          </div>
+                          <div className="mt-1 break-words text-base font-black text-[var(--vesh-green)]">
+                            {value}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-5 grid gap-2 text-sm text-[var(--vesh-muted)]">
+                      <div className="flex gap-2">
+                        <CheckCircle className="h-4 w-4 shrink-0 text-[var(--vesh-green)]" />
+                        Strengths and growth areas
+                      </div>
+                      <div className="flex gap-2">
+                        <CheckCircle className="h-4 w-4 shrink-0 text-[var(--vesh-green)]" />
+                        Personalized coaching suggestions
+                      </div>
+                      <div className="flex gap-2">
+                        <CheckCircle className="h-4 w-4 shrink-0 text-[var(--vesh-green)]" />
+                        Evidence-aligned rubric breakdown
+                      </div>
+                      <div className="flex gap-2">
+                        <CheckCircle className="h-4 w-4 shrink-0 text-[var(--vesh-green)]" />
+                        Session summary and next steps
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid min-w-0 content-between gap-4">
+                  <div className="vesh-card bg-[var(--vesh-paper-soft)] p-4 shadow-[4px_4px_0_rgba(17,17,15,0.14)]">
+                    <div className="text-2xl font-black uppercase leading-none">Vesh</div>
+                    <div className="mt-4 text-[10px] font-black uppercase">
+                      Session report
+                    </div>
+                    <div className="mt-1 text-[10px]">
+                      {(latestSession?.personaName ?? persona.name)} - Anxiety Intake
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      <span className="block h-1.5 bg-[rgba(17,17,15,0.18)]" />
+                      <span className="block h-1.5 bg-[rgba(17,17,15,0.18)]" />
+                      <span className="block h-1.5 bg-[rgba(17,17,15,0.18)]" />
+                      <span className="block h-1.5 w-3/4 bg-[rgba(17,17,15,0.18)]" />
+                    </div>
+                    <div className="mt-5 flex h-16 items-end gap-2 border-[1.5px] border-[var(--vesh-black)] p-2">
+                      {barHeights.map((height, index) => (
+                        <span
+                          key={index}
+                          className={`w-4 border-[1.5px] border-[var(--vesh-black)] ${
+                            index === 5 ? "bg-[var(--vesh-black)]" : "bg-[rgba(17,17,15,0.2)]"
+                          }`}
+                          style={{ height }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onSampleReport(persona)}
+                    className="vesh-button vesh-button-yellow w-full"
+                  >
+                    See full sample report
+                  </button>
+                </div>
+              </article>
+            </div>
+
+            <div className="vesh-note vesh-note-green mt-5 xl:hidden">
+              <strong>Build the relationship before you solve.</strong>
+              <p className="mt-2 text-sm leading-relaxed text-[var(--vesh-ink)]">
+                Connection is the foundation of effective therapy.
+              </p>
+            </div>
+          </div>
+
+          <aside className="hidden min-w-0 xl:block xl:pt-[84px]">
+            <div className="vesh-note sticky top-8 p-5">
+              <div className="vesh-kicker text-[var(--vesh-muted)]">Coach tip</div>
+              <strong className="mt-5 block text-2xl leading-tight">
+                {hasReports ? clinicalDashboard.practiceFocus : "Build the relationship before you solve."}
+              </strong>
+              <p className="mt-6 text-sm leading-relaxed text-[var(--vesh-ink)]">
+                {hasReports
+                  ? "Use the next case to strengthen the lowest skill pattern from your saved reports."
+                  : "Connection is the foundation of effective therapy."}
+              </p>
+            </div>
+          </aside>
         </div>
       </div>
-
-      <aside className="hidden border-l-[1.5px] border-[var(--vesh-black)] bg-[rgba(255,224,95,0.16)] p-6 xl:block">
-        <div className="vesh-note sticky top-24">
-          <div className="vesh-kicker text-[var(--vesh-muted)]">Coach tip</div>
-          <strong className="mt-5 block text-2xl leading-tight">
-            {hasReports ? clinicalDashboard.practiceFocus : "Build the relationship before you solve."}
-          </strong>
-          <p className="mt-6 text-sm leading-relaxed text-[var(--vesh-ink)]">
-            {hasReports
-              ? "Use the next case to strengthen the lowest skill pattern from your saved reports."
-              : "Connection is the foundation of effective therapy."}
-          </p>
-        </div>
-      </aside>
     </section>
   );
 }
@@ -1379,6 +1445,7 @@ export default function BoldVeshApp() {
           persona={recommendedFirstCase}
           onStart={startSession}
           onSampleReport={openSampleReport}
+          onNavigate={navigate}
           clinicalDashboard={clinicalDashboard}
           completedSessionsLoaded={completedSessionsLoaded}
           completedSessionList={completedSessionList}

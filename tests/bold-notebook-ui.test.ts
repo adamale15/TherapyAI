@@ -366,4 +366,25 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("Build the relationship before you solve.");
     expect(app).toContain("See full sample report");
   });
+
+  test("student dashboard rail is interactive and accessible", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain("function DashboardRailIcon");
+    expect(app).toContain("type=\"button\"");
+    expect(app).toContain("aria-label={label}");
+    expect(app).toContain("title={label}");
+    expect(app).toContain("onNavigate");
+    expect(app).toContain('label="Browse cases"');
+    expect(app).toContain('label="Open report preview"');
+  });
+
+  test("student dashboard progress metrics do not use the cramped four-column strip", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain("dashboardMetrics");
+    expect(app).toContain("grid gap-3 sm:grid-cols-2");
+    expect(app).not.toContain("grid grid-cols-4 gap-2 text-xs");
+    expect(app).toContain("max-w-[1480px]");
+  });
 });
