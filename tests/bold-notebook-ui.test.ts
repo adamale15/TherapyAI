@@ -44,6 +44,19 @@ describe("bold notebook UI system", () => {
     expect(app).not.toContain("<strong>Watch</strong>");
   });
 
+  test("app screens update the browser URL and restore view from pathname", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain("usePathname");
+    expect(app).toContain("pathForView");
+    expect(app).toContain("viewForPathname");
+    expect(app).toContain("viewForPathname(pathname)");
+    expect(app).toContain("router.push(pathForView(target))");
+    expect(app).toContain('pathForView("briefing", { personaId: persona.id })');
+    expect(app).toContain('pathForView("session", { personaId: selectedOrFirst.id })');
+    expect(app).toContain('pathForView("summary", { personaId: reportPersona.id })');
+  });
+
   test("session UI rewards matched coaching suggestions with subtle premium motion", () => {
     const app = read("components/BoldVeshApp.tsx");
     const css = read("app/globals.css");
@@ -301,7 +314,8 @@ describe("bold notebook UI system", () => {
     expect(app).toContain('urlParams.get("auth") === "1"');
     expect(app).toContain('urlParams.get("userTypeSet") === "true"');
     expect(app).toContain("user.reload()");
-    expect(app).toContain('window.history.replaceState({}, "", window.location.pathname)');
+    expect(app).toContain("router.push(pathForView(target))");
+    expect(app).not.toContain('window.history.replaceState({}, "", window.location.pathname)');
     expect(setUserType).toContain('redirectUrl.searchParams.set("userType", userType)');
     expect(app).not.toContain('onClick={() => router.push("/sign-in")}');
   });
@@ -480,7 +494,7 @@ describe("bold notebook UI system", () => {
   test("signed-in workspace views share one app shell instead of mixing topbar navigation", () => {
     const app = read("components/BoldVeshApp.tsx");
 
-    expect(app).toContain('const appShellVisible = view !== "home";');
+    expect(app).toContain('const appShellVisible = view !== "home" && signedIn;');
     expect(app).toContain('data-testid="vesh-app-shell"');
     expect(app).toContain("{appShellVisible && (");
     expect(app).not.toContain("<Topbar");

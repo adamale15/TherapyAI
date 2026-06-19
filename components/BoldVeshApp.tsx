@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import {
   AlertTriangle,
@@ -36,15 +36,9 @@ import {
 import { convexFunctions } from "@/lib/convex/functions";
 import { defaultPersonas, type PersonaData } from "@/lib/personas/default-personas";
 import { elevenLabsService } from "@/lib/services/elevenlabs-service";
+import { pathForView, viewForPathname, type AppView } from "@/lib/app-routes";
 
-type View =
-  | "home"
-  | "student"
-  | "practitioner"
-  | "personas"
-  | "briefing"
-  | "session"
-  | "summary";
+type View = AppView;
 
 type Message = {
   id: string;
@@ -807,9 +801,11 @@ function StudentDashboard({
 
 export default function BoldVeshApp() {
   const router = useRouter();
+  const pathname = usePathname();
+  const routeView = viewForPathname(pathname);
   const { user, isLoaded } = useUser();
   const { signOut } = useAuth();
-  const [view, setView] = useState<View>("home");
+  const [view, setView] = useState<View>(routeView);
   const [selectedPersona, setSelectedPersona] = useState<PersonaData | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -890,7 +886,7 @@ export default function BoldVeshApp() {
     [completedSessionList]
   );
   const studentDashboardVisible = view === "student";
-  const appShellVisible = view !== "home";
+  const appShellVisible = view !== "home" && signedIn;
   const savedScoreDisplay = (
     session: CompletedClinicalSession,
     key: "alliance" | "empathicAccuracy"
@@ -965,11 +961,34 @@ export default function BoldVeshApp() {
         redirectedUserType === "student" || redirectedUserType === "practitioner"
           ? redirectedUserType
           : currentUserType;
+      const target = targetUserType === "practitioner" ? "practitioner" : "student";
 
-      setView(targetUserType === "practitioner" ? "practitioner" : "student");
+      setView(target);
+      router.push(pathForView(target));
     },
-    [currentUserType]
+    [currentUserType, router]
   );
+
+  useEffect(() => {
+    setView(routeView);
+  }, [routeView]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const caseId = new URLSearchParams(window.location.search).get("case");
+    if (!caseId) return;
+
+    const routePersona = personas.find((persona) => persona.id === caseId);
+    if (routePersona) {
+      setSelectedPersona(routePersona);
+    }
+  }, [pathname, personas]);
+
+  useEffect(() => {
+    if (!isLoaded || signedIn || routeView === "home") return;
+    router.replace(studentSignUpPath);
+  }, [isLoaded, routeView, router, signedIn]);
 
   useEffect(() => {
     if (!user || !isLoaded || typeof window === "undefined") return;
@@ -985,9 +1004,6 @@ export default function BoldVeshApp() {
     const redirectedUserType = urlParams.get("userType");
     const openAndCleanUrl = () => {
       openWorkspaceAfterAuth(redirectedUserType);
-      if (authRedirect || userTypeSet) {
-        window.history.replaceState({}, "", window.location.pathname);
-      }
     };
 
     if (userTypeSet) {
@@ -1019,6 +1035,7 @@ export default function BoldVeshApp() {
       return;
     }
     setView(target);
+    router.push(pathForView(target));
   };
 
   const focusHomeDemo = () => {
@@ -1047,6 +1064,7 @@ export default function BoldVeshApp() {
         }))
       );
       setView("summary");
+      router.push(pathForView("summary", { personaId: reportPersona.id }));
       return;
     }
 
@@ -1075,6 +1093,7 @@ export default function BoldVeshApp() {
       },
     ]);
     setView("summary");
+    router.push(pathForView("summary", { personaId: reportPersona.id }));
   };
 
   const handleSignOut = async () => {
@@ -1083,6 +1102,7 @@ export default function BoldVeshApp() {
     clearMatchedCoachMoveTimer();
     await signOut();
     setView("home");
+    router.push(pathForView("home"));
     setSelectedPersona(null);
     setMessages([]);
     setActiveSummarySession(null);
@@ -1254,6 +1274,7 @@ export default function BoldVeshApp() {
     setMatchedCoachMove(null);
     setVoiceStatus("Voice ready");
     setView("briefing");
+    router.push(pathForView("briefing", { personaId: persona.id }));
   };
 
   const beginSession = async () => {
@@ -1273,6 +1294,7 @@ export default function BoldVeshApp() {
     setMatchedCoachMove(null);
     setVoiceStatus("Voice ready");
     setView("session");
+    router.push(pathForView("session", { personaId: selectedOrFirst.id }));
 
     await fetch("/api/chat", {
       method: "POST",
@@ -1372,6 +1394,7 @@ export default function BoldVeshApp() {
     setSessionEndReason(reason);
     void persistCompletedSession();
     setView("summary");
+    router.push(pathForView("summary", { personaId: selectedOrFirst.id }));
   };
 
   useEffect(() => {
@@ -1703,7 +1726,7 @@ export default function BoldVeshApp() {
                 the next case from the same workspace.
               </p>
             </div>
-            <button onClick={() => setView("personas")} className="vesh-button vesh-button-green">
+            <button onClick={() => navigate("personas")} className="vesh-button vesh-button-green">
               Assign case
             </button>
           </div>
@@ -1985,7 +2008,7 @@ export default function BoldVeshApp() {
               Begin session
               <ArrowRight className="h-4 w-4" />
             </button>
-            <button onClick={() => setView("personas")} className="vesh-button vesh-button-yellow w-full">
+            <button onClick={() => navigate("personas")} className="vesh-button vesh-button-yellow w-full">
               Choose another case
             </button>
           </aside>
@@ -2249,7 +2272,7 @@ export default function BoldVeshApp() {
               Download PDF
             </button>
             <button
-              onClick={() => setView("student")}
+              onClick={() => navigate("student")}
               className="vesh-button vesh-button-yellow mt-3 w-full"
             >
               <CheckCircle className="h-4 w-4" />
