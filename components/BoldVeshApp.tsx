@@ -117,6 +117,40 @@ function PersonaPortrait({
   );
 }
 
+function DashboardCaseIllustration() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 180 220"
+      className="h-full w-full"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <rect x="1" y="1" width="178" height="218" fill="#fff8ea" stroke="#11110f" strokeWidth="2" />
+      <rect x="18" y="24" width="132" height="166" fill="#ffe9b7" stroke="#11110f" strokeWidth="2" />
+      <path d="M18 56H150" stroke="#11110f" strokeWidth="2" />
+      <path d="M35 43H75M102 43H132" stroke="#11110f" strokeWidth="3" strokeLinecap="round" />
+      <path
+        d="M42 78H103L117 92H139V143H42V78Z"
+        fill="#ffe66d"
+        stroke="#11110f"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      <circle cx="72" cy="118" r="20" fill="#fff8ea" stroke="#11110f" strokeWidth="2" />
+      <path
+        d="M63 116C67 121 76 121 81 116M64 107H64.5M80 107H80.5"
+        stroke="#11110f"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+      <path d="M103 108H128M103 121H126M103 134H119" stroke="#11110f" strokeWidth="3" strokeLinecap="round" />
+      <rect x="42" y="158" width="12" height="12" fill="#ff4b35" stroke="#11110f" strokeWidth="2" />
+      <path d="M62 164H132M42 181H132" stroke="#11110f" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function Brand() {
   return (
     <span className="vesh-brand">
@@ -512,8 +546,8 @@ function StudentDashboard({
                   {hasReports ? "Recommended next case" : "Recommended first case"}
                 </div>
                 <div className="mt-4 grid gap-4 sm:grid-cols-[116px_minmax(0,1fr)]">
-                  <div className="overflow-hidden border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-hot)] shadow-[4px_4px_0_rgba(17,17,15,0.14)]">
-                    <PersonaPortrait persona={persona} />
+                  <div className="grid h-40 sm:h-52 place-items-center overflow-hidden border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-hot)] p-3 shadow-[4px_4px_0_rgba(17,17,15,0.14)]">
+                    <DashboardCaseIllustration />
                   </div>
                   <div className="min-w-0">
                     <h2 className="text-xl font-black leading-none">{persona.name}</h2>

@@ -369,6 +369,15 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("See full sample report");
   });
 
+  test("dashboard recommended case uses a compact case-file illustration", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain("function DashboardCaseIllustration");
+    expect(app).toContain("<DashboardCaseIllustration />");
+    expect(app).toContain("h-40 sm:h-52");
+    expect((app.match(/<PersonaPortrait persona={persona}/g) ?? []).length).toBe(1);
+  });
+
   test("student dashboard rail is interactive and accessible", () => {
     const app = read("components/BoldVeshApp.tsx");
 
