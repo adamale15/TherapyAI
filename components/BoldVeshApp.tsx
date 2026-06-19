@@ -7,7 +7,6 @@ import { useMutation, useQuery } from "convex/react";
 import {
   AlertTriangle,
   ArrowRight,
-  BarChart3,
   CheckCircle,
   ClipboardList,
   Clock,
@@ -104,21 +103,33 @@ function FemalePortraitSvg({ className = "h-full w-full" }: { className?: string
       fill="none"
     >
       <rect width="160" height="180" fill="#fff4d8" />
-      <rect y="0" width="160" height="44" fill="#ffe4b8" />
-      <rect y="134" width="160" height="46" fill="#ffe4b8" />
-      <path d="M20 37H140V155H20Z" fill="#fff8ea" stroke="#11110f" strokeWidth="2" />
-      <path d="M28 155C35 136 53 123 80 123C107 123 125 136 132 155" fill="#fff8ea" stroke="#11110f" strokeWidth="2.5" />
-      <path d="M63 117V132C68 139 92 139 97 132V117" fill="#ffd7c6" stroke="#11110f" strokeWidth="2.5" strokeLinejoin="round" />
-      <path d="M43 110C40 86 41 64 54 50C66 36 89 32 105 41C126 52 128 82 122 111C114 103 106 91 101 75C91 82 75 86 58 83C54 94 49 103 43 110Z" fill="#11110f" stroke="#11110f" strokeWidth="2.5" strokeLinejoin="round" />
-      <path d="M54 79C56 62 67 52 83 52C101 52 113 65 114 83C116 112 103 128 83 128C64 128 51 110 54 79Z" fill="#ffd7c6" stroke="#11110f" strokeWidth="2.5" />
-      <path d="M54 82C67 81 79 74 89 61C94 73 103 81 115 86" stroke="#11110f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M66 90C70 88 74 88 78 91M93 91C98 88 102 88 106 91" stroke="#11110f" strokeWidth="2" strokeLinecap="round" />
-      <path d="M72 99H72.5M100 99H100.5" stroke="#11110f" strokeWidth="5" strokeLinecap="round" />
-      <path d="M86 98C84 105 84 109 88 112" stroke="#11110f" strokeWidth="2" strokeLinecap="round" />
-      <path d="M77 118C85 123 94 123 101 118" stroke="#11110f" strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M35 155C39 143 50 135 63 132L80 155L97 132C111 135 122 143 126 155" fill="#fff8ea" stroke="#11110f" strokeWidth="2.5" strokeLinejoin="round" />
-      <path d="M58 136L80 155L102 136" stroke="#11110f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M34 52C40 42 50 35 63 32M119 54C113 44 104 37 91 34" stroke="#11110f" strokeWidth="2" strokeLinecap="round" opacity="0.45" />
+      <rect x="21" y="18" width="118" height="144" fill="#fff8ea" stroke="#11110f" strokeWidth="2" />
+      <rect x="21" y="18" width="118" height="34" fill="#ffe4b8" stroke="#11110f" strokeWidth="2" />
+      <path
+        d="M48 136C54 115 65 104 80 104C95 104 106 115 112 136"
+        fill="#fff8ea"
+        stroke="#11110f"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+      <path
+        d="M61 76C61 55 75 43 92 47C106 50 115 64 115 82C109 74 101 68 91 65C83 78 73 86 61 89V76Z"
+        fill="#11110f"
+        stroke="#11110f"
+        strokeWidth="3"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M56 92C60 75 70 64 88 61C99 63 108 72 111 86C111 111 100 124 84 124C68 124 57 112 56 92Z"
+        fill="#ffd7c6"
+        stroke="#11110f"
+        strokeWidth="3"
+      />
+      <path d="M63 90C76 87 86 80 94 69C99 78 105 84 113 88" stroke="#11110f" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M71 99H72M96 99H97" stroke="#11110f" strokeWidth="5" strokeLinecap="round" />
+      <path d="M78 113C84 117 91 117 97 113" stroke="#11110f" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M65 122L80 143L96 122" stroke="#11110f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M39 52H52M108 52H121M39 145H121" stroke="#11110f" strokeWidth="2" strokeLinecap="round" opacity="0.35" />
     </svg>
   );
 }
@@ -132,22 +143,33 @@ function MalePortraitSvg({ className = "h-full w-full" }: { className?: string }
       fill="none"
     >
       <rect width="160" height="180" fill="#fff4d8" />
-      <rect y="0" width="160" height="44" fill="#d9eef2" />
-      <rect y="134" width="160" height="46" fill="#ffe4b8" />
-      <path d="M20 37H140V155H20Z" fill="#fff8ea" stroke="#11110f" strokeWidth="2" />
-      <path d="M29 155C37 135 57 123 82 123C108 123 126 136 132 155" fill="#fff8ea" stroke="#11110f" strokeWidth="2.5" />
-      <path d="M64 116V132C71 139 92 139 99 132V116" fill="#d7aa82" stroke="#11110f" strokeWidth="2.5" strokeLinejoin="round" />
-      <path d="M48 76C48 52 63 37 85 35C107 33 123 48 126 68C128 78 125 87 120 96C112 88 104 78 99 65C86 72 70 76 48 76Z" fill="#11110f" stroke="#11110f" strokeWidth="2.5" strokeLinejoin="round" />
-      <path d="M51 76C52 59 63 49 80 48C101 46 115 59 116 80C118 109 104 127 83 127C64 127 49 107 51 76Z" fill="#d7aa82" stroke="#11110f" strokeWidth="2.5" />
-      <path d="M50 78C69 77 85 71 99 60C103 69 109 76 117 81" stroke="#11110f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M64 90C69 87 74 87 79 91M94 91C100 87 105 88 109 92" stroke="#11110f" strokeWidth="2" strokeLinecap="round" />
-      <path d="M72 100H72.5M102 100H102.5" stroke="#11110f" strokeWidth="5" strokeLinecap="round" />
-      <path d="M87 97C85 105 86 109 90 112" stroke="#11110f" strokeWidth="2" strokeLinecap="round" />
-      <path d="M70 112C75 124 94 128 105 114" stroke="#11110f" strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M62 114C70 132 101 133 111 115" stroke="#11110f" strokeWidth="2" strokeLinecap="round" opacity="0.45" />
-      <path d="M37 155C43 141 54 134 65 132L82 153L99 132C111 134 122 142 127 155" fill="#fff8ea" stroke="#11110f" strokeWidth="2.5" strokeLinejoin="round" />
-      <path d="M63 135L82 153L101 135" stroke="#11110f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M47 54C54 43 66 37 80 36M111 50C104 40 94 36 82 36" stroke="#11110f" strokeWidth="2" strokeLinecap="round" opacity="0.45" />
+      <rect x="21" y="18" width="118" height="144" fill="#fff8ea" stroke="#11110f" strokeWidth="2" />
+      <rect x="21" y="18" width="118" height="34" fill="#d9eef2" stroke="#11110f" strokeWidth="2" />
+      <path
+        d="M47 136C54 116 66 104 82 104C99 104 111 116 116 136"
+        fill="#fff8ea"
+        stroke="#11110f"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+      <path
+        d="M52 78C53 58 68 46 86 46C104 46 117 58 121 76C111 73 102 67 95 58C85 68 70 74 52 78Z"
+        fill="#11110f"
+        stroke="#11110f"
+        strokeWidth="3"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M54 84C57 69 67 58 83 57C101 57 114 70 115 87C115 111 103 124 84 124C67 124 55 110 54 84Z"
+        fill="#d7aa82"
+        stroke="#11110f"
+        strokeWidth="3"
+      />
+      <path d="M54 81C73 80 87 73 97 61C102 71 109 78 117 82" stroke="#11110f" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M72 99H73M98 99H99" stroke="#11110f" strokeWidth="5" strokeLinecap="round" />
+      <path d="M76 113C83 117 92 117 99 113" stroke="#11110f" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M66 122L82 143L99 122" stroke="#11110f" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M39 52H52M108 52H121M39 145H121" stroke="#11110f" strokeWidth="2" strokeLinecap="round" opacity="0.35" />
     </svg>
   );
 }
@@ -372,14 +394,12 @@ function AppShell({
   children,
   onNavigate,
   onStartPractice,
-  onOpenReport,
   onSignOut,
 }: {
   view: View;
   children: React.ReactNode;
   onNavigate: (view: View) => void;
   onStartPractice: () => void;
-  onOpenReport: () => void;
   onSignOut: () => void;
 }) {
   return (
@@ -417,12 +437,6 @@ function AppShell({
             onClick={() => onNavigate("personas")}
           />
           <DashboardRailIcon
-            icon={BarChart3}
-            label="Open report preview"
-            active={view === "summary"}
-            onClick={onOpenReport}
-          />
-          <DashboardRailIcon
             icon={Users}
             label="Programs"
             active={view === "practitioner"}
@@ -439,7 +453,7 @@ function AppShell({
       </aside>
 
       <div className="min-w-0">
-        <nav className="vesh-mobile-nav sticky top-0 z-30 grid grid-cols-5 gap-1 border-b-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] p-2 md:hidden">
+        <nav className="vesh-mobile-nav sticky top-0 z-30 grid grid-cols-4 gap-1 border-b-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] p-2 md:hidden">
           <button
             type="button"
             onClick={() => onNavigate("student")}
@@ -460,13 +474,6 @@ function AppShell({
             className={`vesh-chip min-h-10 px-1 text-[10px] ${view === "personas" ? "vesh-chip-active" : ""}`}
           >
             Cases
-          </button>
-          <button
-            type="button"
-            onClick={onOpenReport}
-            className={`vesh-chip min-h-10 px-1 text-[10px] ${view === "summary" ? "vesh-chip-active" : ""}`}
-          >
-            Report
           </button>
           <button
             type="button"
@@ -829,8 +836,22 @@ export default function BoldVeshApp() {
     () => summarizeClinicalHistory(completedSessionList),
     [completedSessionList]
   );
+  const programHistorySessions = useMemo(
+    () =>
+      [...completedSessionList]
+        .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+        .slice(0, 8),
+    [completedSessionList]
+  );
   const studentDashboardVisible = view === "student";
   const appShellVisible = view !== "home";
+  const savedScoreDisplay = (
+    session: CompletedClinicalSession,
+    key: "alliance" | "empathicAccuracy"
+  ) => {
+    const value = (session.scores ?? {})[key];
+    return typeof value === "number" ? `${value.toFixed(1)}/5` : "No data";
+  };
   const needsReviewCount = completedSessionList.filter(
     (session) => {
       const scores = session.scores ?? {};
@@ -1219,8 +1240,13 @@ export default function BoldVeshApp() {
     }
   }, [remainingSeconds, sessionStartedAt, view]);
 
-  const downloadReportPdf = async () => {
-    if (!selectedOrFirst) return;
+  const downloadReportPdf = async (session?: CompletedClinicalSession) => {
+    const reportPersona =
+      (session
+        ? personas.find((persona) => persona.name === session.personaName)
+        : selectedOrFirst) ?? selectedOrFirst;
+
+    if (!reportPersona) return;
 
     try {
       const { jsPDF } = await import("jspdf");
@@ -1252,45 +1278,50 @@ export default function BoldVeshApp() {
         addText(title, 13, true);
       };
 
-      const safeName = selectedOrFirst.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      const generatedDate = new Date();
-      const learnerTurns = messages.filter((message) => message.role === "trainee").length;
-      const clientTurns = messages.filter((message) => message.role === "client").length;
+      const reportMessages = session?.messages ?? messages;
+      const reportAnalysis = session ? analyzeClinicalSession(reportMessages) : sessionAnalysis;
+      const reportDate = session?.createdAt ? new Date(session.createdAt) : new Date();
+      const safeName = reportPersona.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const learnerTurns = reportMessages.filter((message) => message.role === "trainee").length;
+      const clientTurns = reportMessages.filter((message) => message.role === "client").length;
+      const reportStatus = session ? "Saved session report" : completionLabel;
+      const reportDuration = session?.duration ?? sessionDuration;
 
       doc.setTextColor(17, 17, 15);
       addText("Vesh Session Report", 20, true);
-      addText(`${selectedOrFirst.name} / ${selectedOrFirst.condition}`, 14, true);
-      addText(`Generated ${generatedDate.toLocaleString()}`);
-      addText(`Status: ${completionLabel}`);
-      addText(`Session length: ${sessionDuration} minutes`);
+      addText(`${reportPersona.name} / ${reportPersona.condition}`, 14, true);
+      addText(`Generated ${new Date().toLocaleString()}`);
+      addText(`Session date: ${reportDate.toLocaleString()}`);
+      addText(`Status: ${reportStatus}`);
+      addText(`Session length: ${reportDuration} minutes`);
       addText(`Transcript: ${learnerTurns} trainee turns, ${clientTurns} client turns`);
 
       addSection("Case Focus");
-      addText(`Training objective: ${selectedOrFirst.background.sessionGoals[0]}`);
-      addText(`Primary watch point: ${selectedOrFirst.background.therapeuticConsiderations[0]}`);
+      addText(`Training objective: ${reportPersona.background.sessionGoals[0]}`);
+      addText(`Primary watch point: ${reportPersona.background.therapeuticConsiderations[0]}`);
 
       addSection("Scores");
-      sessionAnalysis.metrics.forEach((item) => {
+      reportAnalysis.metrics.forEach((item) => {
         addText(`${item.label}: ${item.display} (${item.detail})`);
       });
 
       addSection("Coach Notes");
-      sessionAnalysis.suggestions.forEach((item, index) => {
+      reportAnalysis.suggestions.forEach((item, index) => {
         addText(`${index + 1}. ${item.title}: ${item.body}`);
       });
 
       addSection("Transcript");
-      if (messages.length === 0) {
+      if (reportMessages.length === 0) {
         addText("No trainee-client turns were recorded in this session.");
       } else {
-        messages.forEach((message) => {
-          const speaker = message.role === "trainee" ? "Trainee" : selectedOrFirst.name;
+        reportMessages.forEach((message) => {
+          const speaker = message.role === "trainee" ? "Trainee" : reportPersona.name;
           addText(`${speaker}: ${message.text}`);
           y += 2;
         });
       }
 
-      doc.save(`vesh-session-${safeName}-${generatedDate.toISOString().slice(0, 10)}.pdf`);
+      doc.save(`vesh-session-${safeName}-${reportDate.toISOString().slice(0, 10)}.pdf`);
     } catch (error) {
       console.error("PDF export failed", error);
       window.alert("Could not create the PDF report. Please try again.");
@@ -1470,7 +1501,6 @@ export default function BoldVeshApp() {
           view={view}
           onNavigate={navigate}
           onStartPractice={() => startSession(selectedOrFirst)}
-          onOpenReport={() => openSampleReport(selectedOrFirst)}
           onSignOut={handleSignOut}
         >
           {studentDashboardVisible && (
@@ -1528,32 +1558,58 @@ export default function BoldVeshApp() {
               <div className="vesh-card mt-5 overflow-hidden">
                 <div className="border-b-[1.5px] border-[var(--vesh-black)] p-4">
                   <div className="vesh-kicker text-[var(--vesh-muted)]">
-                    Clinical skills matrix
+                    Session history
                   </div>
                 </div>
                 <div className="overflow-x-auto">
-                  <div className="vesh-table vesh-program-table min-w-[620px] grid-cols-[1.1fr_0.8fr_0.8fr_1fr_1.2fr]">
-                    {["Case", "Alliance", "Empathy", "Turns", "Date"].map((head) => (
+                  <div className="vesh-table vesh-program-table min-w-[780px] grid-cols-[1.2fr_0.75fr_0.75fr_0.75fr_0.9fr_170px]">
+                    {["Case", "Alliance", "Empathy", "Turns", "Date", "Report"].map((head) => (
                       <div key={head} className="vesh-table-head">
                         {head}
                       </div>
                     ))}
-                    {(clinicalDashboard.latestRows.length > 0
-                      ? clinicalDashboard.latestRows
-                      : [["No completed sessions", "No data", "No data", "0 turns", ""]]
-                    ).flatMap((row, rowIndex) =>
-                      row.map((cell, cellIndex) => (
-                        <div
-                          key={`${rowIndex}-${cellIndex}`}
-                          className={
-                            cellIndex === 1 && rowIndex !== clinicalDashboard.latestRows.length
-                              ? "bg-[#c8f2d9]"
-                              : cellIndex === 1
+                    {programHistorySessions.length > 0 ? (
+                      programHistorySessions.flatMap((session, rowIndex) =>
+                        [
+                          session.personaName,
+                          savedScoreDisplay(session, "alliance"),
+                          savedScoreDisplay(session, "empathicAccuracy"),
+                          `${session.totalMessages} turns`,
+                          new Date(session.createdAt).toLocaleDateString(),
+                          "download",
+                        ].map((cell, cellIndex) => (
+                          <div
+                            key={`${session.createdAt}-${rowIndex}-${cellIndex}`}
+                            className={
+                              cellIndex === 1
                                 ? "bg-[#fff0ad]"
-                                : cellIndex === 2 && rowIndex !== clinicalDashboard.latestRows.length
+                                : cellIndex === 2
                                   ? "bg-[#c8f2d9]"
-                                  : ""
-                          }
+                                  : cellIndex === 5
+                                    ? "flex items-center"
+                                    : ""
+                            }
+                          >
+                            {cellIndex === 5 ? (
+                              <button
+                                type="button"
+                                onClick={() => void downloadReportPdf(session)}
+                                className="vesh-button vesh-button-yellow min-h-10 w-full px-3 py-2 text-[11px]"
+                              >
+                                <Download className="h-4 w-4" />
+                                Download report
+                              </button>
+                            ) : (
+                              cell
+                            )}
+                          </div>
+                        ))
+                      )
+                    ) : (
+                      ["No completed sessions", "No data", "No data", "0 turns", "", ""].map((cell, cellIndex) => (
+                        <div
+                          key={`empty-${cellIndex}`}
+                          className={cellIndex === 5 ? "text-[var(--vesh-muted)]" : ""}
                         >
                           {cell}
                         </div>

@@ -106,7 +106,8 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("summarizeClinicalHistory");
     expect(app).toContain("completedSessions");
     expect(app).toContain("sessionAnalysis.metrics");
-    expect(app).toContain("clinicalDashboard.latestRows");
+    expect(app).toContain("programHistorySessions");
+    expect(app).toContain("savedScoreDisplay");
     expect(metrics).toContain("Working alliance");
     expect(metrics).toContain("Question quality");
     expect(metrics).toContain("Reflection ratio");
@@ -173,7 +174,7 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("vesh-mobile-nav");
     expect(app).toContain("p-4 sm:p-6");
     expect(app).toContain("overflow-x-auto");
-    expect(app).toContain("min-w-[620px]");
+    expect(app).toContain("min-w-[780px]");
     expect(app).toContain("sm:flex-nowrap");
     expect(app).toContain("max-w-[92%]");
     expect(hero).toContain("sm:min-h-[380px]");
@@ -377,8 +378,12 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("aria-label={label}");
     expect(app).toContain("title={label}");
     expect(app).toContain("onNavigate");
+    expect(app).toContain('label="Start rehearsal"');
     expect(app).toContain('label="Browse cases"');
-    expect(app).toContain('label="Open report preview"');
+    expect(app).toContain('label="Programs"');
+    expect(app).toContain("grid-cols-4");
+    expect(app).not.toContain('label="Open report preview"');
+    expect(app).not.toContain("onOpenReport");
   });
 
   test("student dashboard progress metrics do not use the cramped four-column strip", () => {
@@ -397,8 +402,20 @@ describe("bold notebook UI system", () => {
     expect(app).toContain('data-testid="vesh-app-shell"');
     expect(app).toContain("{appShellVisible && (");
     expect(app).not.toContain("<Topbar");
-    expect(app).toContain('active={view === "summary"}');
+    expect(app).not.toContain('label="Open report preview"');
     expect(app).toContain('active={view === "briefing" || view === "session"}');
+  });
+
+  test("program session history can download saved reports directly", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain("programHistorySessions");
+    expect(app).toContain("Session history");
+    expect(app).toContain('["Case", "Alliance", "Empathy", "Turns", "Date", "Report"]');
+    expect(app).toContain("onClick={() => void downloadReportPdf(session)}");
+    expect(app).toContain("Download report");
+    expect(app).toContain("const downloadReportPdf = async (session?: CompletedClinicalSession)");
+    expect(app).toContain('const reportStatus = session ? "Saved session report" : completionLabel;');
   });
 
   test("case cards use reusable male and female SVG portraits", () => {
