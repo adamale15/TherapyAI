@@ -137,9 +137,9 @@ function Topbar({
         </nav>
         <div className="flex items-center gap-2">
           {signedIn ? (
-            <button onClick={onSignOut} className="vesh-button vesh-button-green">
+            <button onClick={onSignOut} className="vesh-button vesh-button-green whitespace-nowrap px-3 text-xs sm:px-4 sm:text-sm">
               <LogOut className="h-4 w-4" />
-              <span>Out</span>
+              <span>Sign out</span>
             </button>
           ) : (
             <button onClick={() => onNavigate("student")} className="vesh-button">
