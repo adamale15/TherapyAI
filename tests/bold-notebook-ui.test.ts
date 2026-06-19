@@ -287,6 +287,16 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("NOT A REPLACEMENT FOR SUPERVISION");
   });
 
+  test("home masthead does not duplicate the Vesh wordmark above the product header", () => {
+    const app = read("components/BoldVeshApp.tsx");
+    const homeMasthead = app.match(/function HomeMasthead\(\) \{[\s\S]*?function Topbar/);
+
+    expect(homeMasthead?.[0]).toBeDefined();
+    expect(homeMasthead?.[0]).not.toContain("<Brand />");
+    expect(homeMasthead?.[0]).toContain("AI THERAPY TRAINING FOR THERAPY STUDENTS");
+    expect(homeMasthead?.[0]).toContain("PRACTICE MORE. GET BETTER. HELP MORE.");
+  });
+
   test("notebook hero includes the reference live rubric sidebar", () => {
     const hero = read("components/NotebookHero.tsx");
 

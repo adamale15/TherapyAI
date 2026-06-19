@@ -111,18 +111,15 @@ function Brand() {
 
 function HomeMasthead() {
   return (
-    <header className="border-b-[1.5px] border-[var(--vesh-black)] bg-[rgba(251,241,220,0.94)] px-4 py-4 sm:px-6 lg:px-10">
+    <header className="border-b-[1.5px] border-[var(--vesh-black)] bg-[rgba(251,241,220,0.94)] px-4 py-3 sm:px-6 lg:px-10">
       <div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-4 sm:gap-5">
-          <Brand />
-          <div
-            aria-label="AI THERAPY TRAINING FOR THERAPY STUDENTS"
-            className="font-mono text-[11px] font-black uppercase leading-[1.08] tracking-[0.16em] text-[var(--vesh-black)] sm:text-[13px]"
-          >
-            AI therapy training
-            <br />
-            for therapy students
-          </div>
+        <div
+          aria-label="AI THERAPY TRAINING FOR THERAPY STUDENTS"
+          className="font-mono text-[11px] font-black uppercase leading-[1.08] tracking-[0.16em] text-[var(--vesh-black)] sm:text-[13px]"
+        >
+          AI therapy training
+          <br />
+          for therapy students
         </div>
         <p className="relative hidden font-mono text-sm font-black uppercase italic tracking-[0.05em] text-[var(--vesh-black)] md:block lg:text-base">
           PRACTICE MORE. GET BETTER. HELP MORE.
