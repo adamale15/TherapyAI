@@ -251,6 +251,24 @@ describe("bold notebook UI system", () => {
     expect((app.match(/router\.push\(demoSignUpPath\)/g) ?? []).length).toBe(1);
   });
 
+  test("auth entrypoints work as links and land signed-in users in the workspace", () => {
+    const app = read("components/BoldVeshApp.tsx");
+    const signIn = read("app/sign-in/[[...sign-in]]/page.tsx");
+    const setUserType = read("app/api/auth/set-user-type/route.ts");
+
+    expect(signIn).toContain('fallbackRedirectUrl="/?auth=1"');
+    expect(signIn).toContain('forceRedirectUrl="/?auth=1"');
+    expect(app).toContain('href="/sign-in"');
+    expect(app).toContain("href={studentSignUpPath}");
+    expect(app).toContain("openWorkspaceAfterAuth");
+    expect(app).toContain('urlParams.get("auth") === "1"');
+    expect(app).toContain('urlParams.get("userTypeSet") === "true"');
+    expect(app).toContain("user.reload()");
+    expect(app).toContain('window.history.replaceState({}, "", window.location.pathname)');
+    expect(setUserType).toContain('redirectUrl.searchParams.set("userType", userType)');
+    expect(app).not.toContain('onClick={() => router.push("/sign-in")}');
+  });
+
   test("first-run dashboard waits for saved history before showing empty-state guidance", () => {
     const app = read("components/BoldVeshApp.tsx");
 

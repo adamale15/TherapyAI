@@ -24,10 +24,12 @@ export async function GET(request: NextRequest) {
     // Redirect to home page with flag to refresh user metadata
     const redirectUrl = new URL("/", request.url);
     redirectUrl.searchParams.set("userTypeSet", "true");
+    if (userType) {
+      redirectUrl.searchParams.set("userType", userType);
+    }
     return NextResponse.redirect(redirectUrl);
   } catch (error) {
     console.error("Error setting user type:", error);
     return NextResponse.redirect(new URL("/", request.url));
   }
 }
-

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
@@ -653,6 +653,41 @@ export default function BoldVeshApp() {
   const completionLabel =
     sessionEndReason === "time" ? "Time limit reached" : "Ended by learner";
 
+  const openWorkspaceAfterAuth = useCallback(
+    (redirectedUserType?: string | null) => {
+      const targetUserType =
+        redirectedUserType === "student" || redirectedUserType === "practitioner"
+          ? redirectedUserType
+          : currentUserType;
+
+      setView(targetUserType === "practitioner" ? "practitioner" : "student");
+    },
+    [currentUserType]
+  );
+
+  useEffect(() => {
+    if (!user || !isLoaded || typeof window === "undefined") return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const authRedirect = urlParams.get("auth") === "1";
+    const userTypeSet = urlParams.get("userTypeSet") === "true";
+
+    if (!authRedirect && !userTypeSet) return;
+
+    const redirectedUserType = urlParams.get("userType");
+    const openAndCleanUrl = () => {
+      openWorkspaceAfterAuth(redirectedUserType);
+      window.history.replaceState({}, "", window.location.pathname);
+    };
+
+    if (userTypeSet) {
+      user.reload().then(openAndCleanUrl).catch(() => openAndCleanUrl());
+      return;
+    }
+
+    openAndCleanUrl();
+  }, [isLoaded, openWorkspaceAfterAuth, user]);
+
   useEffect(() => {
     if (view !== "session" || !sessionStartedAt) return;
 
@@ -1097,36 +1132,45 @@ export default function BoldVeshApp() {
                   <button>Resources</button>
                 </nav>
                 <div className="hidden items-center gap-3 sm:flex">
-                  <button
-                    type="button"
-                    onClick={() => router.push("/sign-in")}
+                  <a
+                    href="/sign-in"
                     className="vesh-button bg-[var(--vesh-paper-soft)] px-5 py-2 text-xs text-[var(--vesh-black)]"
                   >
                     Log in
-                  </button>
+                  </a>
+                  {signedIn ? (
+                    <button
+                      type="button"
+                      onClick={() => openWorkspaceAfterAuth()}
+                      className="vesh-button vesh-button-green px-5 py-2 text-xs"
+                    >
+                      Start practicing
+                    </button>
+                  ) : (
+                    <a
+                      href={studentSignUpPath}
+                      className="vesh-button vesh-button-green px-5 py-2 text-xs"
+                    >
+                      Start practicing
+                    </a>
+                  )}
+                </div>
+                {signedIn ? (
                   <button
                     type="button"
-                    onClick={() =>
-                      signedIn
-                        ? setView(currentUserType === "practitioner" ? "practitioner" : "student")
-                        : router.push(studentSignUpPath)
-                    }
-                    className="vesh-button vesh-button-green px-5 py-2 text-xs"
+                    onClick={() => openWorkspaceAfterAuth()}
+                    className="vesh-button vesh-button-green px-4 py-2 text-xs sm:hidden"
                   >
-                    Start practicing
+                    Start
                   </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    signedIn
-                      ? setView(currentUserType === "practitioner" ? "practitioner" : "student")
-                      : router.push(studentSignUpPath)
-                  }
-                  className="vesh-button vesh-button-green px-4 py-2 text-xs sm:hidden"
-                >
-                  Start
-                </button>
+                ) : (
+                  <a
+                    href={studentSignUpPath}
+                    className="vesh-button vesh-button-green px-4 py-2 text-xs sm:hidden"
+                  >
+                    Start
+                  </a>
+                )}
               </div>
 
               <div className="grid gap-7 p-5 sm:p-7 lg:grid-cols-[0.82fr_1.18fr] lg:items-center lg:p-8 xl:p-10">
@@ -1156,7 +1200,7 @@ export default function BoldVeshApp() {
                       aria-label="Try the live demo"
                       onClick={() =>
                         signedIn
-                          ? setView(currentUserType === "practitioner" ? "practitioner" : "student")
+                          ? openWorkspaceAfterAuth()
                           : focusHomeDemo()
                       }
                       className="vesh-button"
@@ -1168,7 +1212,7 @@ export default function BoldVeshApp() {
                       aria-label="See a sample report"
                       onClick={() =>
                         signedIn
-                          ? setView(currentUserType === "practitioner" ? "practitioner" : "student")
+                          ? openWorkspaceAfterAuth()
                           : router.push(studentSignUpPath)
                       }
                       className="vesh-button vesh-button-yellow"
@@ -1202,7 +1246,7 @@ export default function BoldVeshApp() {
                   <NotebookHero
                     onStartRehearsal={() =>
                       signedIn
-                        ? setView(currentUserType === "practitioner" ? "practitioner" : "student")
+                        ? openWorkspaceAfterAuth()
                         : router.push(demoSignUpPath)
                     }
                   />

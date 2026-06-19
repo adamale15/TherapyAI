@@ -56,7 +56,8 @@ export default function SignInPage() {
           </div>
           <SignIn
             appearance={clerkNotebookAppearance}
-            fallbackRedirectUrl="/"
+            forceRedirectUrl="/?auth=1"
+            fallbackRedirectUrl="/?auth=1"
             routing="path"
             path="/sign-in"
           />
