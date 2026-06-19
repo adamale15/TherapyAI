@@ -185,7 +185,7 @@ export default function NotebookHero({
   };
 
   return (
-    <div className="vesh-card w-full overflow-hidden">
+    <div className="vesh-card w-full min-w-0 overflow-hidden">
       <div className="grid gap-2 border-b-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] px-4 py-3 sm:grid-cols-[1fr_auto] sm:items-center sm:px-5">
         <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
           <span className="vesh-kicker flex items-center gap-2 text-[var(--vesh-black)]">
@@ -209,11 +209,11 @@ export default function NotebookHero({
         </div>
       </div>
 
-      <div className="grid min-h-[520px] bg-[var(--vesh-paper-soft)] lg:grid-cols-[minmax(0,1fr)_300px]">
-        <div className="grid min-h-0 grid-rows-[minmax(280px,1fr)_auto]">
+      <div className="grid min-h-[500px] min-w-0 overflow-hidden bg-[var(--vesh-paper-soft)] lg:grid-cols-[minmax(0,1fr)_minmax(250px,280px)] xl:grid-cols-[minmax(0,1fr)_292px]">
+        <div className="grid min-h-0 min-w-0 grid-rows-[minmax(260px,1fr)_auto] overflow-hidden">
           <div
             ref={scrollRef}
-            className="vesh-paper max-h-[420px] min-h-[320px] overflow-y-auto px-4 py-4 sm:max-h-[470px] sm:min-h-[380px] sm:px-5 sm:py-5 lg:max-h-none"
+            className="vesh-paper min-w-0 max-h-[400px] min-h-[300px] overflow-y-auto overflow-x-hidden px-4 py-4 sm:max-h-[450px] sm:min-h-[360px] sm:px-5 sm:py-5 lg:max-h-none"
           >
             <div className="mb-4 flex items-center justify-between gap-3 border-b-[1.5px] border-[var(--vesh-black)] pb-3">
               <div>
@@ -236,7 +236,7 @@ export default function NotebookHero({
                 return (
                   <div
                     key={message.id}
-                    className="grid animate-slide-up grid-cols-[52px_minmax(0,1fr)] gap-3 py-1 font-mono text-[13px] leading-6 sm:text-[14px] sm:leading-7"
+                    className="grid min-w-0 animate-slide-up grid-cols-[52px_minmax(0,1fr)] gap-3 py-1 font-mono text-[13px] leading-6 sm:text-[14px] sm:leading-7"
                   >
                     <span
                       className={`pt-1 text-[10px] font-black uppercase ${
@@ -246,7 +246,7 @@ export default function NotebookHero({
                       {isYou ? "You" : HERO_PERSONA_NAME}
                     </span>
                     <span
-                      className={`max-w-full rounded-sm border-[1.5px] border-[rgba(17,17,15,0.12)] px-3 py-2 ${
+                      className={`min-w-0 max-w-full break-words rounded-sm border-[1.5px] border-[rgba(17,17,15,0.12)] px-3 py-2 ${
                         isYou
                           ? "bg-[#dff0dc] text-[var(--vesh-green)]"
                           : "bg-[#ffe2d5] text-[var(--vesh-ink)]"
@@ -262,11 +262,11 @@ export default function NotebookHero({
               })}
 
               {busy && !typingId && (
-                <div className="grid grid-cols-[52px_minmax(0,1fr)] gap-3 py-1 font-mono text-[13px] leading-6 text-[var(--vesh-muted)] sm:text-[14px] sm:leading-7">
+                <div className="grid min-w-0 grid-cols-[52px_minmax(0,1fr)] gap-3 py-1 font-mono text-[13px] leading-6 text-[var(--vesh-muted)] sm:text-[14px] sm:leading-7">
                   <span className="pt-1 text-[10px] font-black uppercase text-[var(--vesh-coral-dark)]">
                     {HERO_PERSONA_NAME}
                   </span>
-                  <span className="max-w-full rounded-sm border-[1.5px] border-[rgba(17,17,15,0.12)] bg-[#ffe2d5] px-3 py-2">
+                  <span className="min-w-0 max-w-full break-words rounded-sm border-[1.5px] border-[rgba(17,17,15,0.12)] bg-[#ffe2d5] px-3 py-2">
                     typing...
                   </span>
                 </div>
@@ -300,21 +300,21 @@ export default function NotebookHero({
             </div>
           </div>
 
-          <div className="border-t-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] p-3 sm:p-4">
-            <div className="mb-3 grid gap-2 sm:grid-cols-3">
+          <div className="min-w-0 border-t-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] p-3">
+            <div className="mb-3 grid min-w-0 gap-2 sm:grid-cols-3">
               {SUGGESTED_MOVES.map((move) => (
                 <button
                   key={move.label}
                   type="button"
                   disabled={busy || demoComplete}
                   onClick={() => submit(move.text)}
-                  className="vesh-chip min-h-10 justify-center px-3"
+                  className="vesh-chip min-h-10 min-w-0 justify-center whitespace-normal px-2 text-center leading-tight"
                 >
                   {move.label}
                 </button>
               ))}
             </div>
-            <div className="vesh-card flex flex-wrap items-center gap-2 p-2 sm:flex-nowrap sm:p-3">
+            <div className="vesh-card flex min-w-0 flex-wrap items-center gap-2 p-2 sm:flex-nowrap sm:p-3">
               <input
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
@@ -325,17 +325,17 @@ export default function NotebookHero({
                 maxLength={140}
                 aria-label="Your response to the client"
                 placeholder={demoComplete ? "Mini report unlocked" : "Type your next response..."}
-                className="vesh-session-input min-w-[180px] flex-1 bg-transparent px-2 py-3 text-sm outline-none placeholder:text-[var(--vesh-muted)] sm:text-base"
+                className="vesh-session-input min-w-0 flex-1 bg-transparent px-2 py-3 text-sm outline-none placeholder:text-[var(--vesh-muted)] sm:text-base"
               />
               <button
                 type="button"
                 disabled
                 title="Voice input is available in full sessions"
-                className="vesh-chip min-h-10 px-3"
+                className="vesh-chip min-h-10 shrink-0 px-3"
               >
                 <Mic className="h-4 w-4" />
               </button>
-              <button onClick={() => submit(input)} disabled={busy || demoComplete} className="vesh-button flex-1 sm:flex-none">
+              <button onClick={() => submit(input)} disabled={busy || demoComplete} className="vesh-button shrink-0">
                 <Send className="h-4 w-4" />
                 Send
               </button>
@@ -346,7 +346,7 @@ export default function NotebookHero({
           </div>
         </div>
 
-        <aside className="grid content-start border-t-[1.5px] border-[var(--vesh-black)] bg-[rgba(255,232,189,0.42)] lg:border-l-[1.5px] lg:border-t-0">
+        <aside className="grid min-w-0 content-start border-t-[1.5px] border-[var(--vesh-black)] bg-[rgba(255,232,189,0.42)] lg:border-l-[1.5px] lg:border-t-0">
           <div className="border-b-[1.5px] border-[var(--vesh-black)] p-4">
             <div
               data-legacy-label="Coach margin"

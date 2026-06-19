@@ -177,7 +177,7 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("min-w-[780px]");
     expect(app).toContain("sm:flex-nowrap");
     expect(app).toContain("max-w-[92%]");
-    expect(hero).toContain("sm:min-h-[380px]");
+    expect(hero).toContain("sm:min-h-[360px]");
     expect(hero).toContain("max-w-full");
     expect(css).toContain("@media (max-width: 640px)");
     expect(css).toContain("--vesh-shadow: 4px 4px 0");
@@ -324,6 +324,27 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("CLINICAL FEEDBACK.");
     expect(app).toContain("REAL GROWTH.");
     expect(app).toContain("NOT A REPLACEMENT FOR SUPERVISION");
+  });
+
+  test("landing page nav links and Firefox-safe notebook layout constraints are wired", () => {
+    const app = read("components/BoldVeshApp.tsx");
+    const hero = read("components/NotebookHero.tsx");
+
+    expect(app).toContain('href="#how-it-works"');
+    expect(app).toContain('href="#for-schools"');
+    expect(app).toContain('href="#pricing"');
+    expect(app).toContain('href="#resources"');
+    expect(app).toContain('id="how-it-works"');
+    expect(app).toContain('id="for-schools"');
+    expect(app).toContain('id="pricing"');
+    expect(app).toContain('id="resources"');
+    expect(app).toContain("max-w-[1600px]");
+    expect(app).toContain("lg:p-5");
+    expect(hero).toContain("min-w-0 overflow-hidden");
+    expect(hero).toContain("lg:grid-cols-[minmax(0,1fr)_minmax(250px,280px)]");
+    expect(hero).toContain("xl:grid-cols-[minmax(0,1fr)_292px]");
+    expect(hero).toContain("break-words");
+    expect(hero).toContain("min-w-0 flex-1");
   });
 
   test("home masthead does not duplicate the Vesh wordmark above the product header", () => {

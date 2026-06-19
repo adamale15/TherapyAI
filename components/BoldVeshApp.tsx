@@ -214,7 +214,7 @@ function Brand() {
 function HomeMasthead() {
   return (
     <header className="border-b-[1.5px] border-[var(--vesh-black)] bg-[rgba(251,241,220,0.94)] px-4 py-3 sm:px-6 lg:px-10">
-      <div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-between gap-4">
+      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-4">
         <div
           aria-label="AI THERAPY TRAINING FOR THERAPY STUDENTS"
           className="font-mono text-[11px] font-black uppercase leading-[1.08] tracking-[0.16em] text-[var(--vesh-black)] sm:text-[13px]"
@@ -1394,18 +1394,18 @@ export default function BoldVeshApp() {
       )}
 
       {view === "home" && (
-        <section className="p-4 sm:p-6 lg:p-8">
-          <div className="mx-auto max-w-[1500px]">
-            <div className="vesh-card overflow-hidden bg-[var(--vesh-paper-soft)] shadow-[10px_10px_0_rgba(17,17,15,0.2)]">
+        <section className="px-3 py-4 sm:px-5 sm:py-5 lg:p-5">
+          <div className="mx-auto max-w-[1600px]">
+            <div id="how-it-works" className="vesh-card scroll-mt-24 overflow-hidden bg-[var(--vesh-paper-soft)] shadow-[10px_10px_0_rgba(17,17,15,0.2)]">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b-[1.5px] border-[var(--vesh-black)] px-4 py-3 sm:px-5">
                 <Brand />
                 <nav className="hidden items-center gap-6 text-xs font-black md:flex">
-                  <button className="border-b-[2px] border-[var(--vesh-coral)]">
+                  <a href="#how-it-works" className="border-b-[2px] border-[var(--vesh-coral)]">
                     How it works
-                  </button>
-                  <button>For schools</button>
-                  <button>Pricing</button>
-                  <button>Resources</button>
+                  </a>
+                  <a href="#for-schools">For schools</a>
+                  <a href="#pricing">Pricing</a>
+                  <a href="#resources">Resources</a>
                 </nav>
                 <div className="hidden items-center gap-3 sm:flex">
                   {signedIn ? (
@@ -1471,7 +1471,7 @@ export default function BoldVeshApp() {
                 )}
               </div>
 
-              <div className="grid gap-7 p-5 sm:p-7 lg:grid-cols-[0.82fr_1.18fr] lg:items-center lg:p-8 xl:p-10">
+              <div className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[0.8fr_1.2fr] lg:items-center lg:p-6 xl:p-7">
                 <div>
                   <div className="vesh-kicker text-[var(--vesh-coral-dark)]">
                     AI therapy training
@@ -1550,6 +1550,39 @@ export default function BoldVeshApp() {
                   />
                 </div>
               </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <section id="for-schools" className="vesh-card scroll-mt-24 p-4">
+                <div className="vesh-kicker text-[var(--vesh-muted)]">For schools</div>
+                <h2 className="mt-2 text-xl font-black uppercase leading-none">
+                  Cohort-ready practice
+                </h2>
+                <p className="mt-3 text-sm leading-relaxed text-[var(--vesh-muted)]">
+                  Give students repeatable cases, consistent rubrics, and saved
+                  session reports before live supervision.
+                </p>
+              </section>
+              <section id="pricing" className="vesh-card scroll-mt-24 p-4">
+                <div className="vesh-kicker text-[var(--vesh-muted)]">Pricing</div>
+                <h2 className="mt-2 text-xl font-black uppercase leading-none">
+                  Start with practice
+                </h2>
+                <p className="mt-3 text-sm leading-relaxed text-[var(--vesh-muted)]">
+                  Student access starts with guided rehearsals. Program plans can
+                  add cohort review, exports, and instructor workflows.
+                </p>
+              </section>
+              <section id="resources" className="vesh-card scroll-mt-24 p-4">
+                <div className="vesh-kicker text-[var(--vesh-muted)]">Resources</div>
+                <h2 className="mt-2 text-xl font-black uppercase leading-none">
+                  Built around feedback
+                </h2>
+                <p className="mt-3 text-sm leading-relaxed text-[var(--vesh-muted)]">
+                  Every rehearsal connects transcript evidence to alliance,
+                  empathy, questions, collaboration, and risk-screening skills.
+                </p>
+              </section>
             </div>
           </div>
         </section>
