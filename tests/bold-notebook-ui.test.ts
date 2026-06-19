@@ -51,10 +51,21 @@ describe("bold notebook UI system", () => {
     expect(app).toContain("pathForView");
     expect(app).toContain("viewForPathname");
     expect(app).toContain("viewForPathname(pathname)");
-    expect(app).toContain("router.push(pathForView(target))");
-    expect(app).toContain('pathForView("briefing", { personaId: persona.id })');
-    expect(app).toContain('pathForView("session", { personaId: selectedOrFirst.id })');
-    expect(app).toContain('pathForView("summary", { personaId: reportPersona.id })');
+    expect(app).toContain("pushAppRoute");
+    expect(app).toContain("pathForView(target, options)");
+    expect(app).toContain('pushAppRoute("briefing", { personaId: persona.id })');
+    expect(app).toContain('pushAppRoute("session", { personaId: selectedOrFirst.id })');
+    expect(app).toContain('pushAppRoute("summary", { personaId: reportPersona.id })');
+  });
+
+  test("live session URL changes do not remount and freeze the countdown", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain("window.history.pushState");
+    expect(app).toContain('pushAppRoute("session", { personaId: selectedOrFirst.id })');
+    expect(app).toContain('pushAppRoute("summary", { personaId: selectedOrFirst.id })');
+    expect(app).not.toContain('router.push(pathForView("session", { personaId: selectedOrFirst.id }))');
+    expect(app).not.toContain('router.push(pathForView("summary", { personaId: selectedOrFirst.id }))');
   });
 
   test("session UI rewards matched coaching suggestions with subtle premium motion", () => {
@@ -314,7 +325,7 @@ describe("bold notebook UI system", () => {
     expect(app).toContain('urlParams.get("auth") === "1"');
     expect(app).toContain('urlParams.get("userTypeSet") === "true"');
     expect(app).toContain("user.reload()");
-    expect(app).toContain("router.push(pathForView(target))");
+    expect(app).toContain("pushAppRoute(target)");
     expect(app).not.toContain('window.history.replaceState({}, "", window.location.pathname)');
     expect(setUserType).toContain('redirectUrl.searchParams.set("userType", userType)');
     expect(app).not.toContain('onClick={() => router.push("/sign-in")}');

@@ -955,6 +955,21 @@ export default function BoldVeshApp() {
     setRemainingSeconds(nextDuration * 60);
   };
 
+  const pushAppRoute = useCallback(
+    (target: View, options: { personaId?: string } = {}) => {
+      const nextPath = pathForView(target, options);
+      setView(target);
+
+      if (typeof window === "undefined") {
+        router.push(nextPath);
+        return;
+      }
+
+      window.history.pushState({}, "", nextPath);
+    },
+    [router]
+  );
+
   const openWorkspaceAfterAuth = useCallback(
     (redirectedUserType?: string | null) => {
       const targetUserType =
@@ -963,10 +978,9 @@ export default function BoldVeshApp() {
           : currentUserType;
       const target = targetUserType === "practitioner" ? "practitioner" : "student";
 
-      setView(target);
-      router.push(pathForView(target));
+      pushAppRoute(target);
     },
-    [currentUserType, router]
+    [currentUserType, pushAppRoute]
   );
 
   useEffect(() => {
@@ -1034,8 +1048,7 @@ export default function BoldVeshApp() {
       router.push(studentSignUpPath);
       return;
     }
-    setView(target);
-    router.push(pathForView(target));
+    pushAppRoute(target);
   };
 
   const focusHomeDemo = () => {
@@ -1063,8 +1076,7 @@ export default function BoldVeshApp() {
           text: message.text,
         }))
       );
-      setView("summary");
-      router.push(pathForView("summary", { personaId: reportPersona.id }));
+      pushAppRoute("summary", { personaId: reportPersona.id });
       return;
     }
 
@@ -1092,8 +1104,7 @@ export default function BoldVeshApp() {
         text: "Part of you wants relief, and another part worries what needing help says about you.",
       },
     ]);
-    setView("summary");
-    router.push(pathForView("summary", { personaId: reportPersona.id }));
+    pushAppRoute("summary", { personaId: reportPersona.id });
   };
 
   const handleSignOut = async () => {
@@ -1101,8 +1112,7 @@ export default function BoldVeshApp() {
     stopListening();
     clearMatchedCoachMoveTimer();
     await signOut();
-    setView("home");
-    router.push(pathForView("home"));
+    pushAppRoute("home");
     setSelectedPersona(null);
     setMessages([]);
     setActiveSummarySession(null);
@@ -1273,8 +1283,7 @@ export default function BoldVeshApp() {
     clearMatchedCoachMoveTimer();
     setMatchedCoachMove(null);
     setVoiceStatus("Voice ready");
-    setView("briefing");
-    router.push(pathForView("briefing", { personaId: persona.id }));
+    pushAppRoute("briefing", { personaId: persona.id });
   };
 
   const beginSession = async () => {
@@ -1293,8 +1302,7 @@ export default function BoldVeshApp() {
     clearMatchedCoachMoveTimer();
     setMatchedCoachMove(null);
     setVoiceStatus("Voice ready");
-    setView("session");
-    router.push(pathForView("session", { personaId: selectedOrFirst.id }));
+    pushAppRoute("session", { personaId: selectedOrFirst.id });
 
     await fetch("/api/chat", {
       method: "POST",
@@ -1393,8 +1401,7 @@ export default function BoldVeshApp() {
     }
     setSessionEndReason(reason);
     void persistCompletedSession();
-    setView("summary");
-    router.push(pathForView("summary", { personaId: selectedOrFirst.id }));
+    pushAppRoute("summary", { personaId: selectedOrFirst.id });
   };
 
   useEffect(() => {
