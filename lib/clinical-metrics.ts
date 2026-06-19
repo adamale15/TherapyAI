@@ -10,6 +10,19 @@ export type CoachSuggestion = {
   body: string;
 };
 
+export type CoachSuggestionMatch = {
+  matched: boolean;
+  label: string;
+  skill:
+    | "allianceFrame"
+    | "affectReflection"
+    | "openQuestion"
+    | "singleQuestion"
+    | "collaboration"
+    | "riskScreen"
+    | "formulation";
+};
+
 export type ClinicalMetric = {
   key:
     | "alliance"
@@ -137,7 +150,7 @@ const riskCuePatterns = [
 const riskScreenPatterns = [
   /\bare you safe\b/i,
   /\bsafe right now\b/i,
-  /\bhurt yourself\b/i,
+  /\bhurt(?:ing)? yourself\b/i,
   /\bkill yourself\b/i,
   /\bsuicid/i,
   /\bending your life\b/i,
@@ -168,6 +181,82 @@ function scoreBand(score: number) {
   if (score >= 3.4) return "developing";
   if (score >= 2.6) return "needs practice";
   return "priority";
+}
+
+function questionCount(text: string) {
+  return (text.match(/\?/g) ?? []).length;
+}
+
+function matchResult(
+  matched: boolean,
+  skill: CoachSuggestionMatch["skill"],
+  label: string
+): CoachSuggestionMatch {
+  return { matched, skill, label };
+}
+
+export function evaluateCoachSuggestionMatch(
+  suggestion: CoachSuggestion,
+  traineeText: string
+): CoachSuggestionMatch {
+  const normalizedTitle = suggestion.title.toLowerCase();
+  const hasReflection = countMatches(traineeText, reflectionPatterns) > 0;
+  const hasValidation = countMatches(traineeText, validationPatterns) > 0;
+  const hasOpenQuestion = countMatches(traineeText, openQuestionPatterns) > 0;
+  const hasAdvice = countMatches(traineeText, advicePatterns) > 0;
+  const hasCollaboration = countMatches(traineeText, collaborationPatterns) > 0;
+  const hasRiskScreen = countMatches(traineeText, riskScreenPatterns) > 0;
+  const questions = questionCount(traineeText);
+
+  if (normalizedTitle.includes("screen for safety")) {
+    return matchResult(hasRiskScreen, "riskScreen", "Safety screen matched");
+  }
+
+  if (normalizedTitle.includes("ask permission")) {
+    return matchResult(
+      hasCollaboration && !hasAdvice,
+      "collaboration",
+      "Permission language matched"
+    );
+  }
+
+  if (normalizedTitle.includes("one clean question")) {
+    return matchResult(
+      questions === 1 && !hasAdvice,
+      "singleQuestion",
+      "Single question matched"
+    );
+  }
+
+  if (normalizedTitle.includes("affect reflection")) {
+    return matchResult(
+      hasReflection || hasValidation,
+      "affectReflection",
+      "Reflection matched"
+    );
+  }
+
+  if (normalizedTitle.includes("open the next question")) {
+    return matchResult(
+      hasOpenQuestion && questions <= 1,
+      "openQuestion",
+      "Open question matched"
+    );
+  }
+
+  if (normalizedTitle.includes("open with alliance")) {
+    return matchResult(
+      hasOpenQuestion || hasCollaboration || /\buseful today\b/i.test(traineeText),
+      "allianceFrame",
+      "Alliance frame matched"
+    );
+  }
+
+  return matchResult(
+    (hasReflection || hasValidation) && hasOpenQuestion,
+    "formulation",
+    "Clinical formulation matched"
+  );
 }
 
 export function analyzeClinicalSession(messages: ClinicalMessage[]): ClinicalAnalysis {

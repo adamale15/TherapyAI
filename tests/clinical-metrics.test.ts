@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   analyzeClinicalSession,
+  evaluateCoachSuggestionMatch,
   summarizeClinicalHistory,
   type ClinicalMessage,
   type CompletedClinicalSession,
@@ -85,6 +86,37 @@ describe("clinical metrics", () => {
 
     expect(risk?.display).toBe("Missed");
     expect(analysis.suggestions[1].title).toBe("Screen for safety");
+  });
+
+  test("detects when a trainee follows the active next-move suggestion", () => {
+    const analysis = analyzeClinicalSession([
+      { role: "client", text: "I feel hopeless, like there is no point in waking up." },
+      { role: "trainee", text: "That sounds exhausting." },
+    ]);
+
+    const match = evaluateCoachSuggestionMatch(
+      analysis.suggestions[1],
+      "I want to check on safety directly. Are you having thoughts of hurting yourself?"
+    );
+
+    expect(match.matched).toBe(true);
+    expect(match.label).toBe("Safety screen matched");
+    expect(match.skill).toBe("riskScreen");
+  });
+
+  test("does not reward generic reassurance when the suggested move asks for permission", () => {
+    const analysis = analyzeClinicalSession([
+      { role: "client", text: "I feel like I am barely keeping up." },
+      { role: "trainee", text: "It will get better." },
+    ]);
+
+    const match = evaluateCoachSuggestionMatch(
+      analysis.suggestions[1],
+      "It will get better, just try not to worry too much."
+    );
+
+    expect(match.matched).toBe(false);
+    expect(match.skill).toBe("collaboration");
   });
 
   test("summarizes completed sessions for a dynamic dashboard", () => {

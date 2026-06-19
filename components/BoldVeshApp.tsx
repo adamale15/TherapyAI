@@ -28,6 +28,7 @@ import { PersonaUploadModal } from "./PersonaUploadModal";
 import NotebookHero from "./NotebookHero";
 import {
   analyzeClinicalSession,
+  evaluateCoachSuggestionMatch,
   summarizeClinicalHistory,
   type CompletedClinicalSession,
 } from "@/lib/clinical-metrics";
@@ -48,6 +49,12 @@ type Message = {
   id: string;
   role: "client" | "trainee";
   text: string;
+};
+
+type MatchedCoachMove = {
+  id: string;
+  label: string;
+  suggestionTitle: string;
 };
 
 type SpeechRecognitionLike = {
@@ -815,12 +822,15 @@ export default function BoldVeshApp() {
   const [sessionEndReason, setSessionEndReason] = useState<SessionEndReason | null>(null);
   const [activeSummarySession, setActiveSummarySession] =
     useState<CompletedClinicalSession | null>(null);
+  const [matchedCoachMove, setMatchedCoachMove] =
+    useState<MatchedCoachMove | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const sessionId = useRef(`session-${Date.now()}`);
   const savedSessionKeys = useRef<Set<string>>(new Set());
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const homeDemoRef = useRef<HTMLDivElement | null>(null);
   const handledInitialSignedInHome = useRef(false);
+  const matchedCoachMoveTimer = useRef<number | null>(null);
 
   const convexPersonas = useQuery(convexFunctions.personas.listForUser, {
     ownerClerkId: user?.id,
@@ -899,6 +909,38 @@ export default function BoldVeshApp() {
     ? "Saved session report"
     : completionLabel;
 
+  const clearMatchedCoachMoveTimer = useCallback(() => {
+    if (typeof window === "undefined" || matchedCoachMoveTimer.current === null) {
+      return;
+    }
+
+    window.clearTimeout(matchedCoachMoveTimer.current);
+    matchedCoachMoveTimer.current = null;
+  }, []);
+
+  const showMatchedCoachMove = useCallback(
+    (label: string, suggestionTitle: string) => {
+      const nextMatch = {
+        id: `coach-match-${Date.now()}`,
+        label,
+        suggestionTitle,
+      };
+
+      clearMatchedCoachMoveTimer();
+      setMatchedCoachMove(nextMatch);
+
+      if (typeof window === "undefined") return;
+
+      matchedCoachMoveTimer.current = window.setTimeout(() => {
+        setMatchedCoachMove((current) =>
+          current?.id === nextMatch.id ? null : current
+        );
+        matchedCoachMoveTimer.current = null;
+      }, 3200);
+    },
+    [clearMatchedCoachMoveTimer]
+  );
+
   const openWorkspaceAfterAuth = useCallback(
     (redirectedUserType?: string | null) => {
       const targetUserType =
@@ -951,6 +993,8 @@ export default function BoldVeshApp() {
     return () => window.clearInterval(timer);
   }, [sessionDuration, sessionStartedAt, view]);
 
+  useEffect(() => () => clearMatchedCoachMoveTimer(), [clearMatchedCoachMoveTimer]);
+
   const navigate = (target: View) => {
     if (!signedIn && target !== "home") {
       router.push(studentSignUpPath);
@@ -968,6 +1012,8 @@ export default function BoldVeshApp() {
     session?: CompletedClinicalSession
   ) => {
     const reportPersona = findPersonaForSession(personas, session, persona);
+    clearMatchedCoachMoveTimer();
+    setMatchedCoachMove(null);
     setSelectedPersona(reportPersona);
     setSessionEndReason("manual");
     setActiveSummarySession(session ?? null);
@@ -1016,11 +1062,13 @@ export default function BoldVeshApp() {
   const handleSignOut = async () => {
     stopVoice();
     stopListening();
+    clearMatchedCoachMoveTimer();
     await signOut();
     setView("home");
     setSelectedPersona(null);
     setMessages([]);
     setActiveSummarySession(null);
+    setMatchedCoachMove(null);
   };
 
   const speakText = async (text: string, persona: PersonaData | null) => {
@@ -1184,6 +1232,8 @@ export default function BoldVeshApp() {
     setRemainingSeconds(sessionDuration * 60);
     setSessionEndReason(null);
     setActiveSummarySession(null);
+    clearMatchedCoachMoveTimer();
+    setMatchedCoachMove(null);
     setVoiceStatus("Voice ready");
     setView("briefing");
   };
@@ -1201,6 +1251,8 @@ export default function BoldVeshApp() {
     setActiveSummarySession(null);
     setMessages([]);
     setInput("");
+    clearMatchedCoachMoveTimer();
+    setMatchedCoachMove(null);
     setVoiceStatus("Voice ready");
     setView("session");
 
@@ -1217,6 +1269,16 @@ export default function BoldVeshApp() {
   const sendMessage = async () => {
     const text = input.trim();
     if (!text || isLoading) return;
+
+    const activeNextSuggestion = sessionAnalysis.suggestions[1];
+    const suggestionMatch = evaluateCoachSuggestionMatch(activeNextSuggestion, text);
+
+    if (suggestionMatch.matched) {
+      showMatchedCoachMove(suggestionMatch.label, activeNextSuggestion.title);
+    } else {
+      clearMatchedCoachMoveTimer();
+      setMatchedCoachMove(null);
+    }
 
     setInput("");
     setMessages((prev) => [
@@ -1285,6 +1347,8 @@ export default function BoldVeshApp() {
   const finishSession = (reason: SessionEndReason = "manual") => {
     stopVoice();
     stopListening();
+    clearMatchedCoachMoveTimer();
+    setMatchedCoachMove(null);
     if (reason === "time") {
       setRemainingSeconds(0);
     }
@@ -1985,6 +2049,29 @@ export default function BoldVeshApp() {
                 Feedback on your latest trainee response.
               </p>
             </div>
+            {matchedCoachMove && (
+              <div
+                aria-live="polite"
+                className="vesh-note vesh-note-matched mb-3"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)]">
+                    <CheckCircle className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <div className="vesh-kicker text-[var(--vesh-muted)]">
+                      Matched cue
+                    </div>
+                    <strong className="mt-1 block text-lg leading-none">
+                      Good adjustment
+                    </strong>
+                  </div>
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-[var(--vesh-ink)]">
+                  {matchedCoachMove.label}: {matchedCoachMove.suggestionTitle}
+                </p>
+              </div>
+            )}
             <CoachCard
               tone={sessionAnalysis.suggestions[0].tone}
               eyebrow="What worked"

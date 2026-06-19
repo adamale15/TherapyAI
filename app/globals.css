@@ -195,6 +195,69 @@
     background: #ffd3c8;
   }
 
+  .vesh-note-matched {
+    position: relative;
+    overflow: hidden;
+    border-color: var(--vesh-green);
+    background:
+      linear-gradient(135deg, #f9fff4 0%, #bff3db 58%, #ffe66b 100%);
+    animation: vesh-coach-match 2800ms cubic-bezier(0.19, 1, 0.22, 1) both;
+  }
+
+  .vesh-note-matched::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      115deg,
+      transparent 0%,
+      transparent 34%,
+      rgba(255, 255, 255, 0.54) 46%,
+      transparent 58%,
+      transparent 100%
+    );
+    transform: translateX(-120%);
+    animation: vesh-coach-sheen 1400ms 120ms ease-out both;
+  }
+
+  @keyframes vesh-coach-match {
+    0% {
+      transform: translateY(5px) scale(0.985);
+      box-shadow:
+        0 0 0 rgba(15, 61, 50, 0),
+        5px 5px 0 rgba(17, 17, 15, 0.16);
+    }
+    22% {
+      transform: translateY(-1px) scale(1.01);
+      box-shadow:
+        0 0 0 5px rgba(0, 168, 120, 0.16),
+        7px 7px 0 rgba(17, 17, 15, 0.18);
+    }
+    100% {
+      transform: translateY(0) scale(1);
+      box-shadow:
+        0 0 0 rgba(15, 61, 50, 0),
+        5px 5px 0 rgba(17, 17, 15, 0.16);
+    }
+  }
+
+  @keyframes vesh-coach-sheen {
+    0% {
+      transform: translateX(-120%);
+    }
+    100% {
+      transform: translateX(120%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .vesh-note-matched,
+    .vesh-note-matched::after {
+      animation: none;
+    }
+  }
+
   .vesh-chip {
     display: inline-flex;
     min-height: 1.875rem;

@@ -44,6 +44,20 @@ describe("bold notebook UI system", () => {
     expect(app).not.toContain("<strong>Watch</strong>");
   });
 
+  test("session UI rewards matched coaching suggestions with subtle premium motion", () => {
+    const app = read("components/BoldVeshApp.tsx");
+    const css = read("app/globals.css");
+
+    expect(app).toContain("evaluateCoachSuggestionMatch");
+    expect(app).toContain("matchedCoachMove");
+    expect(app).toContain("Good adjustment");
+    expect(app).toContain("vesh-note-matched");
+    expect(app).toContain('aria-live="polite"');
+    expect(app).toContain("window.setTimeout");
+    expect(css).toContain(".vesh-note-matched");
+    expect(css).toContain("@keyframes vesh-coach-match");
+  });
+
   test("session starts empty and wires voice features", () => {
     const app = read("components/BoldVeshApp.tsx");
 
