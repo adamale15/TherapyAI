@@ -259,6 +259,64 @@ export function evaluateCoachSuggestionMatch(
   );
 }
 
+export function getCoachSuggestionStarters(suggestion: CoachSuggestion): string[] {
+  const normalizedTitle = suggestion.title.toLowerCase();
+
+  if (normalizedTitle.includes("screen for safety")) {
+    return [
+      "I want to check on your safety directly. Are you having thoughts of hurting yourself?",
+      "When you say there is no point, are you feeling safe right now?",
+      "Have thoughts of death or not wanting to wake up been showing up for you?",
+    ];
+  }
+
+  if (normalizedTitle.includes("ask permission")) {
+    return [
+      "Would it be okay if we look at what might help, or would it feel better to stay with the feeling first?",
+      "Before I offer ideas, do you want coping options or more space to unpack this?",
+      "Can we slow down and decide together what would feel most useful right now?",
+    ];
+  }
+
+  if (normalizedTitle.includes("one clean question")) {
+    return [
+      "What feels hardest about that right now?",
+      "Where do you notice that most during the week?",
+      "How has that been affecting you today?",
+    ];
+  }
+
+  if (normalizedTitle.includes("affect reflection")) {
+    return [
+      "It sounds like there is a lot of pressure sitting underneath this.",
+      "Part of you wants relief, and part of you feels embarrassed needing help.",
+      "That sounds exhausting, like you have been carrying it alone for a while.",
+    ];
+  }
+
+  if (normalizedTitle.includes("open the next question")) {
+    return [
+      "What feels most important for me to understand about that?",
+      "How does that pressure show up when things get quiet?",
+      "What has this been like for you day to day?",
+    ];
+  }
+
+  if (normalizedTitle.includes("open with alliance")) {
+    return [
+      "What would make this conversation feel useful today?",
+      "Where would you like to start?",
+      "What feels most important for me to understand first?",
+    ];
+  }
+
+  return [
+    "It sounds like this has been weighing on you. What feels most urgent to understand first?",
+    "Part of this seems really hard to carry. How has it been affecting your day?",
+    "I want to make sure I am getting this right. What stands out most for you?",
+  ];
+}
+
 export function analyzeClinicalSession(messages: ClinicalMessage[]): ClinicalAnalysis {
   const traineeMessages = messages.filter((message) => message.role === "trainee");
   const clientMessages = messages.filter((message) => message.role === "client");

@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   analyzeClinicalSession,
   evaluateCoachSuggestionMatch,
+  getCoachSuggestionStarters,
   summarizeClinicalHistory,
   type ClinicalMessage,
   type CompletedClinicalSession,
@@ -117,6 +118,15 @@ describe("clinical metrics", () => {
 
     expect(match.matched).toBe(false);
     expect(match.skill).toBe("collaboration");
+  });
+
+  test("turns the active next move into concrete response starters", () => {
+    const analysis = analyzeClinicalSession([]);
+    const starters = getCoachSuggestionStarters(analysis.suggestions[1]);
+
+    expect(starters).toHaveLength(3);
+    expect(starters[0]).toContain("useful");
+    expect(starters.join(" ")).toContain("start");
   });
 
   test("summarizes completed sessions for a dynamic dashboard", () => {

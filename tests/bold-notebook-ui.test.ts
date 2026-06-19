@@ -58,6 +58,17 @@ describe("bold notebook UI system", () => {
     expect(css).toContain("@keyframes vesh-coach-match");
   });
 
+  test("session UI makes actionable suggestions visible near the composer", () => {
+    const app = read("components/BoldVeshApp.tsx");
+
+    expect(app).toContain("getCoachSuggestionStarters");
+    expect(app).toContain("suggestionStarters");
+    expect(app).toContain("Suggested response");
+    expect(app).toContain("Try this next");
+    expect(app).toContain("setInput(starter)");
+    expect(app).toContain("Use this starter");
+  });
+
   test("session starts empty and wires voice features", () => {
     const app = read("components/BoldVeshApp.tsx");
 

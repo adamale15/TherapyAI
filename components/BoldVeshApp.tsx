@@ -29,6 +29,7 @@ import NotebookHero from "./NotebookHero";
 import {
   analyzeClinicalSession,
   evaluateCoachSuggestionMatch,
+  getCoachSuggestionStarters,
   summarizeClinicalHistory,
   type CompletedClinicalSession,
 } from "@/lib/clinical-metrics";
@@ -864,6 +865,11 @@ export default function BoldVeshApp() {
   );
   const completedSessionsLoaded = !user?.id || completedSessions !== undefined;
   const sessionAnalysis = useMemo(() => analyzeClinicalSession(messages), [messages]);
+  const activeNextSuggestion = sessionAnalysis.suggestions[1];
+  const suggestionStarters = useMemo(
+    () => getCoachSuggestionStarters(activeNextSuggestion),
+    [activeNextSuggestion]
+  );
   const summaryAnalysis = useMemo(
     () =>
       activeSummarySession
@@ -1270,7 +1276,6 @@ export default function BoldVeshApp() {
     const text = input.trim();
     if (!text || isLoading) return;
 
-    const activeNextSuggestion = sessionAnalysis.suggestions[1];
     const suggestionMatch = evaluateCoachSuggestionMatch(activeNextSuggestion, text);
 
     if (suggestionMatch.matched) {
@@ -2017,29 +2022,59 @@ export default function BoldVeshApp() {
               )}
             </div>
 
-            <div className="vesh-card flex flex-wrap items-center gap-2 p-2 sm:flex-nowrap">
-              <MessageSquare className="ml-1 hidden h-4 w-4 text-[var(--vesh-muted)] sm:block" />
-              <input
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") void sendMessage();
-                }}
-                placeholder="Write or speak your next response..."
-                className="vesh-session-input min-w-[180px] flex-1 bg-transparent px-2 py-3 text-sm outline-none placeholder:text-[var(--vesh-muted)]"
-              />
-              <button
-                className={`vesh-chip min-h-10 px-3 ${isListening ? "vesh-chip-active" : ""}`}
-                title={isListening ? "Stop listening" : "Start voice input"}
-                type="button"
-                onClick={toggleListening}
-              >
-                <Mic className="h-4 w-4" />
-              </button>
-              <button onClick={sendMessage} className="vesh-button min-h-10 flex-1 sm:flex-none" disabled={isLoading || isSpeaking}>
-                <Send className="h-4 w-4" />
-                Send
-              </button>
+            <div className="grid gap-2">
+              <div className="vesh-card bg-[var(--vesh-paper-hot)] p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <div className="vesh-kicker text-[var(--vesh-muted)]">
+                      Suggested response
+                    </div>
+                    <strong className="mt-1 block text-sm uppercase leading-tight">
+                      Try this next: {activeNextSuggestion.title}
+                    </strong>
+                  </div>
+                  <span className="vesh-chip shrink-0">Live cue</span>
+                </div>
+                <div className="mt-3 grid gap-2 lg:grid-cols-3">
+                  {suggestionStarters.map((starter) => (
+                    <button
+                      key={starter}
+                      type="button"
+                      aria-label={`Use this starter: ${starter}`}
+                      title="Use this starter"
+                      onClick={() => setInput(starter)}
+                      className="border-[1.5px] border-[var(--vesh-black)] bg-[var(--vesh-paper-soft)] p-2 text-left text-xs font-bold leading-relaxed shadow-[3px_3px_0_rgba(17,17,15,0.14)] transition-transform hover:-translate-y-0.5"
+                    >
+                      {starter}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="vesh-card flex flex-wrap items-center gap-2 p-2 sm:flex-nowrap">
+                <MessageSquare className="ml-1 hidden h-4 w-4 text-[var(--vesh-muted)] sm:block" />
+                <input
+                  value={input}
+                  onChange={(event) => setInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") void sendMessage();
+                  }}
+                  placeholder="Write or speak your next response..."
+                  className="vesh-session-input min-w-[180px] flex-1 bg-transparent px-2 py-3 text-sm outline-none placeholder:text-[var(--vesh-muted)]"
+                />
+                <button
+                  className={`vesh-chip min-h-10 px-3 ${isListening ? "vesh-chip-active" : ""}`}
+                  title={isListening ? "Stop listening" : "Start voice input"}
+                  type="button"
+                  onClick={toggleListening}
+                >
+                  <Mic className="h-4 w-4" />
+                </button>
+                <button onClick={sendMessage} className="vesh-button min-h-10 flex-1 sm:flex-none" disabled={isLoading || isSpeaking}>
+                  <Send className="h-4 w-4" />
+                  Send
+                </button>
+              </div>
             </div>
           </div>
           <aside className="border-t-[1.5px] border-[var(--vesh-black)] bg-[rgba(15,61,50,0.06)] p-4 sm:p-6 md:border-l-[1.5px] md:border-t-0">
